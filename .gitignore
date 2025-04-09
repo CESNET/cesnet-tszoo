@@ -1,0 +1,7 @@
+__pycache__/
+.vscode/*
+venv/
+build
+cesnet_tszoo.egg-info
+.DS_Store
+dist

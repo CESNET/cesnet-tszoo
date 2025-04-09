@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cesnet_tszoo"
+version = "0.1.0"
+authors = [
+    { name = "Milan Kureš", email = "kuresmil@fit.cvut.cz" },
+    { name = "Josef Koumar", email = "josef.koumar@fit.cvut.cz" },
+]
+maintainers = [
+    { name = "Milan Kureš", email = "kuresmil@fit.cvut.cz" },
+    { name = "Josef Koumar", email = "josef.koumar@fit.cvut.cz" },
+]
+keywords = [
+    "datasets",
+    "machine learning",
+    "time series",
+    "traffic forecasting",
+    "traffic classification",
+    "traffic anomaly detection",
+    "traffic similarity search",
+]
+description = "A toolkit for working with large time series network traffic datasets."
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy<2.0",
+    "pandas",
+    "scikit-learn",
+    "tables>=3.8.0,<=3.9.2",
+    "torch>=1.10",
+    "tqdm",
+    "nbformat>=4.2.0",
+    "plotly",
+    "PyYAML",
+    "requests",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = [
+    "build",
+    "mkdocs-autorefs",
+    "mkdocs-material-extensions",
+    "mkdocs-material",
+    "mkdocs",
+    "mkdocstrings-python",
+    "mkdocstrings",
+    "twine",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/CESNET/cesnet-tszoo"
+"Documentation" = "https://cesnet.github.io/cesnet-tszoo/"
+"Bug Tracker" = "https://github.com/CESNET/cesnet-tszoo/issues"
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
+
+[tool.setuptools.packages.find]
+include = ["cesnet_tszoo*"]
+exclude = ["docs*", "tutorial_notebooks*"]
