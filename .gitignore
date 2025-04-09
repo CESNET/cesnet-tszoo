@@ -1,7 +1,9 @@
 __pycache__/
 .vscode/*
 venv/
+.venv/
 build
 cesnet_tszoo.egg-info
 .DS_Store
 dist
+site
