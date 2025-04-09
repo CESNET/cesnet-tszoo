@@ -1,0 +1,9 @@
+DOI,Model,Avg. RMSE,Std. RMSE,Avg. R2-score,Std. R2-score
+https://arxiv.org/abs/2503.17410,GRU,0.154,0.82,-0.31,1.5
+https://arxiv.org/abs/2503.17410,GRU_FCN,0.154,0.82,-0.61,2.1
+https://arxiv.org/abs/2503.17410,INCEPTIONTIME,0.573,0.77,-9.22,2.5
+https://arxiv.org/abs/2503.17410,LSTM,0.154,0.82,-0.35,1.6
+https://arxiv.org/abs/2503.17410,LSTM_FCN,0.158,0.82,-1.28,3.0
+https://arxiv.org/abs/2503.17410,MEAN,1.011,2.86,0.01,0.1
+https://arxiv.org/abs/2503.17410,RCLSTM,0.247,1.17,-0.99,2.6
+https://arxiv.org/abs/2503.17410,RESNET,0.159,0.82,-0.92,2.6

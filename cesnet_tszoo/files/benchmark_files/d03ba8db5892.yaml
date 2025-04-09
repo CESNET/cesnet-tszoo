@@ -1,0 +1,10 @@
+aggregation: 1_hour
+annotations_both_identifier: null
+annotations_time_identifier: null
+annotations_ts_identifier: null
+config_identifier: d03ba8db5892
+database_name: CESNET-TimeSeries24
+description: null
+is_series_based: false
+related_results_identifier: d03ba8db5892
+source_type: institution_subnets

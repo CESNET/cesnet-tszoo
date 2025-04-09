@@ -1,0 +1,10 @@
+aggregation: 1_day
+annotations_both_identifier: null
+annotations_time_identifier: null
+annotations_ts_identifier: null
+config_identifier: b5e5ea044b81
+database_name: CESNET-TimeSeries24
+description: null
+is_series_based: false
+related_results_identifier: null
+source_type: ip_addresses_sample
