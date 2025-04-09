@@ -7,7 +7,7 @@ Each dataset type will have its own part because of multiple differences of avai
 ## [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset] dataset
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`time_based_loading_data`](https://github.com/CESNET/cesnet-tszoo/blob/tutorial_notebooks/time_based_loading_data.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`time_based_loading_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/time_based_loading_data.ipynb)
 
 Relevant configuration values:
 
@@ -221,7 +221,7 @@ numpy_array = time_based_dataset.get_all_numpy(workers="config")
 ## [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] dataset
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`series_based_loading_data`](https://github.com/CESNET/cesnet-tszoo/blob/tutorial_notebooks/series_based_loading_data.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`series_based_loading_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/series_based_loading_data.ipynb)
 
 Relevant configuration values:
 

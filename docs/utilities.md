@@ -5,7 +5,7 @@ This tutorial will look at various utilities.
 Only time-based will be used, because all methods work almost the same way for series-based.
 
 !!! info "Note"
-    For every option and more detailed examples refer to Jupyter notebook [`utilities`](https://github.com/CESNET/cesnet-tszoo/blob/tutorial_notebooks/utilities.ipynb)
+    For every option and more detailed examples refer to Jupyter notebook [`utilities`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/utilities.ipynb)
 
 ## Setting logger
 CESNET TS-Zoo uses logger, but without setting config below, it wont log anything.

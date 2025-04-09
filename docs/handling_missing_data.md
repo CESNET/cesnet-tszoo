@@ -5,7 +5,7 @@ This tutorial will look at some configuration options used for handling missing 
 Only time-based will be used, because all methods work almost the same way for series-based.
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`handling_missing_data`](https://github.com/CESNET/cesnet-tszoo/blob/tutorial_notebooks/handling_missing_data.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`handling_missing_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/handling_missing_data.ipynb)
 
 Relevant configuration values:
 
