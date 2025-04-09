@@ -1,4 +1,6 @@
 site_name: CESNET TS-Zoo
+repo_name: CESNET/cesnet-tszoo
+repo_url: https://github.com/CESNET/cesnet-tszoo
 
 theme:
   name: "material"
