@@ -1,0 +1,55 @@
+site_name: CESNET TS-Zoo
+
+theme:
+  name: "material"
+  palette:
+    primary: white
+  features:
+    - navigation.sections
+  logo: images/tszoo_logo.svg
+  favicon: images/tszoo_logo.svg
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list 
+
+nav:
+  - Introduction: index.md
+  - Installation: installation.md
+  - Overview of datasets: datasets_overview.md
+  - Scalers: scalers.md
+  - Fillers: fillers.md
+  - Benchmarks: benchmarks.md
+  - Datasets:
+    - CESNET-TimeSeries24: cesnet_timeseries24.md
+    - CESNET-AGG23: cesnet_agg23.md
+  - Tutorials:
+    - Getting started: getting_started.md
+    - Using datasets: using_datasets.md
+    - Choosing data: choosing_data.md
+    - Loading data: loading_data.md
+    - Handling missing data: handling_missing_data.md
+    - Using scalers: using_scalers.md
+    - Benchmarks: benchmarks_tutorial.md
+    - Annotations: annotations.md
+    - Utilities: utilities.md
+  - Reference:
+    - CesnetDatabase: reference_cesnet_database.md
+    - Benchmark: reference_benchmarks.md
+    - Time-based:
+      - TimeBasedCesnetDataset: reference_time_based_cesnet_dataset.md
+      - TimeBasedConfig: reference_time_based_config.md
+    - Series-based:
+      - SeriesBasedCesnetDataset: reference_series_based_cesnet_dataset.md    
+      - SeriesBasedConfig: reference_series_based_config.md
+    - Utils:
+      - Scalers: reference_scalers.md
+      - Fillers: reference_fillers.md
+      - Enums: reference_enums.md
