@@ -49,7 +49,7 @@ pip install -e git+https://github.com/CESNET/cesnet-tszoo
 
 ### Initialize dataset to create train, validation, and test dataframes
 
-#### Using [`TimeBasedCesnetDataset`](cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset) dataset
+#### Using [`TimeBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_time_based_cesnet_dataset/) dataset
 
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
@@ -70,9 +70,9 @@ val_dataframe = dataset.get_val_df()
 test_dataframe = dataset.get_test_df()
 ```
 
-Time-based datasets are configured with [`TimeBasedConfig`](cesnet_tszoo.configs.time_based_config.TimeBasedConfig).
+Time-based datasets are configured with [`TimeBasedConfig`](https://cesnet.github.io/cesnet-tszoo/reference_time_based_config/).
 
-#### Using [`SeriesBasedCesnetDataset`](cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) dataset
+#### Using [`SeriesBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_series_based_cesnet_dataset/) dataset
 
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
@@ -93,9 +93,9 @@ val_dataframe = dataset.get_val_df()
 test_dataframe = dataset.get_test_df()
 ```
 
-Series-based datasets are configured with [`SeriesBasedConfig`](cesnet_tszoo.configs.series_based_config.SeriesBasedConfig).
+Series-based datasets are configured with [`SeriesBasedConfig`](https://cesnet.github.io/cesnet-tszoo/reference_series_based_config/).
 
-#### Using [`load_benchmark`](cesnet_tszoo.benchmarks.load_benchmark)
+#### Using [`load_benchmark`](https://cesnet.github.io/cesnet-tszoo/benchmarks_tutorial/)
 
 ```python
 from cesnet_tszoo.benchmarks import load_benchmark

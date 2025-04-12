@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cesnet_tszoo"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
     { name = "Milan Kureš", email = "kuresmil@fit.cvut.cz" },
     { name = "Josef Koumar", email = "josef.koumar@fit.cvut.cz" },
