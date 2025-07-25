@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../images/tszoo_logo.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.4af4bdda.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
@@ -1511,7 +1511,7 @@ class LogScaler(Scaler):
     def transform(self, data: np.ndarray):
         log_data = np.ma.log(data)
 
-        return log_data.filled(np.NaN)
+        return log_data.filled(np.nan)
 </code></pre>
 
 
@@ -1604,7 +1604,7 @@ class LogScaler(Scaler):
 <span class="sd">            def transform(self, data: np.ndarray):</span>
 <span class="sd">                log_data = np.ma.log(data)</span>
 
-<span class="sd">                return log_data.filled(np.NaN)</span>
+<span class="sd">                return log_data.filled(np.nan)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@abstractmethod</span>
@@ -1956,7 +1956,7 @@ class LogScaler(Scaler):
               Bases: <code><a class="autorefs autorefs-internal" title="Scaler (cesnet_tszoo.utils.scaler.Scaler)" href="#cesnet_tszoo.utils.scaler.Scaler">Scaler</a></code></p>
 
 
-        <p>Tranforms data with natural logarithm. Zero or invalid values are set to <code>np.NaN</code>.</p>
+        <p>Tranforms data with natural logarithm. Zero or invalid values are set to <code>np.nan</code>.</p>
 <p>Corresponds to enum <a class="autorefs autorefs-internal" title="ScalerType" href="../reference_enums/#cesnet_tszoo.utils.enums.ScalerType"><code>ScalerType.LOG_SCALER</code></a> or literal <code>log_scaler</code>.</p>
 
 
@@ -1985,7 +1985,7 @@ class LogScaler(Scaler):
 <span class="normal">149</span>
 <span class="normal">150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LogScaler</span><span class="p">(</span><span class="n">Scaler</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Tranforms data with natural logarithm. Zero or invalid values are set to `np.NaN`.</span>
+<span class="sd">    Tranforms data with natural logarithm. Zero or invalid values are set to `np.nan`.</span>
 
 <span class="sd">    Corresponds to enum [`ScalerType.LOG_SCALER`][cesnet_tszoo.utils.enums.ScalerType] or literal `log_scaler`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1999,7 +1999,7 @@ class LogScaler(Scaler):
     <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
         <span class="n">log_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">log_data</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">log_data</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -2704,10 +2704,10 @@ class LogScaler(Scaler):
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.c8b220af.min.js"></script>
+      <script src="../assets/javascripts/bundle.56ea9cef.min.js"></script>
       
     
   </body>
