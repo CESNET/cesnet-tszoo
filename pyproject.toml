@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cesnet_tszoo"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
     { name = "Milan Kureš", email = "kuresmil@fit.cvut.cz" },
     { name = "Josef Koumar", email = "josef.koumar@fit.cvut.cz" },
@@ -33,13 +33,13 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "numpy<2.0",
+    "numpy>= 2.0, ==2.*",
     "pandas",
     "scikit-learn",
-    "tables>=3.8.0,<=3.9.2",
-    "torch>=1.10",
+    "tables >= 3.10.0",
+    "torch >= 1.10",
     "tqdm",
-    "nbformat>=4.2.0",
+    "nbformat >= 4.2.0",
     "plotly",
     "PyYAML",
     "requests",

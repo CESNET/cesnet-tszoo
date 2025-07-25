@@ -28,7 +28,7 @@ class Scaler(ABC):
             def transform(self, data: np.ndarray):
                 log_data = np.ma.log(data)
 
-                return log_data.filled(np.NaN)
+                return log_data.filled(np.nan)
     """
 
     @abstractmethod
@@ -133,7 +133,7 @@ class MaxAbsScaler(Scaler):
 
 class LogScaler(Scaler):
     """
-    Tranforms data with natural logarithm. Zero or invalid values are set to `np.NaN`.
+    Tranforms data with natural logarithm. Zero or invalid values are set to `np.nan`.
 
     Corresponds to enum [`ScalerType.LOG_SCALER`][cesnet_tszoo.utils.enums.ScalerType] or literal `log_scaler`.
     """
@@ -147,7 +147,7 @@ class LogScaler(Scaler):
     def transform(self, data: np.ndarray):
         log_data = np.ma.log(data)
 
-        return log_data.filled(np.NaN)
+        return log_data.filled(np.nan)
 
 
 class L2Normalizer(Scaler):

@@ -71,7 +71,7 @@ class BaseDataset(Dataset, ABC):
     def load_data_from_table(self, ts_row_ranges_to_take: np.ndarray, time_indices_to_take: np.ndarray, fillers_to_use: np.ndarray[Filler] | None) -> np.ndarray:
         """Return data from table. Missing values are filled with `fillers_to_use` and `default_values`. """
 
-        result = np.full((len(ts_row_ranges_to_take), len(time_indices_to_take), len(self.features_to_take)), fill_value=np.NaN, dtype=np.float64)
+        result = np.full((len(ts_row_ranges_to_take), len(time_indices_to_take), len(self.features_to_take)), fill_value=np.nan, dtype=np.float64)
         result[:, :, self.offset_exclude_feature_ids:] = self.default_values
 
         full_missing_indices = np.arange(0, len(time_indices_to_take))
@@ -119,7 +119,7 @@ class BaseDataset(Dataset, ABC):
 
             # Get valid times
             filtered_rows = rows[mask].view()
-            filtered_rows[ID_TIME_COLUMN_NAME] -= first_time_index
+            filtered_rows[ID_TIME_COLUMN_NAME] = filtered_rows[ID_TIME_COLUMN_NAME] - first_time_index
             existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
             missing_values_mask = np.ones(len(time_indices_to_take), dtype=bool)

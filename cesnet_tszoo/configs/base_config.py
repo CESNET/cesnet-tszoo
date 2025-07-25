@@ -451,7 +451,7 @@ class DatasetConfig(ABC):
 
         elif self.default_values is None or math.isnan(self.default_values) or np.isnan(self.default_values):
             # If default_values is None or NaN, assign NaN to each feature
-            self.default_values = {feature: np.NaN for feature in self.features_to_take_without_ids}
+            self.default_values = {feature: np.nan for feature in self.features_to_take_without_ids}
             self.logger.debug("Assigned NaN as the default value for all features because 'default_values' is None or NaN.")
 
         # Convert the default values into a NumPy array for consistent data handling

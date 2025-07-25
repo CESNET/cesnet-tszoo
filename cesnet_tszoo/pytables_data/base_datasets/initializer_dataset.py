@@ -54,7 +54,7 @@ class InitializerDataset(Dataset, ABC):
     def load_data_from_table(self, identifier_row_range_to_take: np.ndarray, idx: int) -> np.ndarray:
         """Returns data from table. Missing values are filled fillers and `default_values`. Prepares fillers."""
 
-        result = np.full((len(self.time_period), len(self.features_to_take)), fill_value=np.NaN, dtype=np.float64)
+        result = np.full((len(self.time_period), len(self.features_to_take)), fill_value=np.nan, dtype=np.float64)
         result[:, self.offset_exclude_feature_ids:] = self.default_values
 
         expected_offset = np.uint32(len(self.time_period))
@@ -95,7 +95,7 @@ class InitializerDataset(Dataset, ABC):
 
         # Get valid times
         filtered_rows = rows[mask].view()
-        filtered_rows[ID_TIME_COLUMN_NAME] -= first_time_index
+        filtered_rows[ID_TIME_COLUMN_NAME] = filtered_rows[ID_TIME_COLUMN_NAME] - first_time_index
         existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
         missing_values_mask = np.ones(len(self.time_period), dtype=bool)
