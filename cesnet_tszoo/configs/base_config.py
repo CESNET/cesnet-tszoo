@@ -7,8 +7,10 @@ import logging
 
 import numpy as np
 import numpy.typing as npt
+from packaging.version import Version
 from sklearn.model_selection import train_test_split
 
+import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ROW_END, ROW_START, ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, ScalerType, DataloaderOrder
 from cesnet_tszoo.utils.scaler import Scaler
@@ -60,6 +62,8 @@ class DatasetConfig(ABC):
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
         all_fillers: Fillers used for the all set. `None` if no filler is used or all set is not used.
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
+        version: Version of cesnet-tszoo this config was made in.
+        export_update_needed: Whether config was updated to newer version and should be exported.
 
     # Configuration options
 
@@ -184,6 +188,8 @@ class DatasetConfig(ABC):
         self.test_fillers = None
         self.all_fillers = None
         self.is_initialized = False
+        self.version = version.current_version
+        self.export_update_needed = False
 
         self._validate_construction()
 
@@ -617,3 +623,26 @@ class DatasetConfig(ABC):
     def _validate_finalization(self) -> None:
         """Performs final validation of the configuration. """
         ...
+
+    def _try_update_version(self) -> None:
+        """Tries to update config to match newer version of library. """
+
+        self.logger.debug("Trying to update config if necessary.")
+
+        if not hasattr(self, "version"):
+            self.logger.warning("Config attribute 'version' is missing in this instance. Default version '%s' will be set.", version.DEFAULT_VERSION)
+            self.version = version.DEFAULT_VERSION
+
+        if Version(self.version) < Version(version.current_version):
+            self.logger.warning("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.version, version.current_version)
+            self.logger.warning("Package will try to update the config. It is recommended to recreate this config or at least export this config alone or through benchmark to create updated config file.")
+            self.export_update_needed = True
+        elif Version(self.version) > Version(version.current_version):
+            self.logger.error("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.version, version.current_version)
+            self.logger.error("Update cesnet-tszoo package to use this config.")
+            raise ValueError(f"Imported config was made for cesnet-tszoo package of version '{self.version}', but current used cesnet-tszoo package version is '{version.current_version}'!")
+        else:
+            self.export_update_needed = False
+
+        self.logger.debug("Setting config version to current used cesnet-tszoo package version.")
+        self.version = version.current_version

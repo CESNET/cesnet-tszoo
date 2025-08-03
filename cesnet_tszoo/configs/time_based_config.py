@@ -631,6 +631,9 @@ class TimeBasedConfig(DatasetConfig):
                 self.logger.error("ts_ids and test_ts_ids can't have the same IDs!")
                 raise ValueError(f"ts_ids and test_ts_ids can't have the same IDs. Overlapping IDs: {self.ts_ids[mask]}")
 
+    def _try_update_version(self):
+        super()._try_update_version()
+
     def __str__(self) -> str:
 
         if self.scale_with is None:
@@ -689,4 +692,5 @@ Config Details
     Other
         Nan threshold: {str(self.nan_threshold)}
         Random state: {self.random_state}
+        Version: {self.version}
                 '''

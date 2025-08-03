@@ -235,13 +235,13 @@ class TimeBasedCesnetDataset(CesnetDataset):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_other_dataloader.")
 
-        if not self.dataset_config.has_all:
+        if not self.dataset_config.has_test or not self.dataset_config.has_test_ts_ids:
             raise ValueError("Dataloader for test_other set is not available in the dataset configuration.")
 
         assert self.test_dataset is not None, "The test_other_dataset must be initialized before accessing data from test_other set."
 
-        defaultKwargs = {'take_all': False, "cache_loader": True}
-        kwargs = {**defaultKwargs, **kwargs}
+        default_kwargs = {'take_all': False, "cache_loader": True}
+        kwargs = {**default_kwargs, **kwargs}
 
         if ts_id is not None:
 
@@ -313,7 +313,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_other_dataloader.")
 
-        if not self.dataset_config.has_all:
+        if not self.dataset_config.has_test or not self.dataset_config.has_test_ts_ids:
             raise ValueError("Dataloader for test_other set is not available in the dataset configuration.")
 
         assert self.test_dataset is not None, "The test_other_dataset must be initialized before accessing data from test_other set."

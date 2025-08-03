@@ -45,6 +45,7 @@ class ExportBenchmark:
     annotations_time_identifier: str
     annotations_both_identifier: str
     related_results_identifier: Optional[str] = None
+    version: str = None
     description: Optional[str] = None
 
     def to_dict(self):

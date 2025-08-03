@@ -21,7 +21,7 @@ def get_benchmark_path_and_whether_it_is_built_in(identifier: str, data_root: st
     is_built_in = exists_built_in_benchmark(identifier)
 
     if not is_built_in:
-        logger.warning("Built-in benchmark %s not found.", identifier)
+        logger.info("Built-in benchmark %s not found.", identifier)
 
     if is_built_in:
         return path_for_built_in_benchmark, True
@@ -31,7 +31,7 @@ def get_benchmark_path_and_whether_it_is_built_in(identifier: str, data_root: st
     is_custom = os.path.exists(path_for_custom_benchmark)
 
     if not is_custom:
-        logger.warning("No benchmark with identifier %s found at expected path: %s.", identifier, path_for_custom_benchmark)
+        logger.info("No benchmark with identifier %s found at expected path: %s.", identifier, path_for_custom_benchmark)
 
     if is_custom:
         return path_for_custom_benchmark, False

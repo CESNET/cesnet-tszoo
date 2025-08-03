@@ -16,6 +16,7 @@ from plotly.subplots import make_subplots
 from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, Dataset, RandomSampler
 import torch
 
+import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, get_config_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
@@ -260,8 +261,8 @@ class CesnetDataset(ABC):
 
         assert self.train_dataset is not None, "The train_dataset must be initialized before accessing data from training set."
 
-        defaultKwargs = {'take_all': False, "cache_loader": True}
-        kwargs = {**defaultKwargs, **kwargs}
+        default_kwargs = {'take_all': False, "cache_loader": True}
+        kwargs = {**default_kwargs, **kwargs}
 
         if ts_id is not None:
 
@@ -364,8 +365,8 @@ class CesnetDataset(ABC):
 
         assert self.val_dataset is not None, "The val_dataset must be initialized before accessing data from validation set."
 
-        defaultKwargs = {'take_all': False, "cache_loader": True}
-        kwargs = {**defaultKwargs, **kwargs}
+        default_kwargs = {'take_all': False, "cache_loader": True}
+        kwargs = {**default_kwargs, **kwargs}
 
         if ts_id is not None:
 
@@ -463,13 +464,13 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_dataloader.")
 
-        if not self.dataset_config.has_all:
+        if not self.dataset_config.has_test:
             raise ValueError("Dataloader for test set is not available in the dataset configuration.")
 
         assert self.test_dataset is not None, "The test_dataset must be initialized before accessing data from test set."
 
-        defaultKwargs = {'take_all': False, "cache_loader": True}
-        kwargs = {**defaultKwargs, **kwargs}
+        default_kwargs = {'take_all': False, "cache_loader": True}
+        kwargs = {**default_kwargs, **kwargs}
 
         if ts_id is not None:
 
@@ -572,8 +573,8 @@ class CesnetDataset(ABC):
 
         assert self.all_dataset is not None, "The all_dataset must be initialized before accessing data from all set."
 
-        defaultKwargs = {'take_all': False, "cache_loader": True}
-        kwargs = {**defaultKwargs, **kwargs}
+        default_kwargs = {'take_all': False, "cache_loader": True}
+        kwargs = {**default_kwargs, **kwargs}
 
         if ts_id is not None:
 
@@ -705,7 +706,7 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_dataloader.")
 
-        if not self.dataset_config.has_all:
+        if not self.dataset_config.has_test:
             raise ValueError("Dataloader for test set is not available in the dataset configuration.")
 
         assert self.test_dataset is not None, "The test_dataset must be initialized before accessing data from test set."
@@ -823,7 +824,7 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_dataloader.")
 
-        if not self.dataset_config.has_all:
+        if not self.dataset_config.has_test:
             raise ValueError("Dataloader for test set is not available in the dataset configuration.")
 
         assert self.test_dataset is not None, "The test_dataset must be initialized before accessing data from test set."
@@ -1544,6 +1545,8 @@ Dataset details:
             self.logger.info("Custom config found: %s. Loading it.", identifier)
             config = pickle_load(config_file_path)
 
+        config._try_update_version()
+
         self.logger.info("Initializing dataset configuration with the imported config.")
         self.set_dataset_config_and_initialize(config, display_config_details, workers)
 
@@ -1638,6 +1641,7 @@ Dataset details:
             self.logger.info("Config details saved to %s", path_details)
 
         self._update_config_imported_status(identifier)
+        self.dataset_config.export_update_needed = False
         self.logger.info("Config successfully saved")
 
     def save_benchmark(self, identifier: str, force_write: bool = False) -> None:
@@ -1677,8 +1681,8 @@ Dataset details:
         else:
             annotations_both_name = None
 
-        # Use the imported identifier if available, otherwise default to the current identifier
-        config_name = self.dataset_config.import_identifier if self.dataset_config.import_identifier is not None else identifier
+        # Use the imported identifier if available and update is not necessary, otherwise default to the current identifier
+        config_name = self.dataset_config.import_identifier if (self.dataset_config.import_identifier is not None and not self.dataset_config.export_update_needed) else identifier
 
         export_benchmark = ExportBenchmark(self.database_name,
                                            self.is_series_based,
@@ -1687,10 +1691,11 @@ Dataset details:
                                            config_name,
                                            annotations_ts_name,
                                            annotations_time_name,
-                                           annotations_both_name)
+                                           annotations_both_name,
+                                           version=version.current_version)
 
         # If the config was not imported, save it
-        if self.dataset_config.import_identifier is None:
+        if self.dataset_config.import_identifier is None or self.dataset_config.export_update_needed:
             self.save_config(export_benchmark.config_identifier, force_write=force_write)
         else:
             self.logger.info("Using already existing config with identifier: %s", self.dataset_config.import_identifier)

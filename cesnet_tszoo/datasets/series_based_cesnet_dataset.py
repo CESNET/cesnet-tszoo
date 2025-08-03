@@ -498,7 +498,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     def _get_dataloader(self, dataset: SeriesBasedDataset, workers: int | Literal["config"], take_all: bool, batch_size: int, **kwargs) -> DataLoader:
         """Set series based dataloader for this dataset. """
 
-        defaultKwargs = {'order': DataloaderOrder.SEQUENTIAL}
-        kwargs = {**defaultKwargs, **kwargs}
+        default_kwargs = {'order': DataloaderOrder.SEQUENTIAL}
+        kwargs = {**default_kwargs, **kwargs}
 
         return self._get_series_based_dataloader(dataset, workers, take_all, batch_size, kwargs["order"])

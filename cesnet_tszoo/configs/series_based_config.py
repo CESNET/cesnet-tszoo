@@ -414,6 +414,9 @@ class SeriesBasedConfig(DatasetConfig):
             self.logger.error("Overlap detected! Train, Val, and Test sets can't have the same IDs.")
             raise ValueError("Train, Val, and Test can't have the same IDs.")
 
+    def _try_update_version(self):
+        super()._try_update_version()
+
     def __str__(self) -> str:
 
         if self.scale_with is None:
@@ -465,5 +468,6 @@ Config Details:
     Other
         Nan threshold: {str(self.nan_threshold)}
         Random state: {self.random_state}
-        Train dataloader order {str(self.train_dataloader_order)}
+        Train dataloader order: {str(self.train_dataloader_order)}
+        Version: {self.version}
                 '''

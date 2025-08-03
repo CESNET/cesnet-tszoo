@@ -190,6 +190,7 @@ def _get_built_in_benchmark(identifier: str, data_root: str) -> Benchmark:
     logger.debug("Loading config file from '%s'.", config_file_path)
     config = pickle_load(config_file_path)
     config.import_identifier = export_benchmark.config_identifier
+    config._try_update_version()
 
     # Check and load annotations if available
     if export_benchmark.annotations_ts_identifier is not None:
@@ -254,6 +255,7 @@ def _get_custom_benchmark(identifier: str, data_root: str) -> Benchmark:
         config = pickle_load(config_file_path)
 
     config.import_identifier = export_benchmark.config_identifier
+    config._try_update_version()
 
     # Load annotations if available
     if export_benchmark.annotations_ts_identifier is not None:
