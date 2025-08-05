@@ -50,7 +50,7 @@ dataset = benchmark.get_initialized_dataset(display_config_details=True, check_e
 - When using imported config or annotations, only their identifier will be passed to benchmark and no new files will get created
   - if calling anything that changes annotations, it will no longer be taken as imported
 - Only annotations with at least one value will be exported.
-- You can export benchmarks with custom scalers or fillers, but should share their source code along with benchmark
+- You can export benchmarks with custom transformers or fillers, but should share their source code along with benchmark
 
 ```python
 
@@ -58,7 +58,7 @@ from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.configs import TimeBasedConfig                                                                            
 
 time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.IP_ADDRESSES_FULL, aggregation=AgreggationType.AGG_1_DAY, is_series_based=False, display_details=True)
-config = TimeBasedConfig([1548925, 443967], train_time_period=1.0, features_to_take=["n_flows", "n_packets", "n_bytes"], scale_with=None)
+config = TimeBasedConfig([1548925, 443967], train_time_period=1.0, features_to_take=["n_flows", "n_packets", "n_bytes"], transform_with=None)
 
 # Call on time-based dataset to use created config -> must be done before saving exporting benchmark
 time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details=True)
@@ -82,7 +82,7 @@ Instead of exporting or importing whole benchmark you can do for specific config
 
 from cesnet_tszoo.configs import TimeBasedConfig                                                                      
 
-config = TimeBasedConfig([1548925, 443967], train_time_period=1.0, features_to_take=["n_flows", "n_packets", "n_bytes"], scale_with=None)
+config = TimeBasedConfig([1548925, 443967], train_time_period=1.0, features_to_take=["n_flows", "n_packets", "n_bytes"], transform_with=None)
 
 time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details=True)
 

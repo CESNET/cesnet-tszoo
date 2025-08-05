@@ -11,7 +11,7 @@ from cesnet_tszoo.pytables_data.utils.utils import load_database
 
 
 class InitializerDataset(Dataset, ABC):
-    """Base class for initializer PyTable wrappers. Used for going through data to fit scalers, prepare fillers and validate thresholds."""
+    """Base class for initializer PyTable wrappers. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray):
         self.database_path = database_path

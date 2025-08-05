@@ -14,7 +14,7 @@
 | Metrics |  all |
 | Default value |  None* |
 | Filler |  None* |
-| Scaler |  None* |
+| Transformer |  None* |
 | Sliding window train |  None |
 | Sliding window prediction |  None |
 | Sliding window step |  None |

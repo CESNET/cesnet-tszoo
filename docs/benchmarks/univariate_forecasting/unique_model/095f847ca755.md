@@ -14,7 +14,7 @@
 | Metrics |  n_bytes |
 | Default value |  None* |
 | Filler |  None* |
-| Scaler |  None* |
+| Transformer |  None* |
 | Sliding window train |  1008* |
 | Sliding window prediction |  1* |
 | Sliding window step |  1* |

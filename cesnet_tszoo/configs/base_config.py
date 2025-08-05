@@ -12,8 +12,8 @@ from sklearn.model_selection import train_test_split
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ROW_END, ROW_START, ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
-from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, ScalerType, DataloaderOrder
-from cesnet_tszoo.utils.scaler import Scaler
+from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, ScalerType
+from cesnet_tszoo.utils.transformer import Transformer
 
 
 class DatasetConfig(ABC):
@@ -36,11 +36,11 @@ class DatasetConfig(ABC):
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
-        scale_with_display: Used to display the configured type of `scale_with`.
+        transform_with_display: Used to display the configured type of `transform_with`.
         fill_missing_with_display: Used to display the configured type of `fill_missing_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
-        is_scaler_custom: Flag indicating whether the scaler is custom.
+        is_transformer_custom: Flag indicating whether the transformer is custom.
         is_filler_custom: Flag indicating whether the filler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
         used_times: List of all times used in the configuration.
@@ -51,8 +51,8 @@ class DatasetConfig(ABC):
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
         used_singular_all_time_series: Currently used singular all set time series for dataloader.        
-        scalers: Prepared scalers for fitting/transforming. Can be one scaler, array of scalers or `None`.
-        are_scalers_premade: Indicates whether the scalers are premade.
+        transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
+        are_transformers_premade: Indicates whether the transformers are premade.
         has_train: Flag indicating whether the training set is in use.
         has_val: Flag indicating whether the validation set is in use.
         has_test: Flag indicating whether the test set is in use.
@@ -79,8 +79,8 @@ class DatasetConfig(ABC):
         test_batch_size: Batch size for the test dataloader, when window size is None.
         all_batch_size: Batch size for the all dataloader, when window size is None.
         fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.Filler] base class.
-        scale_with: Defines the scaler to transform the dataset. Can pass enum [`ScalerType`][cesnet_tszoo.utils.enums.ScalerType] for built-in scaler, pass a type of custom scaler or instance of already fitted scaler(s).
-        partial_fit_initialized_scalers: If `True`, partial fitting on train set is performed when using initiliazed scalers.
+        transform_with: Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
+        partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
         include_time: If `True`, time data is included in the returned values.
         include_ts_id: If `True`, time series IDs are included in the returned values.
         time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values.
@@ -90,7 +90,7 @@ class DatasetConfig(ABC):
         all_workers: Number of workers for loading all data. `0` means that the data will be loaded in the main process.
         init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process.
         nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately.
-        create_scaler_per_time_series: If `True`, a separate scaler is created for each time series. Not used when using already initialized scalers. 
+        create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
         is_series_based: Flag indicating if the config applies to a series-based dataset.
         train_dataloader_order: Defines the order of data returned by the training dataloader.
         random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
@@ -108,8 +108,8 @@ class DatasetConfig(ABC):
                  test_batch_size: int,
                  all_batch_size: int,
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None,
-                 scale_with: type | ScalerType | list[Scaler] | np.ndarray[Scaler] | Scaler | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_scaler", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None,
-                 partial_fit_initialized_scalers: bool,
+                 transform_with: type | TransformerType | list[Transformer] | np.ndarray[Transformer] | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None,
+                 partial_fit_initialized_transformers: bool,
                  include_time: bool,
                  include_ts_id: bool,
                  time_format: TimeFormat | Literal["id_time", "datetime", "unix_time", "shifted_unix_time"],
@@ -119,7 +119,7 @@ class DatasetConfig(ABC):
                  all_workers: int,
                  init_workers: int,
                  nan_threshold: float,
-                 create_scaler_per_time_series: bool,
+                 create_transformer_per_time_series: bool,
                  is_series_based: bool,
                  train_dataloader_order: DataloaderOrder | Literal["random", "sequential"],
                  random_state: int | None):
@@ -135,8 +135,8 @@ class DatasetConfig(ABC):
         self.test_batch_size = test_batch_size
         self.all_batch_size = all_batch_size
         self.fill_missing_with = fill_missing_with
-        self.scale_with = scale_with
-        self.partial_fit_initialized_scalers = partial_fit_initialized_scalers
+        self.transform_with = transform_with
+        self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
         self.include_time = include_time
         self.include_ts_id = include_ts_id
         self.time_format = time_format
@@ -146,7 +146,7 @@ class DatasetConfig(ABC):
         self.all_workers = all_workers
         self.init_workers = init_workers
         self.nan_threshold = nan_threshold
-        self.create_scaler_per_time_series = create_scaler_per_time_series
+        self.create_transformer_per_time_series = create_transformer_per_time_series
         self.is_series_based = is_series_based
         self.train_dataloader_order = train_dataloader_order
         self.random_state = random_state
@@ -162,11 +162,11 @@ class DatasetConfig(ABC):
         self.aggregation = None
         self.source_type = None
         self.database_name = None
-        self.scale_with_display = None
+        self.transform_with_display = None
         self.fill_missing_with_display = None
         self.features_to_take_without_ids = None
         self.indices_of_features_to_take_no_ids = None
-        self.is_scaler_custom = False
+        self.is_transformer_custom = False
         self.is_filler_custom = False
         self.ts_id_name = None
         self.used_times = None
@@ -177,8 +177,8 @@ class DatasetConfig(ABC):
         self.used_singular_val_time_series = None
         self.used_singular_test_time_series = None
         self.used_singular_all_time_series = None
-        self.scalers = None
-        self.are_scalers_premade = False
+        self.transformers = None
+        self.are_transformers_premade = False
         self.has_train = False
         self.has_val = False
         self.has_test = False
@@ -199,10 +199,10 @@ class DatasetConfig(ABC):
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.base_config.DatasetConfig._dataset_init]. """
 
         # Ensuring boolean flags are correctly set
-        assert isinstance(self.partial_fit_initialized_scalers, bool), "partial_fit_initialized_scalers must be a boolean value."
+        assert isinstance(self.partial_fit_initialized_transformers, bool), "partial_fit_initialized_transformers must be a boolean value."
         assert isinstance(self.include_time, bool), "include_time must be a boolean value."
         assert isinstance(self.include_ts_id, bool), "include_ts_id must be a boolean value."
-        assert isinstance(self.create_scaler_per_time_series, bool), "create_scaler_per_time_series must be a boolean value."
+        assert isinstance(self.create_transformer_per_time_series, bool), "create_transformer_per_time_series must be a boolean value."
 
         # Ensuring worker count values are non-negative integers
         assert isinstance(self.train_workers, int) and self.train_workers >= 0, "train_workers must be a non-negative integer."
@@ -260,11 +260,11 @@ class DatasetConfig(ABC):
         self.time_format = TimeFormat(self.time_format)
         self.train_dataloader_order = DataloaderOrder(self.train_dataloader_order)
 
-        # Validate and process scaler type
-        if isinstance(self.scale_with, (str, ScalerType)):
-            self.scale_with = ScalerType(self.scale_with)
-            if self.scale_with in [ScalerType.POWER_TRANSFORMER, ScalerType.QUANTILE_TRANSFORMER, ScalerType.ROBUST_SCALER] and not self.create_scaler_per_time_series:
-                raise NotImplementedError("The selected scaler requires a working partial_fit method, which is not implemented for this configuration.")
+        # Validate and process transformer type
+        if isinstance(self.transform_with, (str, TransformerType)):
+            self.transform_with = TransformerType(self.transform_with)
+            if self.transform_with in [TransformerType.POWER_TRANSFORMER, TransformerType.QUANTILE_TRANSFORMER, TransformerType.ROBUST_SCALER] and not self.create_transformer_per_time_series:
+                raise NotImplementedError("The selected transformer requires a working partial_fit method, which is not implemented for this configuration.")
 
         # Validate and process missing data filler type
         if isinstance(self.fill_missing_with, (str, FillerType)):
@@ -375,9 +375,9 @@ class DatasetConfig(ABC):
         self._set_default_values(default_values)
         self.logger.debug("Default values have been successfully set.")
 
-        # Set feature scalers
-        self._set_feature_scalers()
-        self.logger.debug("Feature scalers have been successfully set.")
+        # Set feature transformers
+        self._set_feature_transformers()
+        self.logger.debug("Feature transformers have been successfully set.")
 
         # Set fillers
         self._set_fillers()
@@ -610,8 +610,8 @@ class DatasetConfig(ABC):
         return ts_ids, ts_row_ranges, random_indices
 
     @abstractmethod
-    def _set_feature_scalers(self) -> None:
-        """Creates and/or validates scalers based on the `scale_with` parameter. """
+    def _set_feature_transformers(self) -> None:
+        """Creates and/or validates transformers based on the `transform_with` parameter. """
         ...
 
     @abstractmethod
@@ -624,15 +624,20 @@ class DatasetConfig(ABC):
         """Performs final validation of the configuration. """
         ...
 
-    def _try_update_version(self) -> None:
+    def _try_backward_support_update(self) -> None:
         """Tries to update config to match newer version of library. """
 
         self.logger.debug("Trying to update config if necessary.")
 
-        if not hasattr(self, "version"):
-            self.logger.warning("Config attribute 'version' is missing in this instance. Default version '%s' will be set.", version.DEFAULT_VERSION)
-            self.version = version.DEFAULT_VERSION
+        self._try_set_default_version()
 
+        if Version(self.version) < Version(version.VERSION_0_1_3):
+            self.logger.warning("Imported config version is lower than '%s', updating attributes from scaler variant to transformer variant.", version.VERSION_0_1_3)
+            self._scaler_to_transformer_version_update()
+
+        self._try_version_update()
+
+    def _try_version_update(self):
         if Version(self.version) < Version(version.current_version):
             self.logger.warning("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.version, version.current_version)
             self.logger.warning("Package will try to update the config. It is recommended to recreate this config or at least export this config alone or through benchmark to create updated config file.")
@@ -646,3 +651,33 @@ class DatasetConfig(ABC):
 
         self.logger.debug("Setting config version to current used cesnet-tszoo package version.")
         self.version = version.current_version
+
+    def _scaler_to_transformer_version_update(self):
+        self.transform_with = getattr(self, "scale_with")
+        delattr(self, "scale_with")
+
+        if self.transform_with is not None and isinstance(self.transform_with, ScalerType):
+            self.transform_with = TransformerType(self.transform_with.value)
+
+        self.partial_fit_initialized_transformers = getattr(self, "partial_fit_initialized_scalers")
+        delattr(self, "partial_fit_initialized_scalers")
+
+        self.create_transformer_per_time_series = getattr(self, "create_scaler_per_time_series")
+        delattr(self, "create_scaler_per_time_series")
+
+        self.transform_with_display = getattr(self, "scale_with_display")
+        delattr(self, "scale_with_display")
+
+        self.is_transformer_custom = getattr(self, "is_scaler_custom")
+        delattr(self, "is_scaler_custom")
+
+        self.transformers = getattr(self, "scalers")
+        delattr(self, "scalers")
+
+        self.are_transformers_premade = getattr(self, "are_scalers_premade")
+        delattr(self, "are_scalers_premade")
+
+    def _try_set_default_version(self):
+        if not hasattr(self, "version"):
+            self.logger.warning("Config attribute 'version' is missing in this instance. Default version '%s' will be set.", version.DEFAULT_VERSION)
+            self.version = version.DEFAULT_VERSION

@@ -25,15 +25,15 @@ class SeriesBasedDataset(BaseDataset):
             data[:, :, self.ts_id_col_index] = self.ts_id_fill[batch_idx]
 
         # Transform data if applicable
-        if self.scalers is not None:
-            scaler = self.scalers
+        if self.transformers is not None:
+            transformer = self.transformers
             for i, _ in enumerate(data):
                 if len(self.indices_of_features_to_take_no_ids) == 1:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = scaler.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(-1, 1))
+                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(-1, 1))
                 elif len(self.time_period) == 1:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = scaler.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(1, -1))
+                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(1, -1))
                 else:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = scaler.transform(data[i][:, self.indices_of_features_to_take_no_ids])
+                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids])
 
         if self.include_time and self.time_format == TimeFormat.DATETIME:
             return data, self.time_period[TIME_COLUMN_NAME].copy()

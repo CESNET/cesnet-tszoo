@@ -21,12 +21,12 @@ First group target on training model for each time series. Available benchmarks 
 [b5e5ea044b81][b5e5ea044b81] | CESNET-TimeSeries24 | 1 DAY | IP_ADDRESSES_SAMPLE | None |
 [d19ba386743f][d19ba386743f] | CESNET-TimeSeries24 | 1 DAY | IP_ADDRESSES_FULL | None |
 
-We encourage users to change default value for missing values, filler, scaler, sliding window step,  and batch sizes. However, users may not change the rest of the arguments. Usage of these benchmarks are following:
+We encourage users to change default value for missing values, filler, transformer, sliding window step,  and batch sizes. However, users may not change the rest of the arguments. Usage of these benchmarks are following:
 
 ```python
 
 from cesnet_tszoo.benchmarks import load_benchmark
-from cesnet_tszoo.utils.enums import FillerType, ScalerType
+from cesnet_tszoo.utils.enums import FillerType, TransformerType
 from sklearn.metrics import mean_squared_error
 
 benchmark = load_benchmark("871f5972109e", "../")
@@ -38,8 +38,8 @@ dataset.set_default_values(0)
 # (optional) Set filler for filling missing data 
 dataset.apply_filler(FillerType.MEAN_FILLER)
 
-# (optional) Set scaler for data
-dataset.apply_scaler(ScalerType.MIN_MAX_SCALER)
+# (optional) Set transformer for data
+dataset.apply_transformer(TransformerType.MIN_MAX_SCALER)
 
 # (optional) Change sliding window setting
 dataset.set_sliding_window(sliding_window_size=744, sliding_window_prediction_size=24, sliding_window_step=1, set_shared_size=744)
@@ -89,11 +89,11 @@ Second group target on training one generic model which learns generic paterns i
 [9f7047902d66][9f7047902d66] | CESNET-TimeSeries24 | 1 DAY | IP_ADDRESSES_SAMPLE | None |
 [570b215d790d][570b215d790d] | CESNET-TimeSeries24 | 1 DAY | IP_ADDRESSES_FULL | None |
 
-We encourage users to change default value for missing values, filler, scaler, sliding window step,  and batch sizes. However, users may not change the rest of the arguments. Usage of these benchmarks are following:
+We encourage users to change default value for missing values, filler, transformer, sliding window step,  and batch sizes. However, users may not change the rest of the arguments. Usage of these benchmarks are following:
 
 ```python
 from cesnet_tszoo.benchmarks import load_benchmark
-from cesnet_tszoo.utils.enums import FillerType, ScalerType
+from cesnet_tszoo.utils.enums import FillerType, TransformerType
 from sklearn.metrics import mean_squared_error
 
 benchmark = load_benchmark("09de83e89e42", "../")
@@ -105,8 +105,8 @@ dataset.set_default_values(0)
 # (optional) Set filler for filling missing data 
 dataset.apply_filler(FillerType.MEAN_FILLER)
 
-# (optional) Set scaler for data
-dataset.apply_scaler(ScalerType.MIN_MAX_SCALER, create_scaler_per_time_series=False)
+# (optional) Set transformer for data
+dataset.apply_transformer(TransformerType.MIN_MAX_SCALER, create_transformer_per_time_series=False)
 
 # (optional) Change sliding window setting
 dataset.set_sliding_window(sliding_window_size=744, sliding_window_prediction_size=24, sliding_window_step=1, set_shared_size=744)

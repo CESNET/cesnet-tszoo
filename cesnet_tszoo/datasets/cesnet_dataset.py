@@ -27,8 +27,8 @@ from cesnet_tszoo.pytables_data.utils.utils import get_time_indices, get_table_t
 from cesnet_tszoo.datasets.loaders import create_multiple_df_from_dataloader, create_single_df_from_dataloader, create_numpy_from_dataloader
 from cesnet_tszoo.utils.file_utils import pickle_load, pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
-from cesnet_tszoo.utils.scaler import Scaler
-from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, ScalerType
+from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
 from cesnet_tszoo.utils.download import resumable_download
 
@@ -54,7 +54,7 @@ class CesnetDataset(ABC):
 
     1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`DatasetConfig`][cesnet_tszoo.configs.base_config.DatasetConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. 
-       This initializes the dataset, including data splitting (train/validation/test), fitting scalers (if needed), selecting features, and more. This is cached for later use.
+       This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_numpy] to get training data for chosen model.
     4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_numpy].
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_numpy].     
@@ -160,7 +160,7 @@ class CesnetDataset(ABC):
         | Dataset config                    | Description                                                                                    |
         | --------------------------------- | ---------------------------------------------------------------------------------------------- |
         | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config". |
-        | `partial_fit_initialized_scalers` | Determines whether initialized scalers should be partially fitted on the training data.        |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
         | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
 
         Parameters:
@@ -192,7 +192,7 @@ class CesnetDataset(ABC):
             self.logger.debug("Successfully retrieved row ranges and dataset features for config finalization.")
 
             self.dataset_config._dataset_init(self.ts_indices, self.time_indices, ts_row_ranges, dataset_features, self.default_values, self.ts_id_name)
-            self._initialize_scalers_and_details(workers)
+            self._initialize_transformers_and_details(workers)
             self.dataset_config.is_initialized = True
             self.logger.info("Config initialized successfully.")
         else:
@@ -875,9 +875,9 @@ class CesnetDataset(ABC):
                                              test_batch_size: int | Literal["config"] = "config",
                                              all_batch_size: int | Literal["config"] = "config",
                                              fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
-                                             scale_with: type | list[Scaler] | np.ndarray[Scaler] | ScalerType | Scaler | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_scaler", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
-                                             create_scaler_per_time_series: bool | Literal["config"] = "config",
-                                             partial_fit_initialized_scalers: bool | Literal["config"] = "config",
+                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             create_transformer_per_time_series: bool | Literal["config"] = "config",
+                                             partial_fit_initialized_transformers: bool | Literal["config"] = "config",
                                              train_workers: int | Literal["config"] = "config",
                                              val_workers: int | Literal["config"] = "config",
                                              test_workers: int | Literal["config"] = "config",
@@ -905,9 +905,9 @@ class CesnetDataset(ABC):
         | `test_batch_size`                  | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
         | `all_batch_size`                   | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
         | `fill_missing_with`                | Defines how to fill missing values in the dataset.                                                                                              |     
-        | `scale_with`                       | Defines the scaler to transform the dataset.                                                                                                    |     
-        | `create_scaler_per_time_series`    | If `True`, a separate scaler is created for each time series. Not used when using already initialized scalers.                                  |   
-        | `partial_fit_initialized_scalers`  | If `True`, partial fitting on train set is performed when using initiliazed scalers.                                                            |   
+        | `transform_with`                       | Defines the transformer to transform the dataset.                                                                                                    |     
+        | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers.                                  |   
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                            |   
         | `train_workers`                    | Number of workers for loading training data.                                                                                                    |
         | `val_workers`                      | Number of workers for loading validation data.                                                                                                  |
         | `test_workers`                     | Number of workers for loading test data.                                                                                                        |
@@ -925,9 +925,9 @@ class CesnetDataset(ABC):
             test_batch_size: Number of samples per batch for test set. `Defaults: config`.
             all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
             fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
-            scale_with: Defines the scaler to transform the dataset. `Defaults: config`.  
-            create_scaler_per_time_series: If `True`, a separate scaler is created for each time series. Not used when using already initialized scalers. `Defaults: config`.  
-            partial_fit_initialized_scalers: If `True`, partial fitting on train set is performed when using initiliazed scalers. `Defaults: config`.    
+            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Defaults: config`.  
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
             train_workers: Number of workers for loading training data. `Defaults: config`.
             val_workers: Number of workers for loading validation data. `Defaults: config`.
             test_workers: Number of workers for loading test data. `Defaults: config`.
@@ -972,18 +972,18 @@ class CesnetDataset(ABC):
         else:
             requires_init = True
 
-        if create_scaler_per_time_series == "config":
-            create_scaler_per_time_series = self._export_config_copy.create_scaler_per_time_series
+        if create_transformer_per_time_series == "config":
+            create_transformer_per_time_series = self._export_config_copy.create_transformer_per_time_series
         else:
             requires_init = True
 
-        if partial_fit_initialized_scalers == "config":
-            partial_fit_initialized_scalers = self._export_config_copy.partial_fit_initialized_scalers
+        if partial_fit_initialized_transformers == "config":
+            partial_fit_initialized_transformers = self._export_config_copy.partial_fit_initialized_transformers
         else:
             requires_init = True
 
-        if scale_with == "config":
-            scale_with = self._export_config_copy.scale_with
+        if transform_with == "config":
+            transform_with = self._export_config_copy.transform_with
         else:
             requires_init = True
 
@@ -1013,9 +1013,9 @@ class CesnetDataset(ABC):
                 self._export_config_copy.test_batch_size = test_batch_size
                 self._export_config_copy.all_batch_size = all_batch_size
                 self._export_config_copy.fill_missing_with = fill_missing_with
-                self._export_config_copy.scale_with = scale_with
-                self._export_config_copy.partial_fit_initialized_scalers = partial_fit_initialized_scalers
-                self._export_config_copy.create_scaler_per_time_series = create_scaler_per_time_series
+                self._export_config_copy.transform_with = transform_with
+                self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
+                self._export_config_copy.create_transformer_per_time_series = create_transformer_per_time_series
                 self._export_config_copy.train_workers = train_workers
                 self._export_config_copy.val_workers = val_workers
                 self._export_config_copy.test_workers = test_workers
@@ -1085,9 +1085,9 @@ class CesnetDataset(ABC):
         self.update_dataset_config_and_initialize(fill_missing_with=fill_missing_with, workers=workers)
         self.logger.info("Filler has been changed successfuly.")
 
-    def apply_scaler(self, scale_with: type | list[Scaler] | np.ndarray[Scaler] | ScalerType | Scaler | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_scaler", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
-                     create_scaler_per_time_series: bool | Literal["config"] = "config", partial_fit_initialized_scalers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
-        """Used for updating scaler and relevenat configurations set in config.
+    def apply_transformer(self, transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                          create_transformer_per_time_series: bool | Literal["config"] = "config", partial_fit_initialized_transformers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
+        """Used for updating transformer and relevenat configurations set in config.
 
         Set parameter to `config` to keep it as it is config.
 
@@ -1097,22 +1097,22 @@ class CesnetDataset(ABC):
 
         | Dataset config                     | Description                                                                                                    |
         | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-        | `scale_with`                       | Defines the scaler to transform the dataset.                                                                   |     
-        | `create_scaler_per_time_series`    | If `True`, a separate scaler is created for each time series. Not used when using already initialized scalers. |   
-        | `partial_fit_initialized_scalers`  | If `True`, partial fitting on train set is performed when using initiliazed scalers.                           |    
+        | `transform_with`                       | Defines the transformer to transform the dataset.                                                                   |     
+        | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. |   
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                           |    
 
         Parameters:
-            scale_with: Defines the scaler to transform the dataset. `Defaults: config`.  
-            create_scaler_per_time_series: If `True`, a separate scaler is created for each time series. Not used when using already initialized scalers. `Defaults: config`.  
-            partial_fit_initialized_scalers: If `True`, partial fitting on train set is performed when using initiliazed scalers. `Defaults: config`.  
-            workers: How many workers to use when setting new scaler. `Defaults: config`.      
+            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Defaults: config`.  
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.  
+            workers: How many workers to use when setting new transformer. `Defaults: config`.      
         """
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating scaler values.")
+            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating transformer values.")
 
-        self.update_dataset_config_and_initialize(scale_with=scale_with, create_scaler_per_time_series=create_scaler_per_time_series, partial_fit_initialized_scalers=partial_fit_initialized_scalers, workers=workers)
-        self.logger.info("Scaler configuration has been changed successfuly.")
+        self.update_dataset_config_and_initialize(transform_with=transform_with, create_transformer_per_time_series=create_transformer_per_time_series, partial_fit_initialized_transformers=partial_fit_initialized_transformers, workers=workers)
+        self.logger.info("Transformer configuration has been changed successfuly.")
 
     def set_default_values(self, default_values: list[Number] | npt.NDArray[np.number] | dict[str, Number] | Number | Literal["default"] | None, workers: int | Literal["config"] = "config") -> None:
         """Used for updating default values set in config.
@@ -1273,7 +1273,7 @@ Dataset details:
         return data_df
 
     def plot(self, ts_id: int, plot_type: Literal["scatter", "line"], features: list[str] | str | Literal["config"] = "config", feature_per_plot: bool = True,
-             time_format: TimeFormat | Literal["config", "id_time", "datetime", "unix_time", "shifted_unix_time"] = "config", use_scalers: bool = True, is_interactive: bool = True) -> None:
+             time_format: TimeFormat | Literal["config", "id_time", "datetime", "unix_time", "shifted_unix_time"] = "config", use_transformers: bool = True, is_interactive: bool = True) -> None:
         """
         Displays a graph for the selected `ts_id` and its `features`.
 
@@ -1285,7 +1285,7 @@ Dataset details:
             features: The features to display in the plot. `Defaults: "config"`.
             feature_per_plot: Whether each feature should be displayed in a separate plot or combined into one. `Defaults: True`.
             time_format: The time format to use for the x-axis. `Defaults: "config"`.
-            use_scalers: Whether the data should be scaled. If `True`, scaling will be applied using the available scaler for the selected `ts_id`. `Defaults: True`.
+            use_transformers: Whether the data should be transformd. If `True`, transforming will be applied using the available transformer for the selected `ts_id`. `Defaults: True`.
             is_interactive: Whether the plot should be interactive (e.g., zoom, hover). `Defaults: True`.
         """
 
@@ -1300,7 +1300,7 @@ Dataset details:
             time_format = TimeFormat(time_format)
             self.logger.debug("Using specified time format: %s", time_format)
 
-        time_series, times, features = self._get_data_for_plot(ts_id, features, time_format, use_scalers)
+        time_series, times, features = self._get_data_for_plot(ts_id, features, time_format, use_transformers)
         self.logger.debug("Received data for plotting. Time series, times, and features are ready.")
 
         plots = []
@@ -1526,7 +1526,7 @@ Dataset details:
         | Dataset config                    | Description                                                                                    |
         | --------------------------------- | ---------------------------------------------------------------------------------------------- |
         | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config". |
-        | `partial_fit_initialized_scalers` | Determines whether initialized scalers should be partially fitted on the training data.        |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
         | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |  
 
         Parameters:
@@ -1545,7 +1545,7 @@ Dataset details:
             self.logger.info("Custom config found: %s. Loading it.", identifier)
             config = pickle_load(config_file_path)
 
-        config._try_update_version()
+        config._try_backward_support_update()
 
         self.logger.info("Initializing dataset configuration with the imported config.")
         self.set_dataset_config_and_initialize(config, display_config_details, workers)
@@ -1629,8 +1629,8 @@ Dataset details:
         if self.dataset_config.is_filler_custom:
             self.logger.warning("You are using a custom filler. Ensure the config is distributed with the source code of the filler.")
 
-        if self.dataset_config.is_scaler_custom:
-            self.logger.warning("You are using a custom scaler. Ensure the config is distributed with the source code of the scaler.")
+        if self.dataset_config.is_transformer_custom:
+            self.logger.warning("You are using a custom transformer. Ensure the config is distributed with the source code of the transformer.")
 
         pickle_dump(self._export_config_copy, path_pickle)
         self.logger.info("Config pickle saved to %s", path_pickle)
@@ -1733,12 +1733,12 @@ Dataset details:
         yaml_dump(export_benchmark.to_dict(), benchmark_path)
         self.logger.info("Benchmark successfully saved to %s", benchmark_path)
 
-    def get_scalers(self) -> np.ndarray[Scaler] | Scaler | None:
-        """Return used scalers from config. """
+    def get_transformers(self) -> np.ndarray[Transformer] | Transformer | None:
+        """Return used transformers from config. """
         if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting get scalers.")
+            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting get transformers.")
 
-        return self.dataset_config.scalers
+        return self.dataset_config.transformers
 
     def check_errors(self) -> None:
         """
@@ -1776,7 +1776,7 @@ Dataset details:
             dataset.close()
             self.logger.debug("Dataset connection closed.")
 
-    def _get_data_for_plot(self, ts_id: int, features: list[str] | str, time_format: TimeFormat, use_scalers: bool) -> tuple[np.ndarray, np.ndarray]:
+    def _get_data_for_plot(self, ts_id: int, features: list[str] | str, time_format: TimeFormat, use_transformers: bool) -> tuple[np.ndarray, np.ndarray]:
         """Returns prepared data for plotting. """
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
@@ -1813,20 +1813,20 @@ Dataset details:
             id_result = id_result[0]
             self.logger.debug("Valid ts_id found: %d", id_result)
 
-        # Handle scalers
-        scaler = None
-        if self.dataset_config.scale_with is not None and use_scalers:
-            if self.dataset_config.create_scaler_per_time_series and len(self.dataset_config.scalers) <= id_result:
-                self.logger.warning("Scaler will not be used for this ts_id as no scaler is available for it.")
-            elif self.dataset_config.create_scaler_per_time_series:
-                scaler = self.dataset_config.scalers[id_result]
-                self.logger.debug("Applicable scaler found.")
+        # Handle transformers
+        transformer = None
+        if self.dataset_config.transform_with is not None and use_transformers:
+            if self.dataset_config.create_transformer_per_time_series and len(self.dataset_config.transformers) <= id_result:
+                self.logger.warning("Transformer will not be used for this ts_id as no transformer is available for it.")
+            elif self.dataset_config.create_transformer_per_time_series:
+                transformer = self.dataset_config.transformers[id_result]
+                self.logger.debug("Applicable transformer found.")
             else:
-                scaler = self.dataset_config.scalers
-                self.logger.debug("Applicable scaler found.")
+                transformer = self.dataset_config.transformers
+                self.logger.debug("Applicable transformer found.")
         else:
-            if use_scalers:
-                self.logger.warning("Scalers are not set in the config and therefore will can not be applied.")
+            if use_transformers:
+                self.logger.warning("Transformers are not set in the config and therefore will can not be applied.")
 
         # Handle missing data filler
         filler = None
@@ -1848,7 +1848,7 @@ Dataset details:
                                      False,
                                      False,
                                      time_format,
-                                     scaler)
+                                     transformer)
 
         time_series = None
 
@@ -2074,8 +2074,8 @@ Dataset details:
         ...
 
     @abstractmethod
-    def _initialize_scalers_and_details(self, workers: int) -> None:
-        """ Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. Goes through data to validate time series against `nan_threshold`, fit `scalers` and prepare `fillers`"""
+    def _initialize_transformers_and_details(self, workers: int) -> None:
+        """ Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. Goes through data to validate time series against `nan_threshold`, fit `transformers` and prepare `fillers`"""
         ...
 
     def _update_export_config_copy(self) -> None:

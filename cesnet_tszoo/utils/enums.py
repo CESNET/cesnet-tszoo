@@ -70,32 +70,32 @@ class FillerType(Enum):
     """Represents filler [`LinearInterpolationFiller`][cesnet_tszoo.utils.filler.LinearInterpolationFiller]. Equivalent to literal `linear_interpolation_filler`. """
 
 
-class ScalerType(Enum):
-    """Built-in scaler types. """
+class TransformerType(Enum):
+    """Built-in transformer types. """
 
     MIN_MAX_SCALER = "min_max_scaler"
-    """Represents scaler [`MinMaxScaler`][cesnet_tszoo.utils.scaler.MinMaxScaler]. Equivalent to literal `min_max_scaler`. """
+    """Represents transformer [`MinMaxScaler`][cesnet_tszoo.utils.transformer.MinMaxScaler]. Equivalent to literal `min_max_scaler`. """
 
     STANDARD_SCALER = "standard_scaler"
-    """Represents scaler [`StandardScaler`][cesnet_tszoo.utils.scaler.StandardScaler]. Equivalent to literal `standard_scaler`. """
+    """Represents transformer [`StandardScaler`][cesnet_tszoo.utils.transformer.StandardScaler]. Equivalent to literal `standard_scaler`. """
 
     MAX_ABS_SCALER = "max_abs_scaler"
-    """Represents scaler [`MaxAbsScaler`][cesnet_tszoo.utils.scaler.MaxAbsScaler]. Equivalent to literal `max_abs_scaler`. """
+    """Represents transformer [`MaxAbsScaler`][cesnet_tszoo.utils.transformer.MaxAbsScaler]. Equivalent to literal `max_abs_scaler`. """
 
-    LOG_SCALER = "log_scaler"
-    """Represents scaler [`LogScaler`][cesnet_tszoo.utils.scaler.LogScaler]. Equivalent to literal `log_scaler`. """
+    LOG_TRANSFORMER = "log_transformer"
+    """Represents transformer [`LogTransformer`][cesnet_tszoo.utils.transformer.LogTransformer]. Equivalent to literal `log_transformer`. """
 
     L2_NORMALIZER = "l2_normalizer"
-    """Represents scaler [`L2Normalizer`][cesnet_tszoo.utils.scaler.L2Normalizer]. Equivalent to literal `l2_normalizer`. """
+    """Represents transformer [`L2Normalizer`][cesnet_tszoo.utils.transformer.L2Normalizer]. Equivalent to literal `l2_normalizer`. """
 
     ROBUST_SCALER = "robust_scaler"
-    """Represents scaler [`RobustScaler`][cesnet_tszoo.utils.scaler.LogScaler]. Equivalent to literal `robust_scaler`. """
+    """Represents transformer [`RobustScaler`][cesnet_tszoo.utils.transformer.LogTransformer]. Equivalent to literal `robust_scaler`. """
 
     POWER_TRANSFORMER = "power_transformer"
-    """Represents scaler [`PowerTransformer`][cesnet_tszoo.utils.scaler.PowerTransformer]. Equivalent to literal `power_transformer`. """
+    """Represents transformer [`PowerTransformer`][cesnet_tszoo.utils.transformer.PowerTransformer]. Equivalent to literal `power_transformer`. """
 
     QUANTILE_TRANSFORMER = "quantile_transformer"
-    """Represents scaler [`QuantileTransformer`][cesnet_tszoo.utils.scaler.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """
+    """Represents transformer [`QuantileTransformer`][cesnet_tszoo.utils.transformer.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """
 
 
 class TimeFormat(Enum):
@@ -151,3 +151,31 @@ class DataloaderOrder(Enum):
 
     SEQUENTIAL = "sequential"
     """Loaded data will be in the selected order. """
+
+
+class ScalerType(Enum):
+    """Obsolete, dont use. Only for backward compatibility. """
+
+    MIN_MAX_SCALER = "min_max_scaler"
+    """Represents transformer [`MinMaxScaler`][cesnet_tszoo.utils.transformer.MinMaxScaler]. Equivalent to literal `min_max_scaler`. """
+
+    STANDARD_SCALER = "standard_scaler"
+    """Represents transformer [`StandardScaler`][cesnet_tszoo.utils.transformer.StandardScaler]. Equivalent to literal `standard_scaler`. """
+
+    MAX_ABS_SCALER = "max_abs_scaler"
+    """Represents transformer [`MaxAbsScaler`][cesnet_tszoo.utils.transformer.MaxAbsScaler]. Equivalent to literal `max_abs_scaler`. """
+
+    LOG_TRANSFORMER = "log_transformer"
+    """Represents transformer [`LogTransformer`][cesnet_tszoo.utils.transformer.LogTransformer]. Equivalent to literal `log_transformer`. """
+
+    L2_NORMALIZER = "l2_normalizer"
+    """Represents transformer [`L2Normalizer`][cesnet_tszoo.utils.transformer.L2Normalizer]. Equivalent to literal `l2_normalizer`. """
+
+    ROBUST_SCALER = "robust_scaler"
+    """Represents transformer [`RobustScaler`][cesnet_tszoo.utils.transformer.LogTransformer]. Equivalent to literal `robust_scaler`. """
+
+    POWER_TRANSFORMER = "power_transformer"
+    """Represents transformer [`PowerTransformer`][cesnet_tszoo.utils.transformer.PowerTransformer]. Equivalent to literal `power_transformer`. """
+
+    QUANTILE_TRANSFORMER = "quantile_transformer"
+    """Represents transformer [`QuantileTransformer`][cesnet_tszoo.utils.transformer.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """

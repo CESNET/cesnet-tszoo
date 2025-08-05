@@ -12,10 +12,10 @@ class TimeBasedDataset(BaseDataset):
     Returns `batch_size` times for each time series in `ts_row_ranges`.
     """
 
-    def __init__(self, database_path, table_data_path, ts_id_name, ts_row_ranges, time_period, features_to_take, indices_of_features_to_take_no_ids, default_values, fillers, is_scaler_per_time_series, include_time, include_ts_id, time_format, scalers):
-        super().__init__(database_path, table_data_path, ts_id_name, ts_row_ranges, time_period, features_to_take, indices_of_features_to_take_no_ids, default_values, fillers, include_time, include_ts_id, time_format, scalers)
+    def __init__(self, database_path, table_data_path, ts_id_name, ts_row_ranges, time_period, features_to_take, indices_of_features_to_take_no_ids, default_values, fillers, is_transformer_per_time_series, include_time, include_ts_id, time_format, transformers):
+        super().__init__(database_path, table_data_path, ts_id_name, ts_row_ranges, time_period, features_to_take, indices_of_features_to_take_no_ids, default_values, fillers, include_time, include_ts_id, time_format, transformers)
 
-        self.is_scaler_per_time_series = is_scaler_per_time_series
+        self.is_transformer_per_time_series = is_transformer_per_time_series
 
     def __getitem__(self, batch_idx) -> Any:
         data = self.load_data_from_table(self.ts_row_ranges, self.time_period[batch_idx], self.fillers)
@@ -30,17 +30,17 @@ class TimeBasedDataset(BaseDataset):
             data[:, :, self.ts_id_col_index] = self.ts_id_fill
 
         # Transform data if applicable
-        if self.scalers is not None:
+        if self.transformers is not None:
             for i, _ in enumerate(self.ts_row_ranges):
 
-                scaler = self.scalers[i] if self.is_scaler_per_time_series else self.scalers
+                transformer = self.transformers[i] if self.is_transformer_per_time_series else self.transformers
 
                 if len(self.indices_of_features_to_take_no_ids) == 1:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = scaler.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(-1, 1))
+                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(-1, 1))
                 elif len(batch_idx) == 1:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = scaler.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(1, -1))
+                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(1, -1))
                 else:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = scaler.transform(data[i][:, self.indices_of_features_to_take_no_ids])
+                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids])
 
         if self.include_time and self.time_format == TimeFormat.DATETIME:
             return data, self.time_period[batch_idx][TIME_COLUMN_NAME].copy()
