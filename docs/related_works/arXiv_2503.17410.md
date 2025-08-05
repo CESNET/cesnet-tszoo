@@ -24,7 +24,7 @@ Example of usage of this related works configs:
 
 ```python
 from cesnet_tszoo.benchmarks import load_benchmark
-from cesnet_tszoo.utils.enums import FillerType, ScalerType
+from cesnet_tszoo.utils.enums import FillerType, TransformerType
 
 benchmark = load_benchmark("2439d12c2292", "../")
 dataset = benchmark.get_initialized_dataset()

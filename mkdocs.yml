@@ -26,7 +26,7 @@ nav:
   - Introduction: index.md
   - Installation: installation.md
   - Overview of datasets: datasets_overview.md
-  - Scalers: scalers.md
+  - Transformers: transformers.md
   - Fillers: fillers.md
   - Benchmarks: benchmarks.md
   - Datasets:
@@ -38,7 +38,7 @@ nav:
     - Choosing data: choosing_data.md
     - Loading data: loading_data.md
     - Handling missing data: handling_missing_data.md
-    - Using scalers: using_scalers.md
+    - Using transformers: using_transformers.md
     - Benchmarks: benchmarks_tutorial.md
     - Annotations: annotations.md
     - Utilities: utilities.md
@@ -52,6 +52,6 @@ nav:
       - SeriesBasedCesnetDataset: reference_series_based_cesnet_dataset.md    
       - SeriesBasedConfig: reference_series_based_config.md
     - Utils:
-      - Scalers: reference_scalers.md
+      - Transformers: reference_transformers.md
       - Fillers: reference_fillers.md
       - Enums: reference_enums.md

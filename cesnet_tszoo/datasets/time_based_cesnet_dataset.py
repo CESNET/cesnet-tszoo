@@ -38,7 +38,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
     1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
-       This initializes the dataset, including data splitting (train/validation/test/test_other), fitting scalers (if needed), selecting features, and more. This is cached for later use.
+       This initializes the dataset, including data splitting (train/validation/test/test_other), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
     4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_numpy].
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy]. 
@@ -117,7 +117,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
         | Dataset config                    | Description                                                                                    |
         | --------------------------------- | ---------------------------------------------------------------------------------------------- |
         | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
-        | `partial_fit_initialized_scalers` | Determines whether initialized scalers should be partially fitted on the training data.        |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
         | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
 
         Parameters:
@@ -396,12 +396,12 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                  self.dataset_config.indices_of_features_to_take_no_ids,
                                                  self.dataset_config.default_values,
                                                  self.dataset_config.train_fillers,
-                                                 self.dataset_config.create_scaler_per_time_series,
+                                                 self.dataset_config.create_transformer_per_time_series,
                                                  self.dataset_config.include_time,
                                                  self.dataset_config.include_ts_id,
                                                  self.dataset_config.time_format,
                                                  self.dataset_config.train_workers,
-                                                 self.dataset_config.scalers)
+                                                 self.dataset_config.transformers)
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val:
@@ -414,12 +414,12 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                self.dataset_config.indices_of_features_to_take_no_ids,
                                                self.dataset_config.default_values,
                                                self.dataset_config.val_fillers,
-                                               self.dataset_config.create_scaler_per_time_series,
+                                               self.dataset_config.create_transformer_per_time_series,
                                                self.dataset_config.include_time,
                                                self.dataset_config.include_ts_id,
                                                self.dataset_config.time_format,
                                                self.dataset_config.val_workers,
-                                               self.dataset_config.scalers)
+                                               self.dataset_config.transformers)
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test:
@@ -432,12 +432,12 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                 self.dataset_config.indices_of_features_to_take_no_ids,
                                                 self.dataset_config.default_values,
                                                 self.dataset_config.test_fillers,
-                                                self.dataset_config.create_scaler_per_time_series,
+                                                self.dataset_config.create_transformer_per_time_series,
                                                 self.dataset_config.include_time,
                                                 self.dataset_config.include_ts_id,
                                                 self.dataset_config.time_format,
                                                 self.dataset_config.test_workers,
-                                                self.dataset_config.scalers)
+                                                self.dataset_config.transformers)
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all:
@@ -450,16 +450,16 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                self.dataset_config.indices_of_features_to_take_no_ids,
                                                self.dataset_config.default_values,
                                                self.dataset_config.all_fillers,
-                                               self.dataset_config.create_scaler_per_time_series,
+                                               self.dataset_config.create_transformer_per_time_series,
                                                self.dataset_config.include_time,
                                                self.dataset_config.include_ts_id,
                                                self.dataset_config.time_format,
                                                self.dataset_config.all_workers,
-                                               self.dataset_config.scalers)
+                                               self.dataset_config.transformers)
             self.logger.debug("all_dataset initiliazed.")
 
         if self.dataset_config.has_test_ts_ids:
-            test_other_scaler = None if self.dataset_config.create_scaler_per_time_series else self.dataset_config.scalers
+            test_other_transformer = None if self.dataset_config.create_transformer_per_time_series else self.dataset_config.transformers
             self.test_other_dataset = SplittedDataset(self.dataset_path,
                                                       self.dataset_config._get_table_data_path(),
                                                       self.dataset_config.ts_id_name,
@@ -469,19 +469,19 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                       self.dataset_config.indices_of_features_to_take_no_ids,
                                                       self.dataset_config.default_values,
                                                       self.dataset_config.other_test_fillers,
-                                                      self.dataset_config.create_scaler_per_time_series,
+                                                      self.dataset_config.create_transformer_per_time_series,
                                                       self.dataset_config.include_time,
                                                       self.dataset_config.include_ts_id,
                                                       self.dataset_config.time_format,
                                                       self.dataset_config.test_workers,
-                                                      test_other_scaler)
+                                                      test_other_transformer)
             self.logger.debug("test_other_dataset initiliazed.")
 
-    def _initialize_scalers_and_details(self, workers: int) -> None:
+    def _initialize_transformers_and_details(self, workers: int) -> None:
         """
         Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
 
-        Goes through data to validate time series against `nan_threshold`, fit/partial fit `scalers` and prepare `fillers`.
+        Goes through data to validate time series against `nan_threshold`, fit/partial fit `transformers` and prepare `fillers`.
         """
 
         init_dataset = TimeBasedInitializerDataset(self.dataset_path,
@@ -529,19 +529,19 @@ class TimeBasedCesnetDataset(CesnetDataset):
             if max(missing_train_percentage, missing_val_percentage, missing_test_percentage, missing_all_percentage) <= self.dataset_config.nan_threshold:
                 ts_ids_to_take.append(i)
 
-                # Fit scalers if required
-                if self.dataset_config.scale_with is not None and train_data is not None and (not self.dataset_config.are_scalers_premade or self.dataset_config.partial_fit_initialized_scalers):
+                # Fit transformers if required
+                if self.dataset_config.transform_with is not None and train_data is not None and (not self.dataset_config.are_transformers_premade or self.dataset_config.partial_fit_initialized_transformers):
 
-                    if self.dataset_config.are_scalers_premade and self.dataset_config.partial_fit_initialized_scalers:
-                        if self.dataset_config.create_scaler_per_time_series:
-                            self.dataset_config.scalers[i].partial_fit(train_data)
+                    if self.dataset_config.are_transformers_premade and self.dataset_config.partial_fit_initialized_transformers:
+                        if self.dataset_config.create_transformer_per_time_series:
+                            self.dataset_config.transformers[i].partial_fit(train_data)
                         else:
-                            self.dataset_config.scalers.partial_fit(train_data)
+                            self.dataset_config.transformers.partial_fit(train_data)
                     else:
-                        if self.dataset_config.create_scaler_per_time_series:
-                            self.dataset_config.scalers[i].fit(train_data)
+                        if self.dataset_config.create_transformer_per_time_series:
+                            self.dataset_config.transformers[i].fit(train_data)
                         else:
-                            self.dataset_config.scalers.partial_fit(train_data)
+                            self.dataset_config.transformers.partial_fit(train_data)
 
                 # Only update fillers for val/test because train doesnt need to know about previous data
                 if self.dataset_config.fill_missing_with is not None:
@@ -560,9 +560,9 @@ class TimeBasedCesnetDataset(CesnetDataset):
         self.dataset_config.ts_row_ranges = self.dataset_config.ts_row_ranges[ts_ids_to_take]
         self.dataset_config.ts_ids = self.dataset_config.ts_ids[ts_ids_to_take]
 
-        if self.dataset_config.scale_with is not None:
-            if self.dataset_config.create_scaler_per_time_series:
-                self.dataset_config.scalers = self.dataset_config.scalers[ts_ids_to_take]
+        if self.dataset_config.transform_with is not None:
+            if self.dataset_config.create_transformer_per_time_series:
+                self.dataset_config.transformers = self.dataset_config.transformers[ts_ids_to_take]
 
         if self.dataset_config.fill_missing_with is not None:
             if self.dataset_config.has_train:
@@ -670,9 +670,9 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
         filler = None if parent_dataset.fillers is None else parent_dataset.fillers[time_series_position:time_series_position + 1]
 
-        scaler = None
-        if parent_dataset.feature_scalers is not None:
-            scaler = parent_dataset.feature_scalers[time_series_position:time_series_position + 1] if parent_dataset.is_scaler_per_time_series else parent_dataset.feature_scalers
+        transformer = None
+        if parent_dataset.feature_transformers is not None:
+            transformer = parent_dataset.feature_transformers[time_series_position:time_series_position + 1] if parent_dataset.is_transformer_per_time_series else parent_dataset.feature_transformers
 
         dataset = SplittedDataset(self.dataset_path,
                                   self.dataset_config._get_table_data_path(),
@@ -683,12 +683,12 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                   self.dataset_config.indices_of_features_to_take_no_ids,
                                   self.dataset_config.default_values,
                                   filler,
-                                  self.dataset_config.create_scaler_per_time_series,
+                                  self.dataset_config.create_transformer_per_time_series,
                                   self.dataset_config.include_time,
                                   self.dataset_config.include_ts_id,
                                   self.dataset_config.time_format,
                                   0,
-                                  scaler)
+                                  transformer)
         self.logger.debug("Singular time series dataset initiliazed.")
 
         return dataset

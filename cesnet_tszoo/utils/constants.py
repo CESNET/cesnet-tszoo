@@ -23,12 +23,12 @@ MEAN_FILLER = "mean_filler"
 FORWARD_FILLER = "forward_filler"
 LINEAR_INTERPOLATION_FILLER = "linear_interpolation_filler"
 
-# Scalers
+# Transformers
 
 MIN_MAX_SCALER = "min_max_scaler"
 STANDARD_SCALER = "standard_scaler"
 MAX_ABS_SCALER = "max_abs_scaler"
-LOG_SCALER = "log_scaler"
+LOG_TRANSFORMER = "log_transformer"
 ROBUST_SCALER = "robust_scaler"
 POWER_TRANSFORMER = "power_transformer"
 QUANTILE_TRANSFORMER = "quantile_transformer"

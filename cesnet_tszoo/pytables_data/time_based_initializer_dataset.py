@@ -8,7 +8,7 @@ from cesnet_tszoo.pytables_data.base_datasets.initializer_dataset import Initial
 
 
 class TimeBasedInitializerDataset(InitializerDataset):
-    """Used for time based datasets. Used for going through data to fit scalers, prepare fillers and validate thresholds."""
+    """Used for time based datasets. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, all_time_period: np.ndarray, train_time_period: np.ndarray, val_time_period: np.ndarray, test_time_period: np.ndarray,
                  features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray, train_fillers: np.ndarray[Filler], val_fillers: np.ndarray[Filler], test_fillers: np.ndarray[Filler]):
@@ -135,7 +135,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
             test_existing_indices = np.where(missing_values_mask[offsetted_test_time_period] == 0)[0]
             test_missing_indices = np.where(missing_values_mask[offsetted_test_time_period] == 1)[0]
 
-        if self.train_time_period is not None and self.train_fillers is not None and train_should_fill:  # for scaler...
+        if self.train_time_period is not None and self.train_fillers is not None and train_should_fill:  # for transformer...
             self.train_fillers[idx].fill(result[:, self.offset_exclude_feature_ids:].view(), train_existing_indices, train_missing_indices,
                                          default_values=self.default_values,
                                          first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)

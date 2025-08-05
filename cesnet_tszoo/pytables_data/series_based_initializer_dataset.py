@@ -7,7 +7,7 @@ from cesnet_tszoo.pytables_data.base_datasets.initializer_dataset import Initial
 
 
 class SeriesBasedInitializerDataset(InitializerDataset):
-    """Used for series based datasets. Used for going through data to fit scalers, prepare fillers and validate thresholds."""
+    """Used for series based datasets. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, train_ts_row_ranges: np.ndarray, val_ts_row_ranges: np.ndarray, test_ts_row_ranges: np.ndarray, all_ts_row_ranges: np.ndarray, time_period: np.ndarray,
                  features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray, all_fillers: np.ndarray[Filler]):
@@ -53,7 +53,7 @@ class SeriesBasedInitializerDataset(InitializerDataset):
 
         data, count_values = self.load_data_from_table(current_ts_row_ranges[idx - offset], idx)
 
-        # If current times series belongs to train set, return it for fitting scalers
+        # If current times series belongs to train set, return it for fitting transformers
         if is_train:
             train_data = None
 

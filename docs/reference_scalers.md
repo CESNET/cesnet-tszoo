@@ -1,4 +1,4 @@
-::: cesnet_tszoo.utils.scaler
+::: cesnet_tszoo.utils.transformer
     options:
         heading_level: 2
         show_root_heading: true
@@ -7,8 +7,8 @@
         separate_signature: true
         inherited_members: true
         members:
-        - Scaler
-        - LogScaler
+        - Transformer
+        - LogTransformer
         - L2Normalizer
         - MeanFiller
         - MinMaxScaler

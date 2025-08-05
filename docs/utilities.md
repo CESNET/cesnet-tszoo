@@ -104,13 +104,13 @@ time_based_dataset.display_config()
 ```python
 
 # Features will be taken from config
-dataset.plot(ts_id=10, plot_type="line", features="config", feature_per_plot=True, time_format="datetime", use_scalers=True)
+dataset.plot(ts_id=10, plot_type="line", features="config", feature_per_plot=True, time_format="datetime", use_transformers=True)
 
 # Specifies features as list... features must be set in used config
-dataset.plot(ts_id=10, plot_type="line", features=["n_flows", "n_packets"], feature_per_plot=True, time_format="datetime", use_scalers=True)
+dataset.plot(ts_id=10, plot_type="line", features=["n_flows", "n_packets"], feature_per_plot=True, time_format="datetime", use_transformers=True)
 
 # Can specify single feature... still must be set in used config
-dataset.plot(ts_id=10, plot_type="line", features="n_flows", feature_per_plot=True, time_format="datetime", use_scalers=True)
+dataset.plot(ts_id=10, plot_type="line", features="n_flows", feature_per_plot=True, time_format="datetime", use_transformers=True)
 
 ```
 
@@ -129,11 +129,11 @@ time_based_dataset.get_additional_data('weekends_and_holidays')
 
 ```
 
-## Get fitted scalers
-Returns used scaler/s that are used for transforming data.
+## Get fitted transformers
+Returns used transformer/s that are used for transforming data.
 
 ```python
 
-dataset.get_scalers()
+dataset.get_transformers()
 
 ```

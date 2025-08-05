@@ -59,14 +59,14 @@ class Benchmark:
 
     def get_initialized_dataset(self, display_config_details: bool = True, check_errors: bool = False, workers: Literal["config"] | int = "config") -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
         """
-        Return dataset with intialized sets, scalers, fillers etc..
+        Return dataset with intialized sets, transformers, fillers etc..
 
         This method uses following config attributes:
 
         | Dataset config                    | Description                                                                                    |
         | --------------------------------- | ---------------------------------------------------------------------------------------------- |
         | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config". |
-        | `partial_fit_initialized_scalers` | Determines whether initialized scalers should be partially fitted on the training data.        |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
         | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
 
         Parameters:
@@ -190,7 +190,7 @@ def _get_built_in_benchmark(identifier: str, data_root: str) -> Benchmark:
     logger.debug("Loading config file from '%s'.", config_file_path)
     config = pickle_load(config_file_path)
     config.import_identifier = export_benchmark.config_identifier
-    config._try_update_version()
+    config._try_backward_support_update()
 
     # Check and load annotations if available
     if export_benchmark.annotations_ts_identifier is not None:
@@ -255,7 +255,7 @@ def _get_custom_benchmark(identifier: str, data_root: str) -> Benchmark:
         config = pickle_load(config_file_path)
 
     config.import_identifier = export_benchmark.config_identifier
-    config._try_update_version()
+    config._try_backward_support_update()
 
     # Load annotations if available
     if export_benchmark.annotations_ts_identifier is not None:

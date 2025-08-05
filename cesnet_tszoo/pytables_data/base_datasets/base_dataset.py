@@ -10,7 +10,7 @@ import torch
 from cesnet_tszoo.pytables_data.utils.utils import load_database
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, ROW_START, ROW_END
 from cesnet_tszoo.utils.filler import Filler
-from cesnet_tszoo.utils.scaler import Scaler
+from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.utils.enums import TimeFormat
 
 
@@ -18,7 +18,7 @@ class BaseDataset(Dataset, ABC):
     """Base class for PyTable wrappers. Used for main data loading... train, val, test etc."""
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int],
-                 default_values: np.ndarray, fillers: np.ndarray[Filler] | None, include_time: bool, include_ts_id: bool, time_format: TimeFormat, scalers: np.ndarray[Scaler] | Scaler | None):
+                 default_values: np.ndarray, fillers: np.ndarray[Filler] | None, include_time: bool, include_ts_id: bool, time_format: TimeFormat, transformers: np.ndarray[Transformer] | Transformer | None):
         self.database_path = database_path
         self.table_data_path = table_data_path
         self.ts_id_name = ts_id_name
@@ -30,7 +30,7 @@ class BaseDataset(Dataset, ABC):
         self.features_to_take = features_to_take
         self.indices_of_features_to_take_no_ids = indices_of_features_to_take_no_ids
         self.default_values = default_values
-        self.scalers = scalers
+        self.transformers = transformers
         self.offset_exclude_feature_ids = len(self.features_to_take) - len(self.indices_of_features_to_take_no_ids)
 
         self.fillers = deepcopy(fillers)

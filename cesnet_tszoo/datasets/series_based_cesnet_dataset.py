@@ -8,13 +8,13 @@ import numpy.typing as npt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, ScalerType, FillerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, TransformerType, FillerType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.pytables_data.series_based_initializer_dataset import SeriesBasedInitializerDataset
-from cesnet_tszoo.utils.scaler import Scaler
+from cesnet_tszoo.utils.transformer import Transformer
 
 
 @dataclass
@@ -40,7 +40,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
     1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
-       This initializes the dataset, including data splitting (train/validation/test), fitting scalers (if needed), selecting features, and more. This is cached for later use.
+       This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
     4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy].
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy].     
@@ -108,7 +108,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         | Dataset config                    | Description                                                                                    |
         | --------------------------------- | ---------------------------------------------------------------------------------------------- |
         | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
-        | `partial_fit_initialized_scalers` | Determines whether initialized scalers should be partially fitted on the training data.        |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
         | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
 
         Parameters:
@@ -128,8 +128,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                              test_batch_size: int | Literal["config"] = "config",
                                              all_batch_size: int | Literal["config"] = "config",
                                              fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
-                                             scale_with: type | list[Scaler] | np.ndarray[Scaler] | ScalerType | Scaler | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_scaler", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
-                                             partial_fit_initialized_scalers: bool | Literal["config"] = "config",
+                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             partial_fit_initialized_transformers: bool | Literal["config"] = "config",
                                              train_workers: int | Literal["config"] = "config",
                                              val_workers: int | Literal["config"] = "config",
                                              test_workers: int | Literal["config"] = "config",
@@ -153,8 +153,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         | `test_batch_size`                  | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
         | `all_batch_size`                   | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
         | `fill_missing_with`                | Defines how to fill missing values in the dataset.                                                                                              |     
-        | `scale_with`                       | Defines the scaler to transform the dataset.                                                                                                    |      
-        | `partial_fit_initialized_scalers`  | If `True`, partial fitting on train set is performed when using initiliazed scalers.                                                            |   
+        | `transform_with`                       | Defines the transformer to transform the dataset.                                                                                                    |      
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                            |   
         | `train_workers`                    | Number of workers for loading training data.                                                                                                    |
         | `val_workers`                      | Number of workers for loading validation data.                                                                                                  |
         | `test_workers`                     | Number of workers for loading test data.                                                                                                        |
@@ -168,8 +168,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             test_batch_size: Number of samples per batch for test set. `Defaults: config`.
             all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
             fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
-            scale_with: Defines the scaler to transform the dataset. `Defaults: config`.  
-            partial_fit_initialized_scalers: If `True`, partial fitting on train set is performed when using initiliazed scalers. `Defaults: config`.    
+            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
             train_workers: Number of workers for loading training data. `Defaults: config`.
             val_workers: Number of workers for loading validation data. `Defaults: config`.
             test_workers: Number of workers for loading test data. `Defaults: config`.
@@ -179,7 +179,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
         """
 
-        return super(SeriesBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, "config", "config", "config", "config", train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, scale_with, "config", partial_fit_initialized_scalers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
+        return super(SeriesBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, "config", "config", "config", "config", train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test", "all"]) -> dict:
         """
@@ -253,7 +253,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                     self.dataset_config.include_time,
                                                     self.dataset_config.include_ts_id,
                                                     self.dataset_config.time_format,
-                                                    self.dataset_config.scalers)
+                                                    self.dataset_config.transformers)
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val:
@@ -269,7 +269,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                   self.dataset_config.include_time,
                                                   self.dataset_config.include_ts_id,
                                                   self.dataset_config.time_format,
-                                                  self.dataset_config.scalers)
+                                                  self.dataset_config.transformers)
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test:
@@ -285,7 +285,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                    self.dataset_config.include_time,
                                                    self.dataset_config.include_ts_id,
                                                    self.dataset_config.time_format,
-                                                   self.dataset_config.scalers)
+                                                   self.dataset_config.transformers)
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all:
@@ -301,14 +301,14 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                   self.dataset_config.include_time,
                                                   self.dataset_config.include_ts_id,
                                                   self.dataset_config.time_format,
-                                                  self.dataset_config.scalers)
+                                                  self.dataset_config.transformers)
             self.logger.debug("all_dataset initiliazed.")
 
-    def _initialize_scalers_and_details(self, workers: int) -> None:
+    def _initialize_transformers_and_details(self, workers: int) -> None:
         """
         Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
 
-        Goes through data to validate time series against `nan_threshold`, partial fit `scalers` and prepare `fillers`.
+        Goes through data to validate time series against `nan_threshold`, partial fit `transformers` and prepare `fillers`.
         """
 
         init_dataset = SeriesBasedInitializerDataset(self.dataset_path,
@@ -357,9 +357,9 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
                 all_ts_ids_to_take.append(i)
 
-                # Partial fit scaler on train data if applicable
-                if self.dataset_config.scale_with is not None and is_train and (not self.dataset_config.are_scalers_premade or self.dataset_config.partial_fit_initialized_scalers):
-                    self.dataset_config.scalers.partial_fit(train_data)
+                # Partial fit transformer on train data if applicable
+                if self.dataset_config.transform_with is not None and is_train and (not self.dataset_config.are_transformers_premade or self.dataset_config.partial_fit_initialized_transformers):
+                    self.dataset_config.transformers.partial_fit(train_data)
 
         if workers == 0:
             init_dataset.cleanup()
@@ -439,9 +439,9 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         super(SeriesBasedCesnetDataset, self)._update_export_config_copy()
 
-    def apply_scaler(self, scale_with: type | list[Scaler] | np.ndarray[Scaler] | ScalerType | Scaler | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_scaler", "l2_normalizer"] | None | Literal["config"] = "config",
-                     partial_fit_initialized_scalers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
-        """Used for updating scaler and relevenat configurations set in config.
+    def apply_transformer(self, transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                          partial_fit_initialized_transformers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
+        """Used for updating transformer and relevenat configurations set in config.
 
         Set parameter to `config` to keep it as it is config.
 
@@ -451,19 +451,19 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         | Dataset config                     | Description                                                                                                    |
         | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-        | `scale_with`                       | Defines the scaler to transform the dataset.                                                                   |     
-        | `partial_fit_initialized_scalers`  | If `True`, partial fitting on train set is performed when using initiliazed scalers.                           |    
+        | `transform_with`                       | Defines the transformer to transform the dataset.                                                                   |     
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                           |    
 
         Parameters:
-            scale_with: Defines the scaler to transform the dataset. `Defaults: config`.  
-            partial_fit_initialized_scalers: If `True`, partial fitting on train set is performed when using initiliazed scalers. `Defaults: config`.  
-            workers: How many workers to use when setting new scaler. `Defaults: config`.      
+            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.  
+            workers: How many workers to use when setting new transformer. `Defaults: config`.      
         """
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating scaler values.")
+            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating transformer values.")
 
-        self.update_dataset_config_and_initialize(scale_with=scale_with, partial_fit_initialized_scalers=partial_fit_initialized_scalers, workers=workers)
+        self.update_dataset_config_and_initialize(transform_with=transform_with, partial_fit_initialized_transformers=partial_fit_initialized_transformers, workers=workers)
 
     def _get_singular_time_series_dataset(self, parent_dataset: SeriesBasedDataset, ts_id: int) -> SeriesBasedDataset:
         """Returns dataset for single time series """
@@ -476,7 +476,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         time_series_position = temp[0]
 
         filler = None if parent_dataset.fillers is None else parent_dataset.fillers[time_series_position:time_series_position + 1]
-        scaler = None if parent_dataset.scalers is None else parent_dataset.scalers
+        transformer = None if parent_dataset.transformers is None else parent_dataset.transformers
 
         dataset = SeriesBasedDataset(self.dataset_path,
                                      self.dataset_config._get_table_data_path(),
@@ -490,7 +490,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                      self.dataset_config.include_time,
                                      self.dataset_config.include_ts_id,
                                      self.dataset_config.time_format,
-                                     scaler)
+                                     transformer)
         self.logger.debug("Singular time series dataset initiliazed.")
 
         return dataset

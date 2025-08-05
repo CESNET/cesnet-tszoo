@@ -39,5 +39,5 @@
         - save_annotations
         - save_config
         - save_benchmark
-        - get_scalers
+        - get_transformers
         - check_errors
