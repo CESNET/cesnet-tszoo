@@ -640,7 +640,7 @@ class DatasetConfig(ABC):
     def _try_version_update(self):
         if Version(self.version) < Version(version.current_version):
             self.logger.warning("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.version, version.current_version)
-            self.logger.warning("Package will try to update the config. It is recommended to recreate this config or at least export this config alone or through benchmark to create updated config file.")
+            self.logger.warning("Will try to update the config. It is recommended to recreate this config or at least export this config alone or through benchmark to create updated config file.")
             self.export_update_needed = True
         elif Version(self.version) > Version(version.current_version):
             self.logger.error("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.version, version.current_version)
@@ -649,7 +649,7 @@ class DatasetConfig(ABC):
         else:
             self.export_update_needed = False
 
-        self.logger.debug("Setting config version to current used cesnet-tszoo package version.")
+        self.logger.debug("Updating config version to current used cesnet-tszoo package version.")
         self.version = version.current_version
 
     def _scaler_to_transformer_version_update(self):
@@ -679,5 +679,5 @@ class DatasetConfig(ABC):
 
     def _try_set_default_version(self):
         if not hasattr(self, "version"):
-            self.logger.warning("Config attribute 'version' is missing in this instance. Default version '%s' will be set.", version.DEFAULT_VERSION)
+            self.logger.debug("Config attribute 'version' is missing in this instance. Default version '%s' will be temporarily set.", version.DEFAULT_VERSION)
             self.version = version.DEFAULT_VERSION
