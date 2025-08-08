@@ -33,7 +33,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "numpy>= 2.0, ==2.*",
+    "numpy",
     "pandas",
     "scikit-learn",
     "tables >= 3.10.0",
