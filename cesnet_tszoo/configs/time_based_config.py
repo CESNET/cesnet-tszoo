@@ -1,3 +1,4 @@
+import logging
 from typing import Literal
 from datetime import datetime
 from numbers import Number
@@ -9,11 +10,13 @@ from cesnet_tszoo.utils.filler import filler_from_input_to_type
 from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer_type, Transformer
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
-from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder
+from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType
 from cesnet_tszoo.configs.base_config import DatasetConfig
+from configs.handlers.series_based_handler import SeriesBasedHandler
+from configs.handlers.time_based_handler import TimeBasedHandler
 
 
-class TimeBasedConfig(DatasetConfig):
+class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
     """
     This class is used for configuring the [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset].
 
@@ -59,10 +62,6 @@ class TimeBasedConfig(DatasetConfig):
         display_all_time_period: Used to display the configured value of `all_time_period`.
         all_time_period: If no specific sets (train/val/test) are provided, all time IDs are used. When any set is defined, only the time IDs in defined sets are used.
         ts_row_ranges: Initialized when `ts_ids` is set. Contains time series IDs in `ts_ids` with their respective time ID ranges (same as `all_time_period`).
-        test_ts_row_ranges: Initialized when `test_ts_ids` is set. Contains time series IDs in `test_ts_ids` with their respective time ID ranges (same as `test_time_period`).    
-        other_test_fillers: Fillers used in the test_other set. `None` if no filler is used or test_other set is not used.
-        has_ts_ids: Flag indicating whether the `ts_ids` is in use.       
-        has_test_ts_ids: Flag indicating whether the `test_ts_ids` is in use.    
 
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
@@ -85,10 +84,6 @@ class TimeBasedConfig(DatasetConfig):
         used_singular_all_time_series: Currently used singular all set time series for dataloader.             
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
         are_transformers_premade: Indicates whether the transformers are premade.
-        has_train: Flag indicating whether the training set is in use.
-        has_val: Flag indicating whether the validation set is in use.
-        has_test: Flag indicating whether the test set is in use.
-        has_all: Flag indicating whether the all set is in use.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
@@ -136,7 +131,6 @@ class TimeBasedConfig(DatasetConfig):
                  val_time_period: tuple[datetime, datetime] | range | float | None = None,
                  test_time_period: tuple[datetime, datetime] | range | float | None = None,
                  features_to_take: list[str] | Literal["all"] = "all",
-                 test_ts_ids: list[int] | npt.NDArray[np.int_] | float | int | None = None,
                  default_values: list[Number] | npt.NDArray[np.number] | dict[str, Number] | Number | Literal["default"] | None = "default",
                  sliding_window_size: int | None = None,
                  sliding_window_prediction_size: int | None = None,
@@ -162,26 +156,16 @@ class TimeBasedConfig(DatasetConfig):
                  random_state: int | None = None):
 
         self.ts_ids = ts_ids
-        self.train_time_period = train_time_period
-        self.val_time_period = val_time_period
-        self.test_time_period = test_time_period
-        self.test_ts_ids = test_ts_ids
 
-        self.display_train_time_period = None
-        self.display_val_time_period = None
-        self.display_test_time_period = None
-        self.display_all_time_period = None
-        self.all_time_period = None
-        self.used_test_other_workers = None
+        self.set_shared_size = set_shared_size
+
         self.ts_row_ranges = None
-        self.test_ts_row_ranges = None
-        self.other_test_fillers = None
-        self.has_ts_ids = False
-        self.has_test_ts_ids = False
-        self.used_singular_test_other_time_series = None
 
-        super(TimeBasedConfig, self).__init__(features_to_take, default_values, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
-                                              train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, create_transformer_per_time_series, False, DataloaderOrder.SEQUENTIAL, random_state)
+        self.logger = logging.getLogger("time_config")
+
+        TimeBasedHandler.__init__(self, self.logger, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, train_time_period, val_time_period, test_time_period)
+        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
+                               train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, create_transformer_per_time_series, DatasetType.TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
 
     def _validate_construction(self) -> None:
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig._dataset_init]. """
@@ -190,10 +174,6 @@ class TimeBasedConfig(DatasetConfig):
 
         assert self.ts_ids is not None, "ts_ids must not be None"
 
-        if self.test_time_period is None and self.test_ts_ids is not None:
-            self.test_ts_ids = None
-            self.logger.warning("test_ts_ids has been ignored because test_time_period is set to None.")
-
         split_float_total = 0
 
         if isinstance(self.ts_ids, (float, int)):
@@ -201,45 +181,12 @@ class TimeBasedConfig(DatasetConfig):
             if isinstance(self.ts_ids, float):
                 split_float_total += self.ts_ids
 
-        if isinstance(self.test_ts_ids, (float, int)):
-            assert self.test_ts_ids > 0, "test_ts_ids must be greater than 0"
-            if isinstance(self.test_ts_ids, float):
-                split_float_total += self.test_ts_ids
-
         # Check if the total of float splits exceeds 1.0
         if split_float_total > 1.0:
             self.logger.error("The total of the float split sizes is greater than 1.0. Current total: %s", split_float_total)
             raise ValueError("Total value of used float split sizes can't be greater than 1.0.")
 
-        split_time_float_total = 0
-        train_used_float = None if self.train_time_period is None else False
-        val_used_float = None if self.val_time_period is None else False
-
-        if isinstance(self.train_time_period, (float, int)):
-            self.train_time_period = float(self.train_time_period)
-            assert self.train_time_period > 0.0, "train_time_period must be greater than 0"
-            split_time_float_total += self.train_time_period
-            train_used_float = True
-
-        if isinstance(self.val_time_period, (float, int)):
-            if train_used_float is False:
-                raise ValueError("val_time_period cant use float to be set, because train_time_period was set, but did not use float.")
-            self.val_time_period = float(self.val_time_period)
-            assert self.val_time_period > 0.0, "val_time_period must be greater than 0"
-            split_time_float_total += self.val_time_period
-            val_used_float = True
-
-        if isinstance(self.test_time_period, (float, int)):
-            if train_used_float is False or val_used_float is False:
-                raise ValueError("test_time_period cant use float to be set, because previous periods were set, but did not use float.")
-            self.test_time_period = float(self.test_time_period)
-            assert self.test_time_period > 0.0, "test_time_period must be greater than 0"
-            split_time_float_total += self.test_time_period
-
-        # Check if the total of float splits exceeds 1.0
-        if split_time_float_total > 1.0:
-            self.logger.error("The total of the float split sizes for time periods is greater than 1.0. Current total: %s", split_time_float_total)
-            raise ValueError("Total value of used float split sizes for time periods can't be greater than 1.0.")
+        self._validate_time_periods_init()
 
         self.logger.debug("Time-based configuration validated successfully.")
 
@@ -266,16 +213,16 @@ class TimeBasedConfig(DatasetConfig):
                 raise ValueError("sliding_window_step must be greater or equal to 1.")
 
             if set_shared_size == self.set_shared_size:
-                if self.has_train and len(self.train_time_period) < sliding_window_size + sliding_window_prediction_size:
+                if self.has_train() and len(self.train_time_period) < sliding_window_size + sliding_window_prediction_size:
                     raise ValueError("New sliding window size + prediction size is larger than the number of times in train_time_period.")
 
-                if self.has_val and len(self.val_time_period) < sliding_window_size + sliding_window_prediction_size:
+                if self.has_val() and len(self.val_time_period) < sliding_window_size + sliding_window_prediction_size:
                     raise ValueError("New sliding window size + prediction size is larger than the number of times in val_time_period.")
 
-                if self.has_test and len(self.test_time_period) < sliding_window_size + sliding_window_prediction_size:
+                if self.has_test() and len(self.test_time_period) < sliding_window_size + sliding_window_prediction_size:
                     raise ValueError("New sliding window size + prediction size is larger than the number of times in test_time_period.")
 
-                if self.has_all and len(self.all_time_period) < sliding_window_size + sliding_window_prediction_size:
+                if self.has_all() and len(self.all_time_period) < sliding_window_size + sliding_window_prediction_size:
                     raise ValueError("New sliding window size + prediction size is larger than the number of times in all_time_period.")
 
             total_window_size = sliding_window_size + sliding_window_prediction_size
@@ -314,9 +261,21 @@ class TimeBasedConfig(DatasetConfig):
         """Returns the indices corresponding to the all set. """
         return self.ts_ids, self.all_time_period
 
-    def _get_test_other(self) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
-        """Returns the indices corresponding to the test_other set. """
-        return self.test_ts_ids, self.test_time_period
+    def has_train(self) -> bool:
+        """Returns whether training set is used. """
+        return self.train_time_period is not None
+
+    def has_val(self) -> bool:
+        """Returns whether validation set is used. """
+        return self.train_time_period is not None
+
+    def has_test(self) -> bool:
+        """Returns whether test set is used. """
+        return self.train_time_period is not None
+
+    def has_all(self) -> bool:
+        """Returns whether all set is used. """
+        return self.train_time_period is not None
 
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:
         """Validates and filters `train_time_period`, `val_time_period`, `test_time_period` and `all_time_period` based on `dataset` and `aggregation`. """
@@ -325,102 +284,7 @@ class TimeBasedConfig(DatasetConfig):
             self.set_shared_size = int(len(all_time_ids) * self.set_shared_size)
             self.logger.debug("Converted set_shared_size from float to int value.")
 
-        times_to_share = None
-
-        # Used when periods are set with float
-        start = 0
-        end = len(all_time_ids)
-
-        if isinstance(self.train_time_period, float):
-            offset_from_start = int(end * self.train_time_period)
-            self.train_time_period = range(start, start + offset_from_start)
-            start += offset_from_start
-            self.logger.debug("train_time_period set with float value. Using range: %s", self.train_time_period)
-
-        # Process and validate train time period
-        self.train_time_period, self.display_train_time_period = self._process_time_period(self.train_time_period, all_time_ids, times_to_share)
-        self.has_train = self.train_time_period is not None
-
-        if self.has_train:
-            if self.sliding_window_size is not None and len(self.train_time_period) < self.sliding_window_size + self.sliding_window_prediction_size:
-                raise ValueError("Sliding window size + prediction size is larger than the number of times in train_time_period.")
-            self.logger.debug("Processed train_time_period: %s, display_train_time_period: %s", self.train_time_period, self.display_train_time_period)
-            if self.set_shared_size > 0:
-                if self.set_shared_size >= len(self.train_time_period):
-                    times_to_share = self.train_time_period[0: len(self.train_time_period)]
-                    times_to_share = all_time_ids[times_to_share[ID_TIME_COLUMN_NAME]]
-                    self.logger.warning("Whole training set will be shared to the next set. Consider increasing train_time_period or lowering set_shared_size. Current set_shared_size in count value is %s", self.set_shared_size)
-                else:
-                    times_to_share = self.train_time_period[-self.set_shared_size:len(self.train_time_period)]
-                    times_to_share = all_time_ids[times_to_share[ID_TIME_COLUMN_NAME]]
-
-        if isinstance(self.val_time_period, float):
-            offset_from_start = int(end * self.val_time_period)
-            self.val_time_period = range(start, start + offset_from_start)
-            start += offset_from_start
-            self.logger.debug("val_time_period set with float value. Using range: %s", self.val_time_period)
-
-        # Process and validate validation time period
-        self.val_time_period, self.display_val_time_period = self._process_time_period(self.val_time_period, all_time_ids, times_to_share)
-        self.has_val = self.val_time_period is not None
-
-        if self.has_val:
-            if self.sliding_window_size is not None and len(self.val_time_period) < self.sliding_window_size + self.sliding_window_prediction_size:
-                raise ValueError("Sliding window size + prediction size is larger than the number of times in val_time_period.")
-            self.logger.debug("Processed val_time_period: %s, display_val_time_period: %s", self.val_time_period, self.display_val_time_period)
-            if self.set_shared_size > 0:
-                if self.set_shared_size >= len(self.val_time_period):
-                    times_to_share = self.val_time_period[0: len(self.val_time_period)]
-                    times_to_share = all_time_ids[times_to_share[ID_TIME_COLUMN_NAME]]
-                    self.logger.warning("Whole validation set will be shared to the next set. Consider increasing val_time_period or lowering set_shared_size. Current set_shared_size in count value is %s", self.set_shared_size)
-                else:
-                    times_to_share = self.val_time_period[-self.set_shared_size:len(self.val_time_period)]
-                    times_to_share = all_time_ids[times_to_share[ID_TIME_COLUMN_NAME]]
-
-        if isinstance(self.test_time_period, float):
-            offset_from_start = int(end * self.test_time_period)
-            self.test_time_period = range(start, start + offset_from_start)
-            start += offset_from_start
-            self.logger.debug("test_time_period set with float value. Using range: %s", self.test_time_period)
-
-        # Process and validate test time period
-        self.test_time_period, self.display_test_time_period = self._process_time_period(self.test_time_period, all_time_ids, times_to_share)
-        self.has_test = self.test_time_period is not None
-
-        if self.has_test:
-            if self.sliding_window_size is not None and len(self.test_time_period) < self.sliding_window_size + self.sliding_window_prediction_size:
-                raise ValueError("Sliding window size + prediction size is larger than the number of times in test_time_period.")
-            self.logger.debug("Processed test_time_period: %s, display_test_time_period: %s", self.test_time_period, self.display_test_time_period)
-
-        if not self.has_train and not self.has_val and not self.has_test:
-            self.all_time_period = all_time_ids.copy()
-            self.all_time_period = self._set_time_period_form(self.all_time_period, all_time_ids)
-            self.logger.info("Using all times for all_time_period because train_time_period, val_time_period, and test_time_period are all set to None.")
-        else:
-            for temp_time_period in [self.train_time_period, self.val_time_period, self.test_time_period]:
-                if temp_time_period is None:
-                    continue
-                elif self.all_time_period is None:
-                    self.all_time_period = temp_time_period.copy()
-                else:
-                    self.all_time_period = np.concatenate((self.all_time_period, temp_time_period))
-
-            if self.has_train:
-                self.logger.debug("all_time_period includes values from train_time_period.")
-            if self.has_val:
-                self.logger.debug("all_time_period includes values from val_time_period.")
-            if self.has_test:
-                self.logger.debug("all_time_period includes values from test_time_period.")
-
-            self.all_time_period = np.unique(self.all_time_period)
-
-        self.has_all = self.all_time_period is not None
-
-        if self.has_all:
-            self.display_all_time_period = range(self.all_time_period[ID_TIME_COLUMN_NAME][0], self.all_time_period[ID_TIME_COLUMN_NAME][-1] + 1)
-            if self.sliding_window_size is not None and len(self.all_time_period) < self.sliding_window_size + self.sliding_window_prediction_size:
-                raise ValueError("Sliding window size + prediction size is larger than the number of times in all_time_period.")
-            self.logger.debug("Processed all_time_period: %s, display_all_time_period: %s", self.all_time_period, self.display_all_time_period)
+        self._prepare_and_set_time_period_sets(all_time_ids, self.time_format, self.set_shared_size)
 
     def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
         """ Validates and filters inputted time series id from `ts_ids` and `test_ts_ids` based on `dataset` and `source_type`. Handles random set."""
@@ -430,8 +294,7 @@ class TimeBasedConfig(DatasetConfig):
 
         # Process ts_ids if it was specified with times series ids
         if not isinstance(self.ts_ids, (float, int)):
-            self.ts_ids, self.ts_row_ranges, _ = self._process_ts_ids(self.ts_ids, all_ts_ids, all_ts_row_ranges, None, None)
-            self.has_ts_ids = True
+            self.ts_ids, self.ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.ts_ids, all_ts_ids, all_ts_row_ranges, None, None, self.logger, self.ts_id_name, self.random_state)
 
             mask = np.isin(random_ts_ids, self.ts_ids, invert=True)
             random_ts_ids = random_ts_ids[mask]
@@ -439,36 +302,15 @@ class TimeBasedConfig(DatasetConfig):
 
             self.logger.debug("ts_ids set: %s", self.ts_ids)
 
-        # Process test_ts_ids if it was specified with times series ids
-        if self.test_ts_ids is not None and not isinstance(self.test_ts_ids, (float, int)):
-            self.test_ts_ids, self.test_ts_row_ranges, _ = self._process_ts_ids(self.test_ts_ids, all_ts_ids, all_ts_row_ranges, None, None)
-            self.has_test_ts_ids = True
-
-            mask = np.isin(random_ts_ids, self.test_ts_ids, invert=True)
-            random_ts_ids = random_ts_ids[mask]
-            random_indices = random_indices[mask]
-
-            self.logger.debug("test_ts_ids set: %s", self.test_ts_ids)
-
         # Convert proportions to total values
         if isinstance(self.ts_ids, float):
             self.ts_ids = int(self.ts_ids * len(random_ts_ids))
             self.logger.debug("ts_ids converted to total values: %s", self.ts_ids)
-        if isinstance(self.test_ts_ids, float):
-            self.test_ts_ids = int(self.test_ts_ids * len(random_ts_ids))
-            self.logger.debug("test_ts_ids converted to total values: %s", self.test_ts_ids)
 
         # Process random ts_ids if it is to be randomly made
         if isinstance(self.ts_ids, int):
-            self.ts_ids, self.ts_row_ranges, random_indices = self._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.ts_ids, random_indices)
-            self.has_ts_ids = True
+            self.ts_ids, self.ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.ts_ids, random_indices, self.logger, self.ts_id_name, self.random_state)
             self.logger.debug("Random ts_ids set with %s time series.", self.ts_ids)
-
-        # Process random test_ts_ids if it is to be randomly made
-        if isinstance(self.test_ts_ids, int):
-            self.test_ts_ids, self.test_ts_row_ranges, random_indices = self._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.test_ts_ids, random_indices)
-            self.has_test_ts_ids = True
-            self.logger.debug("Random test_ts_ids set with %s time series.", self.test_ts_ids)
 
     def _set_feature_transformers(self) -> None:
         """Creates and/or validates transformers based on the `transform_with` parameter. """
@@ -482,7 +324,7 @@ class TimeBasedConfig(DatasetConfig):
             self.logger.debug("No transformer will be used because transform_with is not set.")
             return
 
-        if not self.has_train:
+        if not self.has_train():
             if self.partial_fit_initialized_transformers:
                 self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
             self.partial_fit_initialized_transformers = False
@@ -528,7 +370,7 @@ class TimeBasedConfig(DatasetConfig):
 
         # Treat transform_with as uninitialized transformer
         else:
-            if not self.has_train:
+            if not self.has_train():
                 self.transform_with = None
                 self.transform_with_display = None
                 self.are_transformers_premade = False
@@ -561,78 +403,29 @@ class TimeBasedConfig(DatasetConfig):
             return
 
         # Set the fillers for the training set
-        if self.has_train:
+        if self.has_train():
             self.train_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for training set are set.")
 
         # Set the fillers for the validation set
-        if self.has_val:
+        if self.has_val():
             self.val_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for validation set are set.")
 
         # Set the fillers for the test set
-        if self.has_test:
+        if self.has_test():
             self.test_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for test set are set.")
 
         # Set the fillers for the all set
-        if self.has_all:
+        if self.has_all():
             self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for all set are set.")
-
-        # Set the fillers for the test_other set
-        if self.has_test_ts_ids:
-            self.other_test_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.test_ts_ids])
-            self.logger.debug("Fillers for other_test set are set.")
 
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates if `train/val/test` are continuos and that there are no overlapping time series ids in `ts_ids` and `test_ts_ids`."""
 
-        previous_first_time_id = None
-        previous_last_time_id = None
-
-        # Validates if time periods are continuos
-        for time_period in [self.train_time_period, self.val_time_period, self.test_time_period]:
-            if time_period is None:
-                continue
-
-            current_first_time_id = time_period[0][ID_TIME_COLUMN_NAME]
-            current_last_time_id = time_period[-1][ID_TIME_COLUMN_NAME]
-
-            # Check if the first time ID is valid in relation to the previous time period's first time ID
-            if previous_first_time_id is not None:
-                if current_first_time_id < previous_first_time_id:
-                    self.logger.error("Starting time ids of train/val/test must follow this rule: train < val < test")
-                    raise ValueError(f"Starting time ids of train/val/test must follow this rule: train < val < test. "
-                                     f"Current first time ID: {current_first_time_id}, previous first time ID: {previous_first_time_id}")
-
-                if current_first_time_id > previous_last_time_id + 1:
-                    self.logger.error("Starting time ids of train/val/test must be smaller or equal to last_id(next_split) + 1")
-                    raise ValueError(f"Starting time ids of train/val/test must be smaller or equal to last_id(next_split) + 1. "
-                                     f"Current first time ID: {current_first_time_id}, previous last time ID: {previous_last_time_id}")
-
-            # Check if the last time ID is valid in relation to the previous time period's last time ID
-            if previous_last_time_id is not None:
-                if current_last_time_id < previous_last_time_id:
-                    self.logger.error("Last time ids of train/val/test must be equal or larger than last_id(next_split)")
-                    raise ValueError(f"Last time ids of train/val/test must be equal or larger than last_id(next_split). "
-                                     f"Current last time ID: {current_last_time_id}, previous last time ID: {previous_last_time_id}")
-
-            previous_first_time_id = current_first_time_id
-            previous_last_time_id = current_last_time_id
-
-        if self.transform_with is not None and self.create_transformer_per_time_series and self.test_ts_ids is not None:
-            self.logger.warning("Transformers won't be used on time series in test_ts_ids, if create_transformer_per_time_series is true.")
-
-        # Check for overlap between ts_ids and test_ts_ids
-        if self.ts_ids is not None and self.test_ts_ids is not None:
-            mask = np.isin(self.ts_ids, self.test_ts_ids)
-            if len(self.ts_ids[mask]) > 0:
-                self.logger.error("ts_ids and test_ts_ids can't have the same IDs!")
-                raise ValueError(f"ts_ids and test_ts_ids can't have the same IDs. Overlapping IDs: {self.ts_ids[mask]}")
-
-    def _try_backward_support_update(self):
-        super()._try_backward_support_update()
+        self._validate_time_periods_overlap()
 
     def __str__(self) -> str:
 
@@ -658,7 +451,6 @@ Config Details
 
     Time series
         Time series IDS: {get_abbreviated_list_string(self.ts_ids)}
-        Test time series IDS: {get_abbreviated_list_string(self.test_ts_ids)}
     Time periods
         Train time periods: {str(self.display_train_time_period)}
         Val time periods: {str(self.display_val_time_period)}

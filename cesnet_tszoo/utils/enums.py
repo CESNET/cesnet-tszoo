@@ -153,6 +153,16 @@ class DataloaderOrder(Enum):
     """Loaded data will be in the selected order. """
 
 
+class DatasetType(Enum):
+    """Types of loading data. """
+
+    TIME_BASED = "time_based"
+
+    SERIES_BASED = "series_based"
+
+    COMBINED = "combined"
+
+
 class ScalerType(Enum):
     """Obsolete, dont use. Only for backward compatibility. """
 

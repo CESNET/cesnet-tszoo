@@ -1,3 +1,4 @@
+import logging
 from typing import Literal
 from datetime import datetime
 from numbers import Number
@@ -8,11 +9,13 @@ import numpy.typing as npt
 from cesnet_tszoo.utils.filler import filler_from_input_to_type
 from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer_type, Transformer
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
-from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder
+from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType
 from cesnet_tszoo.configs.base_config import DatasetConfig
+from configs.handlers.series_based_handler import SeriesBasedHandler
+from configs.handlers.time_based_handler import TimeBasedHandler
 
 
-class SeriesBasedConfig(DatasetConfig):
+class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
     """
     This class is used for configuring the [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset].
 
@@ -142,19 +145,14 @@ class SeriesBasedConfig(DatasetConfig):
                  random_state: int | None = None):
 
         self.time_period = time_period
-        self.train_ts = train_ts
-        self.val_ts = val_ts
-        self.test_ts = test_ts
 
-        self.all_ts = None
-        self.train_ts_row_ranges = None
-        self.val_ts_row_ranges = None
-        self.test_ts_row_ranges = None
-        self.all_ts_row_ranges = None
         self.display_time_period = None
 
-        super(SeriesBasedConfig, self).__init__(features_to_take, default_values, None, None, 1, 0, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
-                                                train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, False, True, train_dataloader_order, random_state)
+        self.logger = logging.getLogger("series_config")
+
+        SeriesBasedHandler.__init__(self, self.logger, True, train_ts, val_ts, test_ts)
+        DatasetConfig.__init__(self, features_to_take, default_values, None, None, 1, 0, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
+                               train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, False, DatasetType.SERIES_BASED, train_dataloader_order, random_state, self.logger)
 
     def _validate_construction(self) -> None:
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig._dataset_init]. """
@@ -166,27 +164,7 @@ class SeriesBasedConfig(DatasetConfig):
             assert self.time_period > 0.0, "time_period must be greater than 0"
             assert self.time_period <= 1.0, "time_period must be lower or equal to 1.0"
 
-        split_float_total = 0
-
-        if isinstance(self.train_ts, (float, int)):
-            assert self.train_ts > 0, "train_ts must be greater than 0."
-            if isinstance(self.train_ts, float):
-                split_float_total += self.train_ts
-
-        if isinstance(self.val_ts, (float, int)):
-            assert self.val_ts > 0, "val_ts must be greater than 0"
-            if isinstance(self.val_ts, float):
-                split_float_total += self.val_ts
-
-        if isinstance(self.test_ts, (float, int)):
-            assert self.test_ts > 0, "test_ts must be greater than 0"
-            if isinstance(self.test_ts, float):
-                split_float_total += self.test_ts
-
-        # Check if the total of float splits exceeds 1.0
-        if split_float_total > 1.0:
-            self.logger.error("The total of the float split sizes is greater than 1.0. Current total: %s", split_float_total)
-            raise ValueError("Total value of used float split sizes can't be larger than 1.0.")
+        self._validate_ts_init()
 
         self.logger.debug("Series-based configuration validated successfully.")
 
@@ -206,6 +184,22 @@ class SeriesBasedConfig(DatasetConfig):
         """Returns the indices corresponding to the all set. """
         return self.all_ts, self.time_period
 
+    def has_train(self) -> bool:
+        """Returns whether training set is used. """
+        return self.train_ts is not None
+
+    def has_val(self) -> bool:
+        """Returns whether validation set is used. """
+        return self.val_ts is not None
+
+    def has_test(self) -> bool:
+        """Returns whether test set is used. """
+        return self.test_ts is not None
+
+    def has_all(self) -> bool:
+        """Returns whether all set is used. """
+        return self.all_ts is not None
+
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:
         """Validates and filters the input time period based on the dataset and aggregation. """
 
@@ -216,103 +210,13 @@ class SeriesBasedConfig(DatasetConfig):
             self.time_period = range(int(self.time_period * len(all_time_ids)))
             self.logger.debug("Time period set with float value. Using range: %s", self.time_period)
 
-        self.time_period, self.display_time_period = self._process_time_period(self.time_period, all_time_ids)
+        self.time_period, self.display_time_period = TimeBasedHandler._process_time_period(self.time_period, all_time_ids, self.logger, self.time_format)
         self.logger.debug("Processed time_period: %s, display_time_period: %s", self.time_period, self.display_time_period)
 
     def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
         """Validates and filters the input time series IDs based on the `dataset` and `source_type`. Handles random split."""
 
-        random_ts_ids = all_ts_ids[self.ts_id_name]
-        random_indices = np.arange(len(all_ts_ids))
-
-        # Process train_ts if it was specified with times series ids
-        if self.train_ts is not None and not isinstance(self.train_ts, (float, int)):
-            self.train_ts, self.train_ts_row_ranges, _ = self._process_ts_ids(self.train_ts, all_ts_ids, all_ts_row_ranges, None, None)
-            self.has_train = True
-
-            mask = np.isin(random_ts_ids, self.train_ts, invert=True)
-            random_ts_ids = random_ts_ids[mask]
-            random_indices = random_indices[mask]
-
-            self.logger.debug("train_ts set: %s", self.train_ts)
-
-        # Process val_ts if it was specified with times series ids
-        if self.val_ts is not None and not isinstance(self.val_ts, (float, int)):
-            self.val_ts, self.val_ts_row_ranges, _ = self._process_ts_ids(self.val_ts, all_ts_ids, all_ts_row_ranges, None, None)
-            self.has_val = True
-
-            mask = np.isin(random_ts_ids, self.val_ts, invert=True)
-            random_ts_ids = random_ts_ids[mask]
-            random_indices = random_indices[mask]
-
-            self.logger.debug("val_ts set: %s", self.val_ts)
-
-        # Process time_ts if it was specified with times series ids
-        if self.test_ts is not None and not isinstance(self.test_ts, (float, int)):
-            self.test_ts, self.test_ts_row_ranges, _ = self._process_ts_ids(self.test_ts, all_ts_ids, all_ts_row_ranges, None, None)
-            self.has_test = True
-
-            mask = np.isin(random_ts_ids, self.test_ts, invert=True)
-            random_ts_ids = random_ts_ids[mask]
-            random_indices = random_indices[mask]
-
-            self.logger.debug("test_ts set: %s", self.test_ts)
-
-        # Convert proportions to total values
-        if isinstance(self.train_ts, float):
-            self.train_ts = int(self.train_ts * len(random_ts_ids))
-            self.logger.debug("train_ts converted to total values: %s", self.train_ts)
-        if isinstance(self.val_ts, float):
-            self.val_ts = int(self.val_ts * len(random_ts_ids))
-            self.logger.debug("val_ts converted to total values: %s", self.val_ts)
-        if isinstance(self.test_ts, float):
-            self.test_ts = int(self.test_ts * len(random_ts_ids))
-            self.logger.debug("test_ts converted to total values: %s", self.test_ts)
-
-        # Process random train_ts if it is to be randomly made
-        if isinstance(self.train_ts, int):
-            self.train_ts, self.train_ts_row_ranges, random_indices = self._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.train_ts, random_indices)
-            self.has_train = True
-            self.logger.debug("Random train_ts set with %s time series.", self.train_ts)
-
-        # Process random val_ts if it is to be randomly made
-        if isinstance(self.val_ts, int):
-            self.val_ts, self.val_ts_row_ranges, random_indices = self._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.val_ts, random_indices)
-            self.has_val = True
-            self.logger.debug("Random val_ts set with %s time series.", self.val_ts)
-
-        # Process random test_ts if it is to be randomly made
-        if isinstance(self.test_ts, int):
-            self.test_ts, self.test_ts_row_ranges, random_indices = self._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.test_ts, random_indices)
-            self.has_test = True
-            self.logger.debug("Random test_ts set with %s time series.", self.test_ts)
-
-        if not self.has_train and not self.has_val and not self.has_test:
-            self.all_ts = all_ts_ids[self.ts_id_name]
-            self.all_ts, self.all_ts_row_ranges, _ = self._process_ts_ids(self.all_ts, all_ts_ids, all_ts_row_ranges, None, None)
-            self.logger.info("Using all time series for all_ts because train_ts, val_ts, and test_ts are all set to None.")
-        else:
-            for temp_ts_ids in [self.train_ts, self.val_ts, self.test_ts]:
-                if temp_ts_ids is None:
-                    continue
-                elif self.all_ts is None:
-                    self.all_ts = temp_ts_ids.copy()
-                else:
-                    self.all_ts = np.concatenate((self.all_ts, temp_ts_ids))
-
-            if self.has_train:
-                self.logger.debug("all_ts includes ids from train_ts.")
-            if self.has_val:
-                self.logger.debug("all_ts includes ids from val_ts.")
-            if self.has_test:
-                self.logger.debug("all_ts includes ids from test_ts.")
-
-            self.all_ts, self.all_ts_row_ranges, _ = self._process_ts_ids(self.all_ts, all_ts_ids, all_ts_row_ranges, None, None)
-
-        self.has_all = self.all_ts is not None
-
-        if self.has_all:
-            self.logger.debug("all_ts set with %s time series.", self.all_ts)
+        self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state)
 
     def _set_feature_transformers(self) -> None:
         """Creates and/or validates transformers based on the `transform_with` parameter. """
@@ -330,7 +234,7 @@ class SeriesBasedConfig(DatasetConfig):
         if not isinstance(self.transform_with, (type, TransformerType)):
             self.transformers = self.transform_with
 
-            if not self.has_train:
+            if not self.has_train():
                 if self.partial_fit_initialized_transformers:
                     self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
                 self.partial_fit_initialized_transformers = False
@@ -344,7 +248,7 @@ class SeriesBasedConfig(DatasetConfig):
 
         # Treat transform_with as uninitialized transformer
         else:
-            if not self.has_train:
+            if not self.has_train():
                 self.transform_with = None
                 self.transform_with_display = None
                 self.are_transformers_premade = False
@@ -373,22 +277,22 @@ class SeriesBasedConfig(DatasetConfig):
             return
 
         # Set the fillers for the training set
-        if self.has_train:
+        if self.has_train():
             self.train_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.train_ts])
             self.logger.debug("Fillers for training set are set.")
 
         # Set the fillers for the validation set
-        if self.has_val:
+        if self.has_val():
             self.val_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.val_ts])
             self.logger.debug("Fillers for validation set are set.")
 
         # Set the fillers for the test set
-        if self.has_test:
+        if self.has_test():
             self.test_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
 
         # Set the fillers for the all set
-        if self.has_all:
+        if self.has_all():
             self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.all_ts])
             self.logger.debug("Fillers for all set are set.")
 
@@ -397,25 +301,7 @@ class SeriesBasedConfig(DatasetConfig):
     def _validate_finalization(self) -> None:
         """Performs final validation of the configuration. """
 
-        train_size = 0
-        if self.has_train:
-            train_size += len(self.train_ts)
-
-        val_size = 0
-        if self.has_val:
-            val_size += len(self.val_ts)
-
-        test_size = 0
-        if self.has_test:
-            test_size += len(self.test_ts)
-
-        # Check for overlap between train, val, and test sets
-        if train_size + val_size + test_size > 0 and train_size + val_size + test_size != len(np.unique(self.all_ts)):
-            self.logger.error("Overlap detected! Train, Val, and Test sets can't have the same IDs.")
-            raise ValueError("Train, Val, and Test can't have the same IDs.")
-
-    def _try_backward_support_update(self):
-        super()._try_backward_support_update()
+        self._validate_ts_overlap()
 
     def __str__(self) -> str:
 
