@@ -11,8 +11,8 @@ from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType
 from cesnet_tszoo.configs.base_config import DatasetConfig
-from configs.handlers.series_based_handler import SeriesBasedHandler
-from configs.handlers.time_based_handler import TimeBasedHandler
+from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
+from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 
 
 class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
@@ -151,13 +151,13 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         self.logger = logging.getLogger("series_config")
 
         SeriesBasedHandler.__init__(self, self.logger, True, train_ts, val_ts, test_ts)
-        DatasetConfig.__init__(self, features_to_take, default_values, None, None, 1, 0, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
+        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
                                train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, False, DatasetType.SERIES_BASED, train_dataloader_order, random_state, self.logger)
 
     def _validate_construction(self) -> None:
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig._dataset_init]. """
 
-        super(SeriesBasedConfig, self)._validate_construction()
+        DatasetConfig._validate_construction(self)
 
         if isinstance(self.time_period, (float, int)):
             self.time_period = float(self.time_period)

@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 from sklearn.model_selection import train_test_split
 
-from utils.constants import ROW_END, ROW_START
+from cesnet_tszoo.utils.constants import ROW_END, ROW_START
 
 
 class SeriesBasedHandler(ABC):

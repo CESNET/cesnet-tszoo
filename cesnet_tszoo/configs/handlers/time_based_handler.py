@@ -3,20 +3,23 @@ from datetime import datetime, timezone
 from logging import Logger
 
 import numpy as np
-import numpy.typing as npt
-from sklearn.model_selection import train_test_split
 
-from utils.constants import ID_TIME_COLUMN_NAME, ROW_END, ROW_START, TIME_COLUMN_NAME
-from utils.enums import TimeFormat
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
+from cesnet_tszoo.utils.enums import TimeFormat
 
 
 class TimeBasedHandler(ABC):
     def __init__(self,
                  logger: Logger,
+                 train_batch_size: int,
+                 val_batch_size: int,
+                 test_batch_size: int,
+                 all_batch_size: int,
                  uses_all_time_period: bool,
                  sliding_window_size: int | None,
                  sliding_window_prediction_size: int | None,
                  sliding_window_step: int,
+                 set_shared_size: float | int,
                  train_time_period: tuple[datetime, datetime] | range | float | None,
                  val_time_period: tuple[datetime, datetime] | range | float | None,
                  test_time_period: tuple[datetime, datetime] | range | float | None):
@@ -24,6 +27,13 @@ class TimeBasedHandler(ABC):
         self.train_time_period = train_time_period
         self.val_time_period = val_time_period
         self.test_time_period = test_time_period
+
+        self.train_batch_size = train_batch_size
+        self.val_batch_size = val_batch_size
+        self.test_batch_size = test_batch_size
+        self.all_batch_size = all_batch_size
+
+        self.set_shared_size = set_shared_size
 
         self.sliding_window_size = sliding_window_size
         self.sliding_window_prediction_size = sliding_window_prediction_size
@@ -40,8 +50,12 @@ class TimeBasedHandler(ABC):
 
         self.logger = logger
 
-    def _prepare_and_set_time_period_sets(self, all_time_ids: np.ndarray, time_format: TimeFormat, set_shared_size: int = 0) -> None:
+    def _prepare_and_set_time_period_sets(self, all_time_ids: np.ndarray, time_format: TimeFormat) -> None:
         """Validates and filters `train_time_period`, `val_time_period`, `test_time_period` and `all_time_period` based on `dataset` and `aggregation`. """
+
+        if isinstance(self.set_shared_size, float):
+            self.set_shared_size = int(len(all_time_ids) * self.set_shared_size)
+            self.logger.debug("Converted set_shared_size from float to int value.")
 
         times_to_share = None
 
@@ -62,13 +76,13 @@ class TimeBasedHandler(ABC):
             if self.sliding_window_size is not None and len(self.train_time_period) < self.sliding_window_size + self.sliding_window_prediction_size:
                 raise ValueError("Sliding window size + prediction size is larger than the number of times in train_time_period.")
             self.logger.debug("Processed train_time_period: %s, display_train_time_period: %s", self.train_time_period, self.display_train_time_period)
-            if set_shared_size > 0:
-                if set_shared_size >= len(self.train_time_period):
+            if self.set_shared_size > 0:
+                if self.set_shared_size >= len(self.train_time_period):
                     times_to_share = self.train_time_period[0: len(self.train_time_period)]
                     times_to_share = all_time_ids[times_to_share[ID_TIME_COLUMN_NAME]]
-                    self.logger.warning("Whole training set will be shared to the next set. Consider increasing train_time_period or lowering set_shared_size. Current set_shared_size in count value is %s", set_shared_size)
+                    self.logger.warning("Whole training set will be shared to the next set. Consider increasing train_time_period or lowering set_shared_size. Current set_shared_size in count value is %s", self.set_shared_size)
                 else:
-                    times_to_share = self.train_time_period[-set_shared_size:len(self.train_time_period)]
+                    times_to_share = self.train_time_period[-self.set_shared_size:len(self.train_time_period)]
                     times_to_share = all_time_ids[times_to_share[ID_TIME_COLUMN_NAME]]
 
         if isinstance(self.val_time_period, float):
@@ -84,13 +98,13 @@ class TimeBasedHandler(ABC):
             if self.sliding_window_size is not None and len(self.val_time_period) < self.sliding_window_size + self.sliding_window_prediction_size:
                 raise ValueError("Sliding window size + prediction size is larger than the number of times in val_time_period.")
             self.logger.debug("Processed val_time_period: %s, display_val_time_period: %s", self.val_time_period, self.display_val_time_period)
-            if set_shared_size > 0:
-                if set_shared_size >= len(self.val_time_period):
+            if self.set_shared_size > 0:
+                if self.set_shared_size >= len(self.val_time_period):
                     times_to_share = self.val_time_period[0: len(self.val_time_period)]
                     times_to_share = all_time_ids[times_to_share[ID_TIME_COLUMN_NAME]]
-                    self.logger.warning("Whole validation set will be shared to the next set. Consider increasing val_time_period or lowering set_shared_size. Current set_shared_size in count value is %s", set_shared_size)
+                    self.logger.warning("Whole validation set will be shared to the next set. Consider increasing val_time_period or lowering set_shared_size. Current set_shared_size in count value is %s", self.set_shared_size)
                 else:
-                    times_to_share = self.val_time_period[-set_shared_size:len(self.val_time_period)]
+                    times_to_share = self.val_time_period[-self.set_shared_size:len(self.val_time_period)]
                     times_to_share = all_time_ids[times_to_share[ID_TIME_COLUMN_NAME]]
 
         if isinstance(self.test_time_period, float):
@@ -169,6 +183,79 @@ class TimeBasedHandler(ABC):
         if split_time_float_total > 1.0:
             self.logger.error("The total of the float split sizes for time periods is greater than 1.0. Current total: %s", split_time_float_total)
             raise ValueError("Total value of used float split sizes for time periods can't be greater than 1.0.")
+
+    def _update_sliding_window(self, sliding_window_size: int | None, sliding_window_prediction_size: int | None, sliding_window_step: int | None, set_shared_size: float | int, all_time_ids: np.ndarray,
+                               has_train: bool, has_val: bool, has_test: bool, has_all: bool):
+        if isinstance(set_shared_size, float):
+            assert set_shared_size >= 0 and set_shared_size <= 1, "set_shared_size float value must be between or equal to 0 and 1."
+            set_shared_size = int(len(all_time_ids) * set_shared_size)
+
+        assert set_shared_size >= 0, "set_shared_size must be of positive value."
+
+        # Ensure sliding_window_size is either None or a valid integer greater than 1
+        assert sliding_window_size is None or (isinstance(sliding_window_size, int) and sliding_window_size > 1), "sliding_window_size must be an integer greater than 1, or None."
+
+        # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 1
+        assert sliding_window_prediction_size is None or (isinstance(sliding_window_prediction_size, int) and sliding_window_prediction_size >= 1), "sliding_window_prediction_size must be an integer greater than 1, or None."
+
+        # Both sliding_window_size and sliding_window_prediction_size must be set or None
+        assert (sliding_window_size is None and sliding_window_prediction_size is None) or (sliding_window_size is not None and sliding_window_prediction_size is not None), "Both sliding_window_size and sliding_window_prediction_size must be set or None."
+
+        # Adjust batch sizes based on sliding_window_size
+        if sliding_window_size is not None:
+
+            if sliding_window_step <= 0:
+                raise ValueError("sliding_window_step must be greater or equal to 1.")
+
+            if set_shared_size == self.set_shared_size:
+                if has_train and len(self.train_time_period) < sliding_window_size + sliding_window_prediction_size:
+                    raise ValueError("New sliding window size + prediction size is larger than the number of times in train_time_period.")
+
+                if has_val and len(self.val_time_period) < sliding_window_size + sliding_window_prediction_size:
+                    raise ValueError("New sliding window size + prediction size is larger than the number of times in val_time_period.")
+
+                if has_test and len(self.test_time_period) < sliding_window_size + sliding_window_prediction_size:
+                    raise ValueError("New sliding window size + prediction size is larger than the number of times in test_time_period.")
+
+                if self.uses_all_time_period and has_all and len(self.all_time_period) < sliding_window_size + sliding_window_prediction_size:
+                    raise ValueError("New sliding window size + prediction size is larger than the number of times in all_time_period.")
+
+            total_window_size = sliding_window_size + sliding_window_prediction_size
+
+            if total_window_size > self.train_batch_size:
+                self.train_batch_size = sliding_window_size + sliding_window_prediction_size
+                self.logger.info("train_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
+            if total_window_size > self.val_batch_size:
+                self.val_batch_size = sliding_window_size + sliding_window_prediction_size
+                self.logger.info("val_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
+            if total_window_size > self.test_batch_size:
+                self.test_batch_size = sliding_window_size + sliding_window_prediction_size
+                self.logger.info("test_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
+            if self.uses_all_time_period and total_window_size > self.all_batch_size:
+                self.all_batch_size = sliding_window_size + sliding_window_prediction_size
+                self.logger.info("all_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
+
+        self.sliding_window_size = sliding_window_size
+        self.sliding_window_prediction_size = sliding_window_prediction_size
+        self.sliding_window_step = sliding_window_step
+        self.set_shared_size = set_shared_size
+
+    def _validate_set_shared_size_init(self):
+        if isinstance(self.set_shared_size, float):
+            assert self.set_shared_size >= 0 and self.set_shared_size <= 1, "set_shared_size float value must be between or equal to 0 and 1."
+
+        assert self.set_shared_size >= 0, "set_shared_size must be of positive value."
+
+    def _validate_sliding_window_init(self):
+
+        # Ensure sliding_window_size is either None or a valid integer greater than 1
+        assert self.sliding_window_size is None or (isinstance(self.sliding_window_size, int) and self.sliding_window_size > 1), "sliding_window_size must be an integer greater than 1, or None."
+
+        # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 1
+        assert self.sliding_window_prediction_size is None or (isinstance(self.sliding_window_prediction_size, int) and self.sliding_window_prediction_size >= 1), "sliding_window_prediction_size must be an integer greater than 1, or None."
+
+        # Both sliding_window_size and sliding_window_prediction_size must be set or None
+        assert (self.sliding_window_size is None and self.sliding_window_prediction_size is None) or (self.sliding_window_size is not None and self.sliding_window_prediction_size is not None), "Both sliding_window_size and sliding_window_prediction_size must be set or None."
 
     def _validate_time_periods_overlap(self):
         previous_first_time_id = None

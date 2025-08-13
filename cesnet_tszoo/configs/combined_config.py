@@ -11,8 +11,8 @@ from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType
 from cesnet_tszoo.configs.base_config import DatasetConfig
-from configs.handlers.series_based_handler import SeriesBasedHandler
-from configs.handlers.time_based_handler import TimeBasedHandler
+from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
+from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 
 
 class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
@@ -47,7 +47,7 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
 
         self.logger = logging.getLogger("combined_config")
 
-        TimeBasedHandler.__init__(self, self.logger, False, sliding_window_size, sliding_window_prediction_size, sliding_window_step, train_time_period, val_time_period, test_time_period)
+        TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, 1, False, sliding_window_size, sliding_window_prediction_size, sliding_window_step, 0, train_time_period, val_time_period, test_time_period)
         SeriesBasedHandler.__init__(self, self.logger, False, train_ts, val_ts, test_ts)
         DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, np.inf, fill_missing_with, transform_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
                                train_workers, val_workers, test_workers, np.inf, init_workers, nan_threshold, False, DatasetType.COMBINED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
@@ -55,7 +55,7 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
     def _validate_construction(self) -> None:
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.multi_time_based_config.MultiTimeBasedConfig._dataset_init]. """
 
-        super(CombinedConfig, self)._validate_construction()
+        DatasetConfig._validate_construction(self)
 
         if self.train_ts is None or self.train_time_period is None:
             if self.train_ts is not None:
@@ -87,8 +87,36 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
 
         self._validate_time_periods_init()
         self._validate_ts_init()
+        self._validate_set_shared_size_init()
+        self._validate_sliding_window_init()
+        self._update_batch_sizes(self.train_batch_size, self.val_batch_size, self.test_batch_size, self.all_batch_size)
 
         self.logger.debug("Time-based configuration validated successfully.")
+
+    def _update_batch_sizes(self, train_batch_size: int, val_batch_size: int, test_batch_size: int, all_batch_size: int) -> None:
+
+        # Adjust batch sizes based on sliding_window_size
+        if self.sliding_window_size is not None:
+
+            if self.sliding_window_step <= 0:
+                raise ValueError("sliding_window_step must be greater or equal to 1.")
+
+            total_window_size = self.sliding_window_size + self.sliding_window_prediction_size
+
+            if isinstance(self.train_batch_size, int) and total_window_size > self.train_batch_size:
+                self.train_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
+                self.logger.info("train_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
+            if isinstance(self.val_batch_size, int) and total_window_size > self.val_batch_size:
+                self.val_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
+                self.logger.info("val_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
+            if isinstance(self.test_batch_size, int) and total_window_size > self.test_batch_size:
+                self.test_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
+                self.logger.info("test_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
+
+        DatasetConfig._update_batch_sizes(self, train_batch_size, val_batch_size, test_batch_size, all_batch_size)
+
+    def _update_sliding_window(self, sliding_window_size: int | None, sliding_window_prediction_size: int | None, sliding_window_step: int | None, set_shared_size: float | int, all_time_ids: np.ndarray):
+        TimeBasedHandler._update_sliding_window(self, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, all_time_ids, self.has_train(), self.has_val(), self.has_test(), self.has_all())
 
     def _get_train(self) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
         """Returns the indices corresponding to the training set. """
@@ -179,12 +207,8 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
             self.are_transformers_premade = False
 
             self.is_transformer_custom = "Custom" in self.transform_with_display
-            if self.create_transformer_per_time_series:
-                self.transformers = np.array([self.transform_with() for _ in self.ts_ids])
-                self.logger.debug("Using list of uninitialized transformers of type: %s", self.transform_with_display)
-            else:
-                self.transformers = self.transform_with()
-                self.logger.debug("Using uninitialized transformer of type: %s", self.transform_with_display)
+            self.transformers = self.transform_with()
+            self.logger.debug("Using uninitialized transformer of type: %s", self.transform_with_display)
 
     def _set_fillers(self) -> None:
         """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
@@ -212,10 +236,10 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
             self.logger.debug("Fillers for test set are set.")
 
     def _validate_finalization(self) -> None:
-        """ Performs final validation of the configuration. Validates if `train/val/test` are continuos and that there are no overlapping time series ids in `ts_ids` and `test_ts_ids`."""
+        """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos."""
 
         self._validate_time_periods_overlap()
-        self._validate_ts_overlap()
+        # self._validate_ts_overlap()
 
     def __str__(self) -> str:
 

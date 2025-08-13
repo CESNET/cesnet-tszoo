@@ -1,17 +1,15 @@
 from typing import Literal
 from numbers import Number
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
 import math
 import logging
 
 import numpy as np
 import numpy.typing as npt
 from packaging.version import Version
-from sklearn.model_selection import train_test_split
 
 import cesnet_tszoo.version as version
-from cesnet_tszoo.utils.constants import ROW_END, ROW_START, ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
 from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, ScalerType, DatasetType
 from cesnet_tszoo.utils.transformer import Transformer
 
@@ -205,41 +203,6 @@ class DatasetConfig(ABC):
         assert isinstance(self.test_batch_size, int) and self.test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(self.all_batch_size, int) and self.all_batch_size > 0, "all_batch_size must be a positive integer."
 
-        if isinstance(self.set_shared_size, float):
-            assert self.set_shared_size >= 0 and self.set_shared_size <= 1, "set_shared_size float value must be between or equal to 0 and 1."
-
-        assert self.set_shared_size >= 0, "set_shared_size must be of positive value."
-
-        # Ensure sliding_window_size is either None or a valid integer greater than 1
-        assert self.sliding_window_size is None or (isinstance(self.sliding_window_size, int) and self.sliding_window_size > 1), "sliding_window_size must be an integer greater than 1, or None."
-
-        # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 1
-        assert self.sliding_window_prediction_size is None or (isinstance(self.sliding_window_prediction_size, int) and self.sliding_window_prediction_size >= 1), "sliding_window_prediction_size must be an integer greater than 1, or None."
-
-        # Both sliding_window_size and sliding_window_prediction_size must be set or None
-        assert (self.sliding_window_size is None and self.sliding_window_prediction_size is None) or (self.sliding_window_size is not None and self.sliding_window_prediction_size is not None), "Both sliding_window_size and sliding_window_prediction_size must be set or None."
-
-        # Adjust batch sizes based on sliding_window_size
-        if self.sliding_window_size is not None:
-
-            if self.sliding_window_step <= 0:
-                raise ValueError("sliding_window_step must be greater or equal to 1.")
-
-            total_window_size = self.sliding_window_size + self.sliding_window_prediction_size
-
-            if total_window_size > self.train_batch_size:
-                self.train_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("train_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > self.val_batch_size:
-                self.val_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("val_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > self.test_batch_size:
-                self.test_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("test_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > self.all_batch_size:
-                self.all_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("all_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-
         # Validate nan_threshold value
         assert isinstance(self.nan_threshold, Number) and 0 <= self.nan_threshold <= 1, "nan_threshold must be a number between 0 and 1."
         self.nan_threshold = float(self.nan_threshold)
@@ -258,9 +221,6 @@ class DatasetConfig(ABC):
         if isinstance(self.fill_missing_with, (str, FillerType)):
             self.fill_missing_with = FillerType(self.fill_missing_with)
 
-    def _update_sliding_window(self, sliding_window_size: int | None, sliding_window_prediction_size: int | None, sliding_window_step: int | None, set_shared_size: float | int, all_time_ids: np.ndarray):
-        return
-
     def _update_batch_sizes(self, train_batch_size: int, val_batch_size: int, test_batch_size: int, all_batch_size: int) -> None:
 
         # Ensuring batch size values are positive integers
@@ -268,32 +228,6 @@ class DatasetConfig(ABC):
         assert isinstance(val_batch_size, int) and val_batch_size > 0, "val_batch_size must be a positive integer."
         assert isinstance(test_batch_size, int) and test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(all_batch_size, int) and all_batch_size > 0, "all_batch_size must be a positive integer."
-
-        # Adjust batch sizes based on sliding_window_size
-        if self.sliding_window_size is not None:
-
-            if self.sliding_window_step <= 0:
-                raise ValueError("sliding_window_step must be greater or equal to 1.")
-
-            total_window_size = self.sliding_window_size + self.sliding_window_prediction_size
-
-            if total_window_size > train_batch_size:
-                train_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("train_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > val_batch_size:
-                val_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("val_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > test_batch_size:
-                test_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("test_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > all_batch_size:
-                all_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("all_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
-        self.test_batch_size = test_batch_size
-        self.all_batch_size = all_batch_size
 
         self.logger.debug("Updated batch sizes.")
 
