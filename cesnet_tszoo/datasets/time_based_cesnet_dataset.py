@@ -8,7 +8,7 @@ import pandas as pd
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.pytables_data.time_based_initializer_dataset import TimeBasedInitializerDataset
@@ -95,16 +95,14 @@ class TimeBasedCesnetDataset(CesnetDataset):
     train_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     val_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     test_dataset: Optional[SplittedDataset] = field(default=None, init=False)
-    test_other_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     all_dataset: Optional[SplittedDataset] = field(default=None, init=False)
 
     train_dataloader: Optional[DataLoader] = field(default=None, init=False)
     val_dataloader: Optional[DataLoader] = field(default=None, init=False)
     test_dataloader: Optional[DataLoader] = field(default=None, init=False)
-    test_other_dataloader: Optional[DataLoader] = field(default=None, init=False)
     all_dataloader: Optional[DataLoader] = field(default=None, init=False)
 
-    is_series_based: bool = field(default=False, init=False)
+    dataset_type: DatasetType = field(default=DatasetType.TIME_BASED, init=False)
 
     _export_config_copy: Optional[TimeBasedConfig] = field(default=None, init=False)
 
@@ -140,7 +138,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
         Returned dictionary contains:
 
         - **ts_ids:** Ids of time series in `about` set.
-        - **test_ts_ids:** Ids of  time series in `test_ts_ids`. Only for `about` == SplitType.TEST and when `test_ts_id` is set in used config.
         - **TimeFormat.ID_TIME:** Times in `about` set, where time format is `TimeFormat.ID_TIME`.
         - **TimeFormat.DATETIME:** Times in `about` set, where time format is `TimeFormat.DATETIME`.
         - **TimeFormat.UNIX_TIME:** Times in `about` set, where time format is `TimeFormat.UNIX_TIME`.
@@ -159,20 +156,19 @@ class TimeBasedCesnetDataset(CesnetDataset):
         result = {}
 
         if about == SplitType.TRAIN:
-            if not self.dataset_config.has_train:
+            if not self.dataset_config.has_train():
                 raise ValueError("Train split is not used.")
             time_period = self.dataset_config.train_time_period
         elif about == SplitType.VAL:
-            if not self.dataset_config.has_val:
+            if not self.dataset_config.has_val():
                 raise ValueError("Val split is not used.")
             time_period = self.dataset_config.val_time_period
         elif about == SplitType.TEST:
-            if not self.dataset_config.has_test:
+            if not self.dataset_config.has_test():
                 raise ValueError("Test split is not used.")
             time_period = self.dataset_config.test_time_period
-            result["test_ts_ids"] = self.dataset_config.test_ts_ids.copy() if self.dataset_config.test_ts_ids is not None else None
         elif about == SplitType.ALL:
-            if not self.dataset_config.has_all:
+            if not self.dataset_config.has_all():
                 raise ValueError("All split is not used.")
 
             time_period = self.dataset_config.all_time_period
@@ -188,169 +184,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
         result[TimeFormat.SHIFTED_UNIX_TIME] = self.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]] - self.time_indices[TIME_COLUMN_NAME][0]
 
         return result
-
-    def get_test_other_dataloader(self, ts_id: int | None = None, workers: int | Literal["config"] = "config", **kwargs) -> DataLoader:
-        """
-        Returns a PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test_other set.
-
-        The `DataLoader` is created on the first call and cached for subsequent use. <br/>
-        The cached dataloader is cleared when either [`get_test_other_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_other_df] or [`get_test_other_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_other_numpy] is called.
-
-        The structure of the returned batch depends on the `time_format` and whether `sliding_window_size` is used:
-
-        - When `sliding_window_size` is used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
-                - `np.ndarray` of times with shape `(times - 1)`
-                - `np.ndarray` of time with shape `(1)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
-        - When `sliding_window_size` is not used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
-                - `np.ndarray` of time with shape `(times)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
-
-        The `DataLoader` is configured with the following config attributes:
-
-        | Dataset config                     | Description                                                                                                                               |
-        | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-        | `test_batch_size`                  | Number of times for time series per batch.                                                                                                |
-        | `sliding_window_size`              | Modifies the shape of the returned data.                                                                                                  |
-        | `sliding_window_prediction_size`   | Modifies the shape of the returned data.                                                                                                  |
-        | `sliding_window_step`              | Available only for time-based datasets. Number of times to move by after each window.                                                     |
-        | `test_workers`                     | Specifies the number of workers to use for loading test_other data. Applied when `workers` = "config".                                    |
-
-        Parameters:
-            workers: The number of workers to use for loading test_other data. `Default: "config"`  
-            ts_id: Specifies time series to take. If None returns all time series as normal. `Default: "None"`
-
-        Returns:
-            An iterable `DataLoader` containing data from test_other set.         
-        """
-
-        if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_other_dataloader.")
-
-        if not self.dataset_config.has_test or not self.dataset_config.has_test_ts_ids:
-            raise ValueError("Dataloader for test_other set is not available in the dataset configuration.")
-
-        assert self.test_dataset is not None, "The test_other_dataset must be initialized before accessing data from test_other set."
-
-        default_kwargs = {'take_all': False, "cache_loader": True}
-        kwargs = {**default_kwargs, **kwargs}
-
-        if ts_id is not None:
-
-            if ts_id == self.dataset_config.used_singular_test_other_time_series and self.test_other_dataloader is not None:
-                self.logger.debug("Returning cached test_other_dataloader.")
-                return self.test_other_dataloader
-
-            dataset = self._get_singular_time_series_dataset(self.test_other_dataset, ts_id)
-            self.dataset_config.used_singular_test_other_time_series = ts_id
-            if self.test_other_dataloader:
-                del self.test_other_dataloader
-                self.test_other_dataloader = None
-                self.logger.info("Destroyed previous cached test_other_dataloader.")
-
-            self.dataset_config.used_test_other_workers = 0
-            self.test_other_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.test_batch_size)
-            self.logger.info("Created new cached test_other_dataloader.")
-            return self.test_other_dataloader
-        elif self.dataset_config.used_singular_test_other_time_series is not None and self.test_other_dataloader is not None:
-            del self.test_other_dataloader
-            self.test_other_dataloader = None
-            self.dataset_config.used_singular_test_other_time_series = None
-            self.logger.info("Destroyed previous cached test_other_dataloader.")
-
-        if workers == "config":
-            workers = self.dataset_config.test_workers
-
-        # If the dataloader is cached and number of used workers did not change, return the cached dataloader
-        if self.test_other_dataloader and kwargs["cache_loader"] and workers == self.dataset_config.used_test_other_workers:
-            self.logger.debug("Returning cached test_other_dataloader.")
-            return self.test_other_dataloader
-
-        # Update the used workers count
-        self.dataset_config.used_test_other_workers = workers
-
-        # If there's a previously cached dataloader, destroy it
-        if self.test_other_dataloader:
-            del self.test_other_dataloader
-            self.test_other_dataloader = None
-            self.logger.info("Destroyed previous cached test_other_dataloader.")
-
-        # If caching is enabled, create a new cached dataloader
-        if kwargs["cache_loader"]:
-            self.test_other_dataloader = self._get_dataloader(self.test_other_dataset, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
-            self.logger.info("Created new cached test_other_dataloader.")
-            return self.test_other_dataloader
-
-        # If caching is disabled, create a new uncached dataloader
-        self.logger.debug("Created new uncached test_other_dataloader.")
-        return self._get_dataloader(self.test_other_dataset, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
-
-    def get_test_other_df(self, workers: int | Literal["config"] = "config", as_single_dataframe: bool = True) -> pd.DataFrame:
-        """
-        Creates a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html) containing all the data from test_other set grouped by time series.
-
-        This method uses the `test_other_dataloader` with a batch size set to the total number of data in the test_other set. The cached `test_other_dataloader` is cleared during this operation.
-
-        !!! warning "Memory usage"
-            The entire test_other set is loaded into memory, which may lead to high memory usage. If working with large test_other set, consider using `get_test_other_dataloader` instead to handle data in batches.
-
-        Parameters:
-            workers: The number of workers to use for loading test_other data. `Default: "config"`  
-            as_single_dataframe: Whether to return a single dataframe with all time series combined, or to create separate dataframes for each time series. `Default: True` 
-
-        Returns:
-            A single Pandas DataFrame containing all data from test_other set, or a list of DataFrames (one per time series).
-        """
-
-        if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_other_dataloader.")
-
-        if not self.dataset_config.has_test or not self.dataset_config.has_test_ts_ids:
-            raise ValueError("Dataloader for test_other set is not available in the dataset configuration.")
-
-        assert self.test_dataset is not None, "The test_other_dataset must be initialized before accessing data from test_other set."
-
-        ts_ids, time_period = self.dataset_config._get_test_other()
-
-        dataloader = self.get_test_other_dataloader(workers=workers, take_all=True, cache_loader=False)
-        return self._get_df(dataloader, as_single_dataframe, ts_ids, time_period)
-
-    def get_test_other_numpy(self, workers: int | Literal["config"] = "config",) -> np.ndarray:
-        """
-        Creates a NumPy array containing all the data from test_other set grouped by time series, with the shape `(num_time_series, num_times, num_features)`.
-
-        This method uses the `test_other_dataloader` with a batch size set to the total number of data in the test_other set. The cached `test_other_dataloader` is cleared during this operation.
-
-        !!! warning "Memory usage"
-            The entire test_other set is loaded into memory, which may lead to high memory usage. If working with large test_other set, consider using `get_test_other_dataloader` instead to handle data in batches.        
-
-        Parameters:
-            workers: The number of workers to use for loading test_other data. `Default: "config"`  
-
-        Returns:
-            A NumPy array containing all the data in test_other set with the shape `(num_time_series, num_times, num_features)`.
-        """
-
-        if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_other_dataloader.")
-
-        if not self.dataset_config.has_all:
-            raise ValueError("Dataloader for test_other set is not available in the dataset configuration.")
-
-        assert self.test_dataset is not None, "The test_other_dataset must be initialized before accessing data from test_other set."
-
-        ts_ids, time_period = self.dataset_config._get_test_other()
-
-        dataloader = self.get_test_other_dataloader(workers=workers, take_all=True, cache_loader=False)
-        return self._get_numpy(dataloader, ts_ids, time_period)
 
     def set_sliding_window(self, sliding_window_size: int | None | Literal["config"] = "config", sliding_window_prediction_size: int | None | Literal["config"] = "config",
                            sliding_window_step: int | None | Literal["config"] = "config", set_shared_size: float | int | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
@@ -384,9 +217,9 @@ class TimeBasedCesnetDataset(CesnetDataset):
         self.logger.info("Sliding window values has been changed successfuly.")
 
     def _initialize_datasets(self) -> None:
-        """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test, test_other and all). """
+        """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
 
-        if self.dataset_config.has_train:
+        if self.dataset_config.has_train():
             self.train_dataset = SplittedDataset(self.dataset_path,
                                                  self.dataset_config._get_table_data_path(),
                                                  self.dataset_config.ts_id_name,
@@ -404,7 +237,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                  self.dataset_config.transformers)
             self.logger.debug("train_dataset initiliazed.")
 
-        if self.dataset_config.has_val:
+        if self.dataset_config.has_val():
             self.val_dataset = SplittedDataset(self.dataset_path,
                                                self.dataset_config._get_table_data_path(),
                                                self.dataset_config.ts_id_name,
@@ -422,7 +255,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                self.dataset_config.transformers)
             self.logger.debug("val_dataset initiliazed.")
 
-        if self.dataset_config.has_test:
+        if self.dataset_config.has_test():
             self.test_dataset = SplittedDataset(self.dataset_path,
                                                 self.dataset_config._get_table_data_path(),
                                                 self.dataset_config.ts_id_name,
@@ -440,7 +273,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                 self.dataset_config.transformers)
             self.logger.debug("test_dataset initiliazed.")
 
-        if self.dataset_config.has_all:
+        if self.dataset_config.has_all():
             self.all_dataset = SplittedDataset(self.dataset_path,
                                                self.dataset_config._get_table_data_path(),
                                                self.dataset_config.ts_id_name,
@@ -457,25 +290,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                self.dataset_config.all_workers,
                                                self.dataset_config.transformers)
             self.logger.debug("all_dataset initiliazed.")
-
-        if self.dataset_config.has_test_ts_ids:
-            test_other_transformer = None if self.dataset_config.create_transformer_per_time_series else self.dataset_config.transformers
-            self.test_other_dataset = SplittedDataset(self.dataset_path,
-                                                      self.dataset_config._get_table_data_path(),
-                                                      self.dataset_config.ts_id_name,
-                                                      self.dataset_config.test_ts_row_ranges,
-                                                      self.dataset_config.test_time_period,
-                                                      self.dataset_config.features_to_take,
-                                                      self.dataset_config.indices_of_features_to_take_no_ids,
-                                                      self.dataset_config.default_values,
-                                                      self.dataset_config.other_test_fillers,
-                                                      self.dataset_config.create_transformer_per_time_series,
-                                                      self.dataset_config.include_time,
-                                                      self.dataset_config.include_ts_id,
-                                                      self.dataset_config.time_format,
-                                                      self.dataset_config.test_workers,
-                                                      test_other_transformer)
-            self.logger.debug("test_other_dataset initiliazed.")
 
     def _initialize_transformers_and_details(self, workers: int) -> None:
         """
@@ -517,13 +331,13 @@ class TimeBasedCesnetDataset(CesnetDataset):
             missing_all_percentage = 0
 
             # Filter time series based on missing data threshold
-            if self.dataset_config.has_train:
+            if self.dataset_config.has_train():
                 missing_train_percentage = train_count_values[1] / (train_count_values[0] + train_count_values[1])
-            if self.dataset_config.has_val:
+            if self.dataset_config.has_val():
                 missing_val_percentage = val_count_values[1] / (val_count_values[0] + val_count_values[1])
-            if self.dataset_config.has_test:
+            if self.dataset_config.has_test():
                 missing_test_percentage = test_count_values[1] / (test_count_values[0] + test_count_values[1])
-            if self.dataset_config.has_all:
+            if self.dataset_config.has_all():
                 missing_all_percentage = all_count_values[1] / (all_count_values[0] + all_count_values[1])
 
             if max(missing_train_percentage, missing_val_percentage, missing_test_percentage, missing_all_percentage) <= self.dataset_config.nan_threshold:
@@ -545,9 +359,9 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
                 # Only update fillers for val/test because train doesnt need to know about previous data
                 if self.dataset_config.fill_missing_with is not None:
-                    if self.dataset_config.has_val:
+                    if self.dataset_config.has_val():
                         self.dataset_config.val_fillers[i] = val_filler
-                    if self.dataset_config.has_test:
+                    if self.dataset_config.has_test():
                         self.dataset_config.test_fillers[i] = test_filler
 
         if workers == 0:
@@ -565,13 +379,13 @@ class TimeBasedCesnetDataset(CesnetDataset):
                 self.dataset_config.transformers = self.dataset_config.transformers[ts_ids_to_take]
 
         if self.dataset_config.fill_missing_with is not None:
-            if self.dataset_config.has_train:
+            if self.dataset_config.has_train():
                 self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
-            if self.dataset_config.has_val:
+            if self.dataset_config.has_val():
                 self.dataset_config.val_fillers = self.dataset_config.val_fillers[ts_ids_to_take]
-            if self.dataset_config.has_test:
+            if self.dataset_config.has_test():
                 self.dataset_config.test_fillers = self.dataset_config.test_fillers[ts_ids_to_take]
-            if self.dataset_config.has_all:
+            if self.dataset_config.has_all():
                 self.dataset_config.all_fillers = self.dataset_config.all_fillers[ts_ids_to_take]
 
         self.dataset_config.used_ts_row_ranges = self.dataset_config.ts_row_ranges
@@ -581,65 +395,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
         self.logger.debug("ts_ids updated: %s time series left.", len(ts_ids_to_take))
 
-        # Check if going through test_other data is needed
-        if self.dataset_config.test_ts_row_ranges is not None:
-            test_init_dataset = TimeBasedInitializerDataset(self.dataset_path,
-                                                            self.dataset_config._get_table_data_path(),
-                                                            self.dataset_config.ts_id_name,
-                                                            self.dataset_config.test_ts_row_ranges,
-                                                            None,
-                                                            None,
-                                                            None,
-                                                            self.dataset_config.test_time_period,
-                                                            self.dataset_config.features_to_take,
-                                                            self.dataset_config.indices_of_features_to_take_no_ids,
-                                                            self.dataset_config.default_values,
-                                                            None,
-                                                            None,
-                                                            self.dataset_config.other_test_fillers)
-
-            sampler = SequentialSampler(test_init_dataset)
-            dataloader = DataLoader(test_init_dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=TimeBasedInitializerDataset.worker_init_fn, persistent_workers=False, sampler=sampler)
-
-            if workers == 0:
-                test_init_dataset.pytables_worker_init()
-
-            test_ts_ids_to_take = []
-
-            self.logger.info("Updating config on test_other and selected time series.")
-            for i, data in enumerate(tqdm(dataloader, total=len(self.dataset_config.test_ts_row_ranges))):
-                _, _, _, test_count_values, _, _, test_filler = data[0]
-
-                missing_test_percentage = test_count_values[1] / (test_count_values[0] + test_count_values[1])
-
-                if missing_test_percentage <= self.dataset_config.nan_threshold:
-                    test_ts_ids_to_take.append(i)
-
-                    if self.dataset_config.fill_missing_with is not None:
-                        self.dataset_config.other_test_fillers[i] = test_filler
-
-            if workers == 0:
-                test_init_dataset.cleanup()
-
-            if len(test_ts_ids_to_take) == 0:
-                raise ValueError("No valid time series left in test_ts_ids after applying nan_threshold.")
-
-            # Update config based on filtered time series
-            self.dataset_config.test_ts_row_ranges = self.dataset_config.test_ts_row_ranges[test_ts_ids_to_take]
-            self.dataset_config.test_ts_ids = self.dataset_config.test_ts_ids[test_ts_ids_to_take]
-
-            if self.dataset_config.fill_missing_with is not None:
-                if self.dataset_config.other_test_fillers is not None:
-                    self.dataset_config.other_test_fillers = self.dataset_config.other_test_fillers[test_ts_ids_to_take]
-
-            self.dataset_config.used_ts_row_ranges = np.concatenate((self.dataset_config.used_ts_row_ranges, self.dataset_config.test_ts_row_ranges))
-            self.dataset_config.used_ts_ids = np.concatenate((self.dataset_config.used_ts_ids, self.dataset_config.test_ts_ids))
-
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.used_fillers = np.concatenate((self.dataset_config.used_fillers, self.dataset_config.other_test_fillers))
-
-            self.logger.debug("test_ts_ids updated: %s time series left.", len(test_ts_ids_to_take))
-
     def _update_export_config_copy(self) -> None:
         """
         Called at the end of [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize] or when changing config values. 
@@ -648,13 +403,17 @@ class TimeBasedCesnetDataset(CesnetDataset):
         """
         self._export_config_copy.database_name = self.database_name
 
-        if self.dataset_config.has_train:
+        if self.dataset_config.ts_ids is not None:
             self._export_config_copy.ts_ids = self.dataset_config.ts_ids.copy()
             self.logger.debug("Updated ts_ids of _export_config_copy.")
+        else:
+            self._export_config_copy.ts_ids = None
+            self.logger.debug("Updated ts_ids of _export_config_copy.")
 
-        if self.dataset_config.has_test_ts_ids:
-            self._export_config_copy.test_ts_ids = self.dataset_config.test_ts_ids.copy()
-            self.logger.debug("Updated test_ts_ids of _export_config_copy")
+        self._export_config_copy.sliding_window_size = self.dataset_config.sliding_window_size
+        self._export_config_copy.sliding_window_prediction_size = self.dataset_config.sliding_window_prediction_size
+        self._export_config_copy.sliding_window_step = self.dataset_config.sliding_window_step
+        self._export_config_copy.set_shared_size = self.dataset_config.set_shared_size
 
         super(TimeBasedCesnetDataset, self)._update_export_config_copy()
 
@@ -697,10 +456,3 @@ class TimeBasedCesnetDataset(CesnetDataset):
         """ Set time based dataloader for this dataset. """
 
         return self._get_time_based_dataloader(dataset, workers, take_all, batch_size)
-
-    def _clear(self) -> None:
-        """ Clears set data. Mainly called when initializing new config. """
-
-        self.test_other_dataloader = None
-        self.test_other_dataset = None
-        super(TimeBasedCesnetDataset, self)._clear()

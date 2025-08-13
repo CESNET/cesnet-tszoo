@@ -8,7 +8,7 @@ import numpy.typing as npt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, TransformerType, FillerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, TransformerType, FillerType, DatasetType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
@@ -95,7 +95,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     test_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
     all_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
 
-    is_series_based: bool = field(default=True, init=False)
+    dataset_type: DatasetType = field(default=DatasetType.SERIES_BASED, init=False)
 
     _export_config_copy: Optional[SeriesBasedConfig] = field(default=None, init=False)
 
@@ -209,19 +209,19 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         result = {}
 
         if about == SplitType.TRAIN:
-            if not self.dataset_config.has_train:
+            if not self.dataset_config.has_train():
                 raise ValueError("Train set is not used.")
             ts_ids = self.dataset_config.train_ts
         elif about == SplitType.VAL:
-            if not self.dataset_config.has_val:
+            if not self.dataset_config.has_val():
                 raise ValueError("Val set is not used.")
             ts_ids = self.dataset_config.val_ts
         elif about == SplitType.TEST:
-            if not self.dataset_config.has_test:
+            if not self.dataset_config.has_test():
                 raise ValueError("Test set is not used.")
             ts_ids = self.dataset_config.test_ts
         elif about == SplitType.ALL:
-            if not self.dataset_config.has_all:
+            if not self.dataset_config.has_all():
                 raise ValueError("All set is not used.")
             ts_ids = self.dataset_config.all_ts
         else:
@@ -240,7 +240,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     def _initialize_datasets(self) -> None:
         """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
 
-        if self.dataset_config.has_train:
+        if self.dataset_config.has_train():
             self.train_dataset = SeriesBasedDataset(self.dataset_path,
                                                     self.dataset_config._get_table_data_path(),
                                                     self.dataset_config.ts_id_name,
@@ -256,7 +256,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                     self.dataset_config.transformers)
             self.logger.debug("train_dataset initiliazed.")
 
-        if self.dataset_config.has_val:
+        if self.dataset_config.has_val():
             self.val_dataset = SeriesBasedDataset(self.dataset_path,
                                                   self.dataset_config._get_table_data_path(),
                                                   self.dataset_config.ts_id_name,
@@ -272,7 +272,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                   self.dataset_config.transformers)
             self.logger.debug("val_dataset initiliazed.")
 
-        if self.dataset_config.has_test:
+        if self.dataset_config.has_test():
             self.test_dataset = SeriesBasedDataset(self.dataset_path,
                                                    self.dataset_config._get_table_data_path(),
                                                    self.dataset_config.ts_id_name,
@@ -288,7 +288,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                    self.dataset_config.transformers)
             self.logger.debug("test_dataset initiliazed.")
 
-        if self.dataset_config.has_all:
+        if self.dataset_config.has_all():
             self.all_dataset = SeriesBasedDataset(self.dataset_path,
                                                   self.dataset_config._get_table_data_path(),
                                                   self.dataset_config.ts_id_name,
@@ -365,7 +365,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             init_dataset.cleanup()
 
         # Update sets based on filtered time series
-        if self.dataset_config.has_train:
+        if self.dataset_config.has_train():
             if len(train_ts_ids_to_take) == 0:
                 raise ValueError("No time series left in training set after applying nan_threshold.")
             self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[train_ts_ids_to_take]
@@ -376,7 +376,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             self.logger.debug("Train set updated: %s time series left.", len(train_ts_ids_to_take))
 
-        if self.dataset_config.has_val:
+        if self.dataset_config.has_val():
             if len(val_ts_ids_to_take) == 0:
                 raise ValueError("No time series left in validation set after applying nan_threshold.")
             self.dataset_config.val_ts_row_ranges = self.dataset_config.val_ts_row_ranges[val_ts_ids_to_take]
@@ -387,7 +387,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             self.logger.debug("Validation set updated: %s time series selected.", len(val_ts_ids_to_take))
 
-        if self.dataset_config.has_test:
+        if self.dataset_config.has_test():
             if len(test_ts_ids_to_take) == 0:
                 raise ValueError("No time series left in test set after applying nan_threshold.")
             self.dataset_config.test_ts_row_ranges = self.dataset_config.test_ts_row_ranges[test_ts_ids_to_take]
@@ -398,7 +398,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             self.logger.debug("Test set updated: %s time series selected.", len(test_ts_ids_to_take))
 
-        if self.dataset_config.has_all:
+        if self.dataset_config.has_all():
             if len(all_ts_ids_to_take) == 0:
                 raise ValueError("No series left in all set after applying nan_threshold.")
             self.dataset_config.all_ts = self.dataset_config.all_ts[all_ts_ids_to_take]
@@ -425,15 +425,15 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         self._export_config_copy.database_name = self.database_name
 
-        if self.dataset_config.has_train:
+        if self.dataset_config.has_train():
             self._export_config_copy.train_ts = self.dataset_config.train_ts.copy()
             self.logger.debug("Updated train_ts of _export_config_copy.")
 
-        if self.dataset_config.has_val:
+        if self.dataset_config.has_val():
             self._export_config_copy.val_ts = self.dataset_config.val_ts.copy()
             self.logger.debug("Updated val_ts of _export_config_copy.")
 
-        if self.dataset_config.has_test:
+        if self.dataset_config.has_test():
             self._export_config_copy.test_ts = self.dataset_config.test_ts.copy()
             self.logger.debug("Updated test_ts of _export_config_copy.")
 

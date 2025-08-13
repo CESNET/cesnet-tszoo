@@ -4,7 +4,7 @@ from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDatas
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
 from cesnet_tszoo.datasets.cesnet_database import CesnetDatabase
 from cesnet_tszoo.datasets.datasets_constants import _CESNET_TIME_SERIES24_ID_NAMES, _CESNET_TIME_SERIES24_DEFAULT_VALUES, _CESNET_TIME_SERIES24_AGGREGATIONS, _CESNET_TIME_SERIES24_SOURCE_TYPES, _CESNET_AGG23_ID_NAMES, _CESNET_AGG23_DEFAULT_VALUES, _CESNET_AGG23_AGGREGATIONS, _CESNET_AGG23_SOURCE_TYPES, _CESNET_TIME_SERIES24_ADDITIONAL_DATA
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 
 
 class CESNET_TimeSeries24(CesnetDatabase):
@@ -23,7 +23,7 @@ class CESNET_TimeSeries24(CesnetDatabase):
 
     @classmethod
     def get_dataset(cls, data_root: str, source_type: SourceType | Literal["ip_addresses_sample", "ip_addresses_full", "institution_subnets", "institutions"], aggregation: AgreggationType | Literal["10_minutes", "1_hour", "1_day"],
-                    is_series_based: bool, check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
+                    dataset_type: DatasetType | Literal["time_based", "series_based", "combined"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
         """
         Create new dataset instance.
 
@@ -39,7 +39,7 @@ class CESNET_TimeSeries24(CesnetDatabase):
             TimeBasedCesnetDataset or SeriesBasedCesnetDataset.
         """
 
-        return super(CESNET_TimeSeries24, cls).get_dataset(data_root, source_type, aggregation, is_series_based, check_errors, display_details)
+        return super(CESNET_TimeSeries24, cls).get_dataset(data_root, source_type, aggregation, dataset_type, check_errors, display_details)
 
 
 class CESNET_AGG23(CesnetDatabase):
@@ -69,4 +69,4 @@ class CESNET_AGG23(CesnetDatabase):
             TimeBasedCesnetDataset
         """
 
-        return super(CESNET_AGG23, cls).get_dataset(data_root, SourceType.CESNET2, AgreggationType.AGG_1_MINUTE, False, check_errors, display_details)
+        return super(CESNET_AGG23, cls).get_dataset(data_root, SourceType.CESNET2, AgreggationType.AGG_1_MINUTE, DatasetType.TIME_BASED, check_errors, display_details)

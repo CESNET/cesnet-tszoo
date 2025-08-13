@@ -4,7 +4,7 @@ from abc import ABC
 
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.utils.download import resumable_download
 
 
@@ -72,7 +72,7 @@ class CesnetDatabase(ABC):
         raise ValueError("To create dataset instance use class method 'get_dataset' instead.")
 
     @classmethod
-    def get_dataset(cls, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, is_series_based: bool, check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
+    def get_dataset(cls, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
         """
         Create new dataset instance.
 
@@ -92,6 +92,7 @@ class CesnetDatabase(ABC):
 
         source_type = SourceType(source_type)
         aggregation = AgreggationType(aggregation)
+        dataset_type = DatasetType(dataset_type)
 
         if source_type not in cls.source_types:
             raise ValueError(f"Unsupported source type: {source_type}")
@@ -117,10 +118,14 @@ class CesnetDatabase(ABC):
         if not cls._is_downloaded(dataset_path):
             cls._download(dataset_name, dataset_path)
 
-        if is_series_based:
+        if dataset_type == DatasetType.SERIES_BASED:
             dataset = SeriesBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
-        else:
+        elif dataset_type == DatasetType.TIME_BASED:
             dataset = TimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
+        elif dataset_type == DatasetType.COMBINED:
+            raise NotImplementedError()
+        else:
+            raise NotImplementedError()
 
         if check_errors:
             dataset.check_errors()
@@ -128,12 +133,28 @@ class CesnetDatabase(ABC):
         if display_details:
             dataset.display_dataset_details()
 
-        if is_series_based:
+        if dataset_type == DatasetType.SERIES_BASED:
             logger.info("Dataset is series-based. Use cesnet_tszoo.configs.SeriesBasedConfig")
-        else:
+        elif dataset_type == DatasetType.TIME_BASED:
             logger.info("Dataset is time-based. Use cesnet_tszoo.configs.TimeBasedConfig")
+        elif dataset_type == DatasetType.COMBINED:
+            raise NotImplementedError()
+        else:
+            raise NotImplementedError()
 
         return dataset
+
+    @classmethod
+    def get_expected_paths(cls, data_root: str, database_name: str):
+        paths = {}
+
+        paths["tszoo_root"] = os.path.normpath(os.path.expanduser(os.path.join(data_root, "tszoo")))
+        paths["database_root"] = os.path.join(paths["tszoo_root"], "databases", database_name)
+        paths["configs_root"] = os.path.join(paths["tszoo_root"], "configs")
+        paths["benchmarks_root"] = os.path.join(paths["tszoo_root"], "benchmarks")
+        paths["annotations_root"] = os.path.join(paths["tszoo_root"], "annotations")
+
+        return paths
 
     @classmethod
     def _is_downloaded(cls, dataset_path: str) -> bool:

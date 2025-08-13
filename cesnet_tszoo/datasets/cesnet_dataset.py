@@ -28,9 +28,11 @@ from cesnet_tszoo.datasets.loaders import create_multiple_df_from_dataloader, cr
 from cesnet_tszoo.utils.file_utils import pickle_load, pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
 from cesnet_tszoo.utils.transformer import Transformer
-from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType
+from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
+from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 from cesnet_tszoo.utils.download import resumable_download
+from cesnet_tszoo.configs.config_loading import load_config
 
 
 @dataclass
@@ -111,7 +113,7 @@ class CesnetDataset(ABC):
     default_values: dict
     additional_data: dict[str, tuple]
 
-    is_series_based: bool = field(default=None, init=False)
+    dataset_type: DatasetType | None = field(default=None, init=False)
 
     dataset_config: Optional[DatasetConfig] = field(default=None, init=False)
 
@@ -256,7 +258,7 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access train_dataloader.")
 
-        if not self.dataset_config.has_train:
+        if not self.dataset_config.has_train():
             raise ValueError("Dataloader for training set is not available in the dataset configuration.")
 
         assert self.train_dataset is not None, "The train_dataset must be initialized before accessing data from training set."
@@ -360,7 +362,7 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access val_dataloader.")
 
-        if not self.dataset_config.has_val:
+        if not self.dataset_config.has_val():
             raise ValueError("Dataloader for validation set is not available in the dataset configuration.")
 
         assert self.val_dataset is not None, "The val_dataset must be initialized before accessing data from validation set."
@@ -464,7 +466,7 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_dataloader.")
 
-        if not self.dataset_config.has_test:
+        if not self.dataset_config.has_test():
             raise ValueError("Dataloader for test set is not available in the dataset configuration.")
 
         assert self.test_dataset is not None, "The test_dataset must be initialized before accessing data from test set."
@@ -568,7 +570,7 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access all_dataloader.")
 
-        if not self.dataset_config.has_all:
+        if not self.dataset_config.has_all():
             raise ValueError("Dataloader for all set is not available in the dataset configuration.")
 
         assert self.all_dataset is not None, "The all_dataset must be initialized before accessing data from all set."
@@ -646,14 +648,16 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access train_dataloader.")
 
-        if not self.dataset_config.has_train:
+        if not self.dataset_config.has_train():
             raise ValueError("Dataloader for training set is not available in the dataset configuration.")
 
         assert self.train_dataset is not None, "The train_dataset must be initialized before accessing data from training set."
 
         ts_ids, time_period = self.dataset_config._get_train()
 
-        dataloader = self.get_train_dataloader(workers=workers, take_all=not self.dataset_config.is_series_based, cache_loader=False)
+        should_take_all = self.dataset_config.dataset_type != DatasetType.SERIES_BASED
+
+        dataloader = self.get_train_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_df(dataloader, as_single_dataframe, ts_ids, time_period)
 
     def get_val_df(self, workers: int | Literal["config"] = "config", as_single_dataframe: bool = True) -> pd.DataFrame:
@@ -676,14 +680,16 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access val_dataloader.")
 
-        if not self.dataset_config.has_val:
+        if not self.dataset_config.has_val():
             raise ValueError("Dataloader for validation set is not available in the dataset configuration.")
 
         assert self.val_dataset is not None, "The val_dataset must be initialized before accessing data from validation set."
 
         ts_ids, time_period = self.dataset_config._get_val()
 
-        dataloader = self.get_val_dataloader(workers=workers, take_all=not self.dataset_config.is_series_based, cache_loader=False)
+        should_take_all = self.dataset_config.dataset_type != DatasetType.SERIES_BASED
+
+        dataloader = self.get_val_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_df(dataloader, as_single_dataframe, ts_ids, time_period)
 
     def get_test_df(self, workers: int | Literal["config"] = "config", as_single_dataframe: bool = True) -> pd.DataFrame:
@@ -706,14 +712,16 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_dataloader.")
 
-        if not self.dataset_config.has_test:
+        if not self.dataset_config.has_test():
             raise ValueError("Dataloader for test set is not available in the dataset configuration.")
 
         assert self.test_dataset is not None, "The test_dataset must be initialized before accessing data from test set."
 
         ts_ids, time_period = self.dataset_config._get_test()
 
-        dataloader = self.get_test_dataloader(workers=workers, take_all=not self.dataset_config.is_series_based, cache_loader=False)
+        should_take_all = self.dataset_config.dataset_type != DatasetType.SERIES_BASED
+
+        dataloader = self.get_test_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_df(dataloader, as_single_dataframe, ts_ids, time_period)
 
     def get_all_df(self, workers: int | Literal["config"] = "config", as_single_dataframe: bool = True) -> pd.DataFrame:
@@ -736,15 +744,16 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access all_dataloader.")
 
-        if not self.dataset_config.has_all:
+        if not self.dataset_config.has_all():
             raise ValueError("Dataloader for all set is not available in the dataset configuration.")
 
         assert self.all_dataset is not None, "The all_dataset must be initialized before accessing data from all set."
 
         ts_ids, time_period = self.dataset_config._get_all()
 
-        dataloader = self.get_all_dataloader(workers=workers, take_all=not self.dataset_config.is_series_based, cache_loader=False)
+        should_take_all = self.dataset_config.dataset_type != DatasetType.SERIES_BASED
 
+        dataloader = self.get_all_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_df(dataloader, as_single_dataframe, ts_ids, time_period)
 
     def get_train_numpy(self, workers: int | Literal["config"] = "config") -> np.ndarray:
@@ -766,14 +775,16 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access train_dataloader.")
 
-        if not self.dataset_config.has_train:
+        if not self.dataset_config.has_train():
             raise ValueError("Dataloader for training set is not available in the dataset configuration.")
 
         assert self.train_dataset is not None, "The train_dataset must be initialized before accessing data from training set."
 
         ts_ids, time_period = self.dataset_config._get_train()
 
-        dataloader = self.get_train_dataloader(workers=workers, take_all=not self.dataset_config.is_series_based, cache_loader=False)
+        should_take_all = self.dataset_config.dataset_type != DatasetType.SERIES_BASED
+
+        dataloader = self.get_train_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_numpy(dataloader, ts_ids, time_period)
 
     def get_val_numpy(self, workers: int | Literal["config"] = "config") -> np.ndarray:
@@ -795,14 +806,16 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access val_dataloader.")
 
-        if not self.dataset_config.has_val:
+        if not self.dataset_config.has_val():
             raise ValueError("Dataloader for validation set is not available in the dataset configuration.")
 
         assert self.val_dataset is not None, "The val_dataset must be initialized before accessing data from validation set."
 
         ts_ids, time_period = self.dataset_config._get_val()
 
-        dataloader = self.get_val_dataloader(workers=workers, take_all=not self.dataset_config.is_series_based, cache_loader=False)
+        should_take_all = self.dataset_config.dataset_type != DatasetType.SERIES_BASED
+
+        dataloader = self.get_val_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_numpy(dataloader, ts_ids, time_period)
 
     def get_test_numpy(self, workers: int | Literal["config"] = "config") -> np.ndarray:
@@ -824,14 +837,16 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access test_dataloader.")
 
-        if not self.dataset_config.has_test:
+        if not self.dataset_config.has_test():
             raise ValueError("Dataloader for test set is not available in the dataset configuration.")
 
         assert self.test_dataset is not None, "The test_dataset must be initialized before accessing data from test set."
 
         ts_ids, time_period = self.dataset_config._get_test()
 
-        dataloader = self.get_test_dataloader(workers=workers, take_all=not self.dataset_config.is_series_based, cache_loader=False)
+        should_take_all = self.dataset_config.dataset_type != DatasetType.SERIES_BASED
+
+        dataloader = self.get_test_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_numpy(dataloader, ts_ids, time_period)
 
     def get_all_numpy(self, workers: int | Literal["config"] = "config") -> np.ndarray:
@@ -853,15 +868,16 @@ class CesnetDataset(ABC):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to access all_dataloader.")
 
-        if not self.dataset_config.has_all:
+        if not self.dataset_config.has_all():
             raise ValueError("Dataloader for all set is not available in the dataset configuration.")
 
         assert self.all_dataset is not None, "The all_dataset must be initialized before accessing data from all set."
 
         ts_ids, time_period = self.dataset_config._get_all()
 
-        dataloader = self.get_all_dataloader(workers=workers, take_all=not self.dataset_config.is_series_based, cache_loader=False)
+        should_take_all = self.dataset_config.dataset_type != DatasetType.SERIES_BASED
 
+        dataloader = self.get_all_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_numpy(dataloader, ts_ids, time_period)
 
     def update_dataset_config_and_initialize(self,
@@ -947,16 +963,17 @@ class CesnetDataset(ABC):
         else:
             requires_init = True
 
-        if sliding_window_size == "config":
-            sliding_window_size = self.dataset_config.sliding_window_size
-        if sliding_window_prediction_size == "config":
-            sliding_window_prediction_size = self.dataset_config.sliding_window_prediction_size
-        if sliding_window_step == "config":
-            sliding_window_step = self.dataset_config.sliding_window_step
-        if set_shared_size == "config":
-            set_shared_size = self.dataset_config.set_shared_size
-        else:
-            requires_init = True
+        if isinstance(self.dataset_config, TimeBasedHandler):
+            if sliding_window_size == "config":
+                sliding_window_size = self.dataset_config.sliding_window_size
+            if sliding_window_prediction_size == "config":
+                sliding_window_prediction_size = self.dataset_config.sliding_window_prediction_size
+            if sliding_window_step == "config":
+                sliding_window_step = self.dataset_config.sliding_window_step
+            if set_shared_size == "config":
+                set_shared_size = self.dataset_config.set_shared_size
+            else:
+                requires_init = True
 
         if train_batch_size == "config":
             train_batch_size = self.dataset_config.train_batch_size
@@ -1004,10 +1021,11 @@ class CesnetDataset(ABC):
             if requires_init:
                 self.logger.info("Re-initialization is required.")
                 self._export_config_copy.default_values = default_values
-                self._export_config_copy.sliding_window_size = sliding_window_size
-                self._export_config_copy.sliding_window_prediction_size = sliding_window_prediction_size
-                self._export_config_copy.sliding_window_step = sliding_window_step
-                self._export_config_copy.set_shared_size = set_shared_size
+                if isinstance(self.dataset_config, TimeBasedHandler):
+                    self._export_config_copy.sliding_window_size = sliding_window_size
+                    self._export_config_copy.sliding_window_prediction_size = sliding_window_prediction_size
+                    self._export_config_copy.sliding_window_step = sliding_window_step
+                    self._export_config_copy.set_shared_size = set_shared_size
                 self._export_config_copy.train_batch_size = train_batch_size
                 self._export_config_copy.val_batch_size = val_batch_size
                 self._export_config_copy.test_batch_size = test_batch_size
@@ -1027,7 +1045,9 @@ class CesnetDataset(ABC):
                 self.logger.info("Re-initialization is not needed.")
                 self.dataset_config._update_batch_sizes(train_batch_size, val_batch_size, test_batch_size, all_batch_size)
                 self.dataset_config._update_workers(train_workers, val_workers, test_workers, all_workers, init_workers)
-                self.dataset_config._update_sliding_window(sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, self.time_indices)
+
+                if isinstance(self.dataset_config, TimeBasedHandler):
+                    self.dataset_config._update_sliding_window(sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, self.time_indices)
 
                 if self.train_dataloader is not None:
                     del self.train_dataloader
@@ -1536,22 +1556,13 @@ Dataset details:
         """
 
         # Load config
-        config_file_path, is_built_in = get_config_path_and_whether_it_is_built_in(identifier, self.configs_root, self.database_name, self.source_type, self.aggregation, self.logger)
-
-        if is_built_in:
-            self.logger.info("Built-in config found: %s. Loading it.", identifier)
-            config = pickle_load(config_file_path)
-        else:
-            self.logger.info("Custom config found: %s. Loading it.", identifier)
-            config = pickle_load(config_file_path)
-
-        config._try_backward_support_update()
+        config = load_config(identifier, self.configs_root, self.database_name, self.source_type, self.aggregation, self.logger)
 
         self.logger.info("Initializing dataset configuration with the imported config.")
         self.set_dataset_config_and_initialize(config, display_config_details, workers)
 
         self._update_config_imported_status(identifier)
-        self.logger.info("Successfully imported config from %s", config_file_path)
+        self.logger.info("Successfully used config with identifier %s", identifier)
 
     def save_annotations(self, identifier: str, on: AnnotationType | Literal["id_time", "ts_id", "both"], force_write: bool = False) -> None:
         """ 
@@ -1685,9 +1696,9 @@ Dataset details:
         config_name = self.dataset_config.import_identifier if (self.dataset_config.import_identifier is not None and not self.dataset_config.export_update_needed) else identifier
 
         export_benchmark = ExportBenchmark(self.database_name,
-                                           self.is_series_based,
                                            self.source_type.value,
                                            self.aggregation.value,
+                                           self.dataset_type.value,
                                            config_name,
                                            annotations_ts_name,
                                            annotations_time_name,
@@ -1906,9 +1917,9 @@ Dataset details:
             if total_batch_size >= LOADING_WARNING_THRESHOLD:
                 self.logger.warning("The total number of samples in one batch is %d (%d time series × %d times(batch size) ). Consider lowering the batch size.", total_batch_size, len(dataset.ts_row_ranges), batch_size)
 
-        shouldDrop = not take_all and self.dataset_config.sliding_window_size is not None
+        should_drop = not take_all and self.dataset_config.sliding_window_size is not None
 
-        batch_sampler = BatchSampler(sampler=SequentialSampler(dataset), batch_size=batch_size, drop_last=shouldDrop)
+        batch_sampler = BatchSampler(sampler=SequentialSampler(dataset), batch_size=batch_size, drop_last=should_drop)
 
         dataloader = DataLoader(dataset, num_workers=0, collate_fn=self._collate_fn, persistent_workers=False, batch_size=None, sampler=batch_sampler)
 
@@ -2007,8 +2018,8 @@ Dataset details:
                 self.dataset_config.time_format,
                 self.dataset_config.include_ts_id,
                 self.dataset_config.include_time,
-                True,
-                self.dataset_config.is_series_based
+                self.dataset_config.dataset_type,
+                True
             )
         else:
             self.logger.debug("Returning multiple DataFrames, one per time series.")
@@ -2019,8 +2030,8 @@ Dataset details:
                 self.dataset_config.time_format,
                 self.dataset_config.include_ts_id,
                 self.dataset_config.include_time,
-                True,
-                self.dataset_config.is_series_based
+                self.dataset_config.dataset_type,
+                True
             )
 
     def _get_numpy(self, dataloader: DataLoader, ts_ids: np.ndarray, time_period: np.ndarray) -> np.ndarray:
@@ -2039,8 +2050,8 @@ Dataset details:
             ts_ids,
             self.dataset_config.time_format,
             self.dataset_config.include_time,
-            True,
-            self.dataset_config.is_series_based
+            self.dataset_config.dataset_type,
+            True
         )
 
     def _clear(self) -> None:
@@ -2086,11 +2097,6 @@ Dataset details:
         self._export_config_copy.test_batch_size = self.dataset_config.test_batch_size
         self._export_config_copy.all_batch_size = self.dataset_config.all_batch_size
 
-        self._export_config_copy.sliding_window_size = self.dataset_config.sliding_window_size
-        self._export_config_copy.sliding_window_prediction_size = self.dataset_config.sliding_window_prediction_size
-        self._export_config_copy.sliding_window_step = self.dataset_config.sliding_window_step
-        self._export_config_copy.set_shared_size = self.dataset_config.set_shared_size
-
         self._export_config_copy.train_workers = self.dataset_config.train_workers
         self._export_config_copy.val_workers = self.dataset_config.val_workers
         self._export_config_copy.test_workers = self.dataset_config.test_workers
@@ -2104,9 +2110,9 @@ Dataset details:
             self.logger.error("This config is not compatible with the current dataset. Difference in database name between config and this dataset.")
             raise ValueError("This config is not compatible with the current dataset.", f"config.database_name == {config.database_name} and dataset.database_name == {self.database_name}")
 
-        if config.is_series_based != self.is_series_based:
+        if config.dataset_type != self.dataset_type:
             self.logger.error("This config is not compatible with the current dataset. Difference in is_series_based between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.is_series_based == {config.is_series_based} and dataset.is_series_based == {self.is_series_based}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.dataset_type == {config.dataset_type} and dataset.dataset_type == {self.dataset_type}")
 
         if config.aggregation != self.aggregation:
             self.logger.error("This config is not compatible with the current dataset. Difference in aggregation type between config and this dataset.")
