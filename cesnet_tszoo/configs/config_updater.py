@@ -138,6 +138,7 @@ class ConfigUpdater:
                                                    sliding_window_size=self.config_to_update.sliding_window_size,
                                                    sliding_window_prediction_size=self.config_to_update.sliding_window_prediction_size,
                                                    sliding_window_step=self.config_to_update.sliding_window_step,
+                                                   set_shared_size=self.config_to_update.set_shared_size,
                                                    train_batch_size=self.config_to_update.train_batch_size,
                                                    val_batch_size=self.config_to_update.val_batch_size,
                                                    test_batch_size=self.config_to_update.test_batch_size,

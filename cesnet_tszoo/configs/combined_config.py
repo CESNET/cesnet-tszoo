@@ -29,6 +29,7 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
                  sliding_window_size: int | None = None,
                  sliding_window_prediction_size: int | None = None,
                  sliding_window_step: int = 1,
+                 set_shared_size: float | int = 0,
                  train_batch_size: int = 32,
                  val_batch_size: int = 64,
                  test_batch_size: int = 128,
@@ -47,10 +48,10 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
 
         self.logger = logging.getLogger("combined_config")
 
-        TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, 1, False, sliding_window_size, sliding_window_prediction_size, sliding_window_step, 0, train_time_period, val_time_period, test_time_period)
-        SeriesBasedHandler.__init__(self, self.logger, False, train_ts, val_ts, test_ts)
-        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, np.inf, fill_missing_with, transform_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
-                               train_workers, val_workers, test_workers, np.inf, init_workers, nan_threshold, False, DatasetType.COMBINED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
+        TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, 1, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
+        SeriesBasedHandler.__init__(self, self.logger, True, train_ts, val_ts, test_ts)
+        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, 1, fill_missing_with, transform_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
+                               train_workers, val_workers, test_workers, 1, init_workers, nan_threshold, False, DatasetType.COMBINED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
 
     def _validate_construction(self) -> None:
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.multi_time_based_config.MultiTimeBasedConfig._dataset_init]. """
@@ -234,6 +235,10 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
         if self.has_test():
             self.test_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
+
+        # Set the fillers for the all set
+        self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.all_ts])
+        self.logger.debug("Fillers for all set are set.")
 
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos."""
