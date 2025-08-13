@@ -4,6 +4,7 @@ from abc import ABC
 
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
+from cesnet_tszoo.datasets.combined_cesnet_dataset import CombinedCesnetDataset
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.utils.download import resumable_download
 
@@ -123,7 +124,7 @@ class CesnetDatabase(ABC):
         elif dataset_type == DatasetType.TIME_BASED:
             dataset = TimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
         elif dataset_type == DatasetType.COMBINED:
-            raise NotImplementedError()
+            dataset = CombinedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
         else:
             raise NotImplementedError()
 
@@ -138,7 +139,7 @@ class CesnetDatabase(ABC):
         elif dataset_type == DatasetType.TIME_BASED:
             logger.info("Dataset is time-based. Use cesnet_tszoo.configs.TimeBasedConfig")
         elif dataset_type == DatasetType.COMBINED:
-            raise NotImplementedError()
+            logger.info("Dataset is combined. Use cesnet_tszoo.configs.CombinedConfig")
         else:
             raise NotImplementedError()
 
