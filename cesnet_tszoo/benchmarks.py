@@ -10,12 +10,13 @@ from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-from cesnet_tszoo.datasets.datasets import CESNET_TimeSeries24
+from cesnet_tszoo.datasets.datasets import CESNET_TimeSeries24, CesnetDatabase
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
 from cesnet_tszoo.utils.enums import AnnotationType, SourceType, AgreggationType
 from cesnet_tszoo.utils.file_utils import yaml_load, pickle_load
 from cesnet_tszoo.utils.utils import ExportBenchmark
+from cesnet_tszoo.configs.config_loading import load_config
 
 
 class Benchmark:
@@ -162,7 +163,7 @@ def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBased
     """Returns `dataset` based on `export_benchmark`. """
 
     if export_benchmark.database_name == CESNET_TimeSeries24.name:
-        dataset = CESNET_TimeSeries24.get_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.is_series_based, False, False)
+        dataset = CESNET_TimeSeries24.get_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
     else:
         raise ValueError("Invalid database name.")
 
@@ -182,15 +183,15 @@ def _get_built_in_benchmark(identifier: str, data_root: str) -> Benchmark:
     logger.debug("Loading benchmark from '%s'.", benchmark_file_path)
     export_benchmark = ExportBenchmark.from_dict(yaml_load(benchmark_file_path))
 
+    config_root = CesnetDatabase.get_expected_paths(data_root, export_benchmark.database_name)["configs_root"]
+
+    config = load_config(export_benchmark.config_identifier, config_root, export_benchmark.database_name, SourceType(export_benchmark.source_type), AgreggationType(export_benchmark.aggregation), logger)
+
+    if export_benchmark.dataset_type is None:
+        export_benchmark.dataset_type = config.dataset_type
+
     # Prepare the dataset
     dataset = _get_dataset(data_root, export_benchmark)
-
-    # Load config
-    config_file_path, _ = get_config_path_and_whether_it_is_built_in(export_benchmark.config_identifier, dataset.configs_root, export_benchmark.database_name, SourceType(export_benchmark.source_type), AgreggationType(export_benchmark.aggregation), logger)
-    logger.debug("Loading config file from '%s'.", config_file_path)
-    config = pickle_load(config_file_path)
-    config.import_identifier = export_benchmark.config_identifier
-    config._try_backward_support_update()
 
     # Check and load annotations if available
     if export_benchmark.annotations_ts_identifier is not None:
@@ -241,21 +242,16 @@ def _get_custom_benchmark(identifier: str, data_root: str) -> Benchmark:
     export_benchmark = ExportBenchmark.from_dict(yaml_load(benchmark_file_path))
     logger.info("Loaded benchmark '%s' with description: '%s'.", identifier, export_benchmark.description)
 
-    # Prepare the dataset
-    dataset = _get_dataset(data_root, export_benchmark)
+    config_root = CesnetDatabase.get_expected_paths(data_root, export_benchmark.database_name)["configs_root"]
 
     # Load config
-    config_file_path, is_built_in = get_config_path_and_whether_it_is_built_in(export_benchmark.config_identifier, dataset.configs_root, export_benchmark.database_name, SourceType(export_benchmark.source_type), AgreggationType(export_benchmark.aggregation), logger)
+    config = load_config(export_benchmark.config_identifier, config_root, export_benchmark.database_name, SourceType(export_benchmark.source_type), AgreggationType(export_benchmark.aggregation), logger)
 
-    if is_built_in:
-        logger.info("Built-in config found: %s. Loading it.", identifier)
-        config = pickle_load(config_file_path)
-    else:
-        logger.info("Custom config found: %s. Loading it.", identifier)
-        config = pickle_load(config_file_path)
+    if export_benchmark.dataset_type is None:
+        export_benchmark.dataset_type = config.dataset_type
 
-    config.import_identifier = export_benchmark.config_identifier
-    config._try_backward_support_update()
+    # Prepare the dataset
+    dataset = _get_dataset(data_root, export_benchmark)
 
     # Load annotations if available
     if export_benchmark.annotations_ts_identifier is not None:
