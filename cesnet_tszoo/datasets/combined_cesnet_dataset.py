@@ -332,7 +332,7 @@ class CombinedCesnetDataset(CesnetDataset):
         ts_ids_to_take = []
 
         self.logger.info("Updating config for %s set.", set_name)
-        for i, data in enumerate(tqdm(dataloader, total=len(self.dataset_config.train_ts))):
+        for i, data in enumerate(tqdm(dataloader, total=len(ts_ids))):
             data, count_values = data[0]
 
             # Filter time series based on missing data threshold
