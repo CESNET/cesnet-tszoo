@@ -35,7 +35,7 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
                  test_batch_size: int = 128,
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
                  transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None = None,
-                 partial_fit_initialized_transformers: bool = False,
+                 partial_fit_initialized_transformer: bool = False,
                  include_time: bool = True,
                  include_ts_id: bool = True,
                  time_format: TimeFormat | Literal["id_time", "datetime", "unix_time", "shifted_unix_time"] = TimeFormat.ID_TIME,
@@ -50,7 +50,7 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
 
         TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, 1, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
         SeriesBasedHandler.__init__(self, self.logger, True, train_ts, val_ts, test_ts)
-        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, 1, fill_missing_with, transform_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
+        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, 1, fill_missing_with, transform_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
                                train_workers, val_workers, test_workers, 1, init_workers, nan_threshold, False, DatasetType.COMBINED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
 
     def _validate_construction(self) -> None:
