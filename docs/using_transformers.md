@@ -12,7 +12,7 @@ Each dataset type will have its own part because of multiple differences of avai
 Relevant configuration values:
 
 - `transform_with` - Defines the transformer used to transform the dataset.
-- `create_transformer_per_time_series` - If True, a separate transformer is created for each time series and transformers wont be used for time series on 'test_ts_id'.
+- `create_transformer_per_time_series` - If True, a separate transformer is created for each time series.
 - `partial_fit_initialized_transformers` - If True, partial fitting on train set is performed when using initiliazed transformers.
 
 ### Transformers
@@ -35,7 +35,7 @@ To see all built-in transformers refer to [`Transformers`][cesnet_tszoo.utils.tr
 from cesnet_tszoo.utils.enums import TransformerType
 from cesnet_tszoo.configs import TimeBasedConfig
 
-config = TimeBasedConfig(ts_ids=[1367, 1368], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, test_ts_ids=[1370], features_to_take=['n_flows', 'n_packets'],
+config = TimeBasedConfig(ts_ids=[1367, 1368], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
                          transform_with=TransformerType.MIN_MAX_SCALER, create_transformer_per_time_series=True)                                                                              
 
 # Call on time-based dataset to use created config
@@ -91,7 +91,7 @@ class CustomTransformer(Transformer):
         temp = np.vstack((self.min, temp_min)) 
         self.min = np.min(temp, axis=0)            
 
-config = TimeBasedConfig(ts_ids=[1367, 1368], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, test_ts_ids=[1370], features_to_take=['n_flows', 'n_packets'],
+config = TimeBasedConfig(ts_ids=[1367, 1368], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
                          transform_with=CustomTransformer, create_transformer_per_time_series=True)                                                                        
 
 time_based_dataset.set_dataset_config_and_initialize(config)
@@ -114,13 +114,13 @@ time_based_dataset.apply_transformer(transform_with=CustomTransformer, create_tr
 
 from cesnet_tszoo.configs import TimeBasedConfig         
 
-config = TimeBasedConfig(ts_ids=[103, 118], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, test_ts_ids=[1370], features_to_take=['n_flows', 'n_packets'],
+config = TimeBasedConfig(ts_ids=[103, 118], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
                          transform_with=list_of_fitted_transformers, create_transformer_per_time_series=True)    
 
 # Length of list_of_fitted_transformers must be equal to number of time series in ts_ids 
 # All transformers in list_of_fitted_transformers must be of same type                                                            
 
-config = TimeBasedConfig(ts_ids=[103, 118], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, test_ts_ids=[1370], features_to_take=['n_flows', 'n_packets'],
+config = TimeBasedConfig(ts_ids=[103, 118], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
                          transform_with=one_prefitted_transformer, create_transformer_per_time_series=True)
 
 # one_prefitted_transformer must be just one transformer (not a list)                     

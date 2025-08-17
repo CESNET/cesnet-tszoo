@@ -51,10 +51,6 @@ class DatasetConfig(ABC):
         used_singular_all_time_series: Currently used singular all set time series for dataloader.        
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
         are_transformers_premade: Indicates whether the transformers are premade.
-        has_train: Flag indicating whether the training set is in use.
-        has_val: Flag indicating whether the validation set is in use.
-        has_test: Flag indicating whether the test set is in use.
-        has_all: Flag indicating whether the all set is in use.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
@@ -68,10 +64,6 @@ class DatasetConfig(ABC):
     Attributes:
         features_to_take: Defines which features are used.
         default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
-        sliding_window_size: Number of values in one window. Impacts dataloader behavior.
-        sliding_window_prediction_size: Number of times to predict from sliding_window_size. Impacts dataloader behavior.
-        sliding_window_step: Number of times to move by after each window.
-        set_shared_size: How much times should time periods share.
         train_batch_size: Batch size for the train dataloader, when window size is None.
         val_batch_size: Batch size for the validation dataloader, when window size is None.
         test_batch_size: Batch size for the test dataloader, when window size is None.
@@ -89,7 +81,7 @@ class DatasetConfig(ABC):
         init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process.
         nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately.
         create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
-        is_series_based: Flag indicating if the config applies to a series-based dataset.
+        dataset_type: Type of a dataset this config is used for.
         train_dataloader_order: Defines the order of data returned by the training dataloader.
         random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
     """
@@ -119,34 +111,12 @@ class DatasetConfig(ABC):
                  random_state: int | None,
                  logger: logging.Logger):
 
-        self.features_to_take = features_to_take
-        self.default_values = default_values
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
-        self.test_batch_size = test_batch_size
-        self.all_batch_size = all_batch_size
-        self.fill_missing_with = fill_missing_with
-        self.transform_with = transform_with
-        self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
-        self.include_time = include_time
-        self.include_ts_id = include_ts_id
-        self.time_format = time_format
-        self.train_workers = train_workers
-        self.val_workers = val_workers
-        self.test_workers = test_workers
-        self.all_workers = all_workers
-        self.init_workers = init_workers
-        self.nan_threshold = nan_threshold
-        self.create_transformer_per_time_series = create_transformer_per_time_series
-        self.dataset_type = dataset_type
-        self.train_dataloader_order = train_dataloader_order
-        self.random_state = random_state
-
         self.used_train_workers = None
         self.used_val_workers = None
         self.used_test_workers = None
         self.used_all_workers = None
         self.import_identifier = None
+        self.logger = logger
 
         self.aggregation = None
         self.source_type = None
@@ -175,7 +145,29 @@ class DatasetConfig(ABC):
         self.is_initialized = False
         self.version = version.current_version
         self.export_update_needed = False
-        self.logger = logger
+
+        self.features_to_take = features_to_take
+        self.default_values = default_values
+        self.train_batch_size = train_batch_size
+        self.val_batch_size = val_batch_size
+        self.test_batch_size = test_batch_size
+        self.all_batch_size = all_batch_size
+        self.fill_missing_with = fill_missing_with
+        self.transform_with = transform_with
+        self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
+        self.include_time = include_time
+        self.include_ts_id = include_ts_id
+        self.time_format = time_format
+        self.train_workers = train_workers
+        self.val_workers = val_workers
+        self.test_workers = test_workers
+        self.all_workers = all_workers
+        self.init_workers = init_workers
+        self.nan_threshold = nan_threshold
+        self.create_transformer_per_time_series = create_transformer_per_time_series
+        self.dataset_type = dataset_type
+        self.train_dataloader_order = train_dataloader_order
+        self.random_state = random_state
 
         self._validate_construction()
 
@@ -433,61 +425,3 @@ class DatasetConfig(ABC):
     def _validate_finalization(self) -> None:
         """Performs final validation of the configuration. """
         ...
-
-    def _try_backward_support_update(self) -> None:
-        """Tries to update config to match newer version of library. """
-
-        self.logger.debug("Trying to update config if necessary.")
-
-        self._try_set_default_version()
-
-        if Version(self.version) < Version(version.VERSION_0_1_3):
-            self.logger.warning("Imported config version is lower than '%s', updating attributes from scaler variant to transformer variant.", version.VERSION_0_1_3)
-            self._scaler_to_transformer_version_update()
-
-        self._try_version_update()
-
-    def _try_version_update(self):
-        if Version(self.version) < Version(version.current_version):
-            self.logger.warning("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.version, version.current_version)
-            self.logger.warning("Will try to update the config. It is recommended to recreate this config or at least export this config alone or through benchmark to create updated config file.")
-            self.export_update_needed = True
-        elif Version(self.version) > Version(version.current_version):
-            self.logger.error("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.version, version.current_version)
-            self.logger.error("Update cesnet-tszoo package to use this config.")
-            raise ValueError(f"Imported config was made for cesnet-tszoo package of version '{self.version}', but current used cesnet-tszoo package version is '{version.current_version}'!")
-        else:
-            self.export_update_needed = False
-
-        self.logger.debug("Updating config version to current used cesnet-tszoo package version.")
-        self.version = version.current_version
-
-    def _scaler_to_transformer_version_update(self):
-        self.transform_with = getattr(self, "scale_with")
-        delattr(self, "scale_with")
-
-        if self.transform_with is not None and isinstance(self.transform_with, ScalerType):
-            self.transform_with = TransformerType(self.transform_with.value)
-
-        self.partial_fit_initialized_transformers = getattr(self, "partial_fit_initialized_scalers")
-        delattr(self, "partial_fit_initialized_scalers")
-
-        self.create_transformer_per_time_series = getattr(self, "create_scaler_per_time_series")
-        delattr(self, "create_scaler_per_time_series")
-
-        self.transform_with_display = getattr(self, "scale_with_display")
-        delattr(self, "scale_with_display")
-
-        self.is_transformer_custom = getattr(self, "is_scaler_custom")
-        delattr(self, "is_scaler_custom")
-
-        self.transformers = getattr(self, "scalers")
-        delattr(self, "scalers")
-
-        self.are_transformers_premade = getattr(self, "are_scalers_premade")
-        delattr(self, "are_scalers_premade")
-
-    def _try_set_default_version(self):
-        if not hasattr(self, "version"):
-            self.logger.debug("Config attribute 'version' is missing in this instance. Default version '%s' will be temporarily set.", version.DEFAULT_VERSION)
-            self.version = version.DEFAULT_VERSION

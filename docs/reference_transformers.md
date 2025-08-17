@@ -10,7 +10,6 @@
         - Transformer
         - LogTransformer
         - L2Normalizer
-        - MeanFiller
         - MinMaxScaler
         - StandardScaler
         - MaxAbsScaler

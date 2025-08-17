@@ -18,7 +18,7 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 
 @dataclass
 class TimeBasedCesnetDataset(CesnetDataset):
-    """This class is used for time-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] with parameter `is_series_based` = `False`.
+    """This class is used for time-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] with parameter `dataset_type` = `DatasetType.TIME_BASED`.
 
     Time-based means batch size affects number of returned times in one batch. Which time series are returned does not change.
 
@@ -41,8 +41,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
        This initializes the dataset, including data splitting (train/validation/test/test_other), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
     4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_numpy].
-    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy]. 
-    6. (Optional) Evaluate the model on [`get_test_other_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_other_dataloader]/[`get_test_other_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_other_df]/[`get_test_other_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_other_numpy].    
+    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy].  
 
     Alternatively you can use [`load_benchmark`][cesnet_tszoo.benchmarks.load_benchmark]
 
@@ -50,8 +49,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
     2. Retrieve the initialized dataset using [`get_initialized_dataset`][cesnet_tszoo.benchmarks.Benchmark.get_initialized_dataset]. This will provide a dataset that is ready to use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
     4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_numpy].
-    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy]. 
-    6. (Optional) Evaluate the model on [`get_test_other_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_other_dataloader]/[`get_test_other_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_other_df]/[`get_test_other_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_other_numpy].    
+    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy].  
 
     Parameters:
         database_name: Name of the database.
@@ -77,16 +75,15 @@ class TimeBasedCesnetDataset(CesnetDataset):
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize] is called.
 
     Attributes:
+        dataset_type: Type of this dataset.
         dataset_config: Configuration of the dataset.
         train_dataset: Training set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
         val_dataset: Validation set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
         test_dataset: Test set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.  
-        test_other_dataset: Test_other set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
         all_dataset: All set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
         train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
         val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
-        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.
-        test_other_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test_other set.            
+        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.         
         all_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set.        
     """
 
@@ -96,11 +93,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
     val_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     test_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     all_dataset: Optional[SplittedDataset] = field(default=None, init=False)
-
-    train_dataloader: Optional[DataLoader] = field(default=None, init=False)
-    val_dataloader: Optional[DataLoader] = field(default=None, init=False)
-    test_dataloader: Optional[DataLoader] = field(default=None, init=False)
-    all_dataloader: Optional[DataLoader] = field(default=None, init=False)
 
     dataset_type: DatasetType = field(default=DatasetType.TIME_BASED, init=False)
 
@@ -112,11 +104,11 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
         The following configuration attributes are used during initialization:
 
-        | Dataset config                    | Description                                                                                    |
-        | --------------------------------- | ---------------------------------------------------------------------------------------------- |
-        | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
-        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
-        | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
+        | Dataset config                         | Description                                                                                    |
+        | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+        | `init_workers`                         | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.   |
+        | `nan_threshold`                        | Filters out time series with missing values exceeding the specified threshold.                 |
 
         Parameters:
             dataset_config: Desired configuration of the dataset.

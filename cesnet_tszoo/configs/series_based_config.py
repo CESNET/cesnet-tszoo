@@ -45,6 +45,7 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         used_val_workers: Tracks the number of validation workers in use. Helps determine if the validation dataloader should be recreated based on worker changes.
         used_test_workers: Tracks the number of test workers in use. Helps determine if the test dataloader should be recreated based on worker changes.
         used_all_workers: Tracks the total number of all workers in use. Helps determine if the all dataloader should be recreated based on worker changes.
+        uses_all_ts: Whether all time series set should be used.
         import_identifier: Tracks the name of the config upon import. None if not imported.
         logger: Logger for displaying information.   
 
@@ -75,18 +76,16 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
-        used_singular_all_time_series: Currently used singular all set time series for dataloader.             
+        used_singular_all_time_series: Currently used singular all set time series for dataloader.        
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
         are_transformers_premade: Indicates whether the transformers are premade.
-        has_train: Flag indicating whether the training set is in use.
-        has_val: Flag indicating whether the validation set is in use.
-        has_test: Flag indicating whether the test set is in use.
-        has_all: Flag indicating whether the all set is in use.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
         all_fillers: Fillers used for the all set. `None` if no filler is used or all set is not used.
-        is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.          
+        is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
+        version: Version of cesnet-tszoo this config was made in.
+        export_update_needed: Whether config was updated to newer version and should be exported.      
 
     # Configuration options
 

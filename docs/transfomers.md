@@ -15,9 +15,6 @@ Related config parameters in [`TimeBasedConfig`][cesnet_tszoo.configs.time_based
 - `create_transformer_per_time_series`: Whether to create a separate transformer for each time series or create one transformer for all time series.
 - `partial_fit_initialized_transformers`: Whether to `partial_fit` already fitted transformer(s).
 
-!!! warning "Time series in test_ts_ids"
-    Time series in `test_ts_ids` will not be transformed when `create_transformer_per_time_series` = `True`. But they will be transformed when `create_transformer_per_time_series` = `False`.
-
 !!! warning "fit vs partial_fit"
     When `create_transformer_per_time_series` = `True` and transformers are not pre-fitted, transformers must implement `fit` method. Else if you want to fit transformers, `partial_fit` method must be implemented. Check [`Transformer`][cesnet_tszoo.utils.transformer.Transformer] for details.
 

@@ -12,13 +12,12 @@ Each dataset type will have its own part because of multiple differences of avai
 Relevant configuration values:
 
 - `ts_ids` - Defines which time series IDs are used for train/val/test/all.
-- `test_ts_ids` - Defines which time series IDs are used in the test_other set.
 - `train_time_period`/`val_time_period`/`test_time_period` - Defines time periods for train/val/test sets.
 - `features_to_take` - Defines which features are used.
 - `include_time` - If True, time data is included in the returned values.
 - `include_ts_id` - If True, time series IDs are included in the returned values.
 - `time_format` - Format for the returned time data.
-- `random_state` - Fixes randomness for reproducibility when setting `ts_ids` or `test_ts_ids`
+- `random_state` - Fixes randomness for reproducibility when setting `ts_ids`
 
 ### Selecting which time series to load
 - Sets time series that will be used for train/val/test/all sets
@@ -39,19 +38,6 @@ config = TimeBasedConfig(ts_ids=0.1, random_state = 111)
 config = TimeBasedConfig(ts_ids=[0,1,2,3,4,5])
 
 # Call on time-based dataset to use created config
-time_based_dataset.set_dataset_config_and_initialize(config)
-
-```
-
-You can also specify time series for `test_ts_ids`, but they will only be used when `test_time_period` is set. They can be set the same way as `ts_ids`
-
-```python
-
-from cesnet_tszoo.configs import TimeBasedConfig
-
-# Both ts_ids and test_ts_ids will contain unique time series.
-config = TimeBasedConfig(ts_ids=54, test_ts_ids=20, test_time_period=range(0, 1000), random_state = 111)
-
 time_based_dataset.set_dataset_config_and_initialize(config)
 
 ```

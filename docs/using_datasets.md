@@ -39,12 +39,12 @@ from cesnet_tszoo.utils.enums import AgreggationType, SourceType # Used for spec
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
 
 # Time-based
-time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, is_series_based=False)
+time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED)
 config = TimeBasedConfig(ts_ids=50)
 time_based_dataset.set_dataset_config_and_initialize(config)
 
 # Series-based
-series_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, is_series_based=True)
+series_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.SERIES_BASED)
 config = SeriesBasedDataset(time_period=range(0, 200))
 series_based_dataset.set_dataset_config_and_initialize(config)
 

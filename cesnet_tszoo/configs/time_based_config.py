@@ -37,8 +37,6 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         - If `create_transformer_per_time_series` is `False`, transformers must support `partial_fit`.
         - Transformers must implement the `transform` method.
         - The `fit/partial_fit` and `transform` methods must accept an input of type `np.ndarray` with shape `(times, features)`.
-        - Transformers are applied to `test_other` only when `create_transformer_per_time_series` is `False`.    
-    - `ts_ids` and `test_ts_ids` must not contain any overlapping time series IDs.
     - `train_time_period`, `val_time_period`, `test_time_period` can overlap, but they should keep order of `train_time_period` < `val_time_period` < `test_time_period`
 
     For available configuration options, refer to [here][cesnet_tszoo.configs.time_based_config.TimeBasedConfig--configuration-options].
@@ -47,8 +45,8 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
         used_val_workers: Tracks the number of validation workers in use. Helps determine if the validation dataloader should be recreated based on worker changes.
         used_test_workers: Tracks the number of test workers in use. Helps determine if the test dataloader should be recreated based on worker changes.
-        used_test_other_workers: Tracks the number of test_other workers in use. Helps determine if the test_other dataloader should be recreated based on worker changes.
         used_all_workers: Tracks the total number of all workers in use. Helps determine if the all dataloader should be recreated based on worker changes.
+        uses_all_time_period: Whether all time period set should be used.
         import_identifier: Tracks the name of the config upon import. None if not imported.
         logger: Logger for displaying information.     
 
@@ -79,26 +77,26 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
-        used_singular_test_other_time_series: Currently used singular test other set time series for dataloader.
-        used_singular_all_time_series: Currently used singular all set time series for dataloader.             
+        used_singular_all_time_series: Currently used singular all set time series for dataloader.        
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
         are_transformers_premade: Indicates whether the transformers are premade.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
         all_fillers: Fillers used for the all set. `None` if no filler is used or all set is not used.
-        is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.      
+        is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
+        version: Version of cesnet-tszoo this config was made in.
+        export_update_needed: Whether config was updated to newer version and should be exported.     
 
     # Configuration options
 
     Attributes:
         ts_ids: Defines which time series IDs are used for train/val/test/all. Can be a list of IDs, or an integer/float to specify a random selection. An `int` specifies the number of random time series, and a `float` specifies the proportion of available time series. 
-                `int` and `float` must be greater than 0, and a float should be smaller or equal to 1.0. Using `int` or `float` guarantees that no time series from `test_ts_ids` will be used. `Default: None`    
+                `int` and `float` must be greater than 0, and a float should be smaller or equal to 1.0.  
         train_time_period: Defines the time period for training set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. `Default: None`
         val_time_period: Defines the time period for validation set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. `Default: None`
         test_time_period: Defines the time period for test set. Can be a range of time IDs or a tuple of datetime objects. `Default: None`
-        features_to_take: Defines which features are used. `Default: "all"` 
-        test_ts_ids: Defines which time series IDs are used in the test_other set. Same as `ts_ids` but for the test_other set. These time series only use times in `test_time_period`. `Default: None`                   
+        features_to_take: Defines which features are used. `Default: "all"`                  
         default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature. `Default: "default"`
         sliding_window_size: Number of times in one window. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows. `Default: None`
         sliding_window_prediction_size: Number of times to predict from sliding_window_size. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows. `Default: None`
@@ -257,7 +255,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         self._prepare_and_set_time_period_sets(all_time_ids, self.time_format)
 
     def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
-        """ Validates and filters inputted time series id from `ts_ids` and `test_ts_ids` based on `dataset` and `source_type`. Handles random set."""
+        """ Validates and filters inputted time series id from `ts_ids` based on `dataset` and `source_type`. Handles random set."""
 
         random_ts_ids = all_ts_ids[self.ts_id_name]
         random_indices = np.arange(len(all_ts_ids))
@@ -393,7 +391,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             self.logger.debug("Fillers for all set are set.")
 
     def _validate_finalization(self) -> None:
-        """ Performs final validation of the configuration. Validates if `train/val/test` are continuos and that there are no overlapping time series ids in `ts_ids` and `test_ts_ids`."""
+        """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos. """
 
         self._validate_time_periods_overlap()
 

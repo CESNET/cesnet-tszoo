@@ -56,7 +56,7 @@ from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType
 from cesnet_tszoo.configs import TimeBasedConfig
 
-dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, is_series_based=False)
+dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED)
 config = TimeBasedConfig(
     ts_ids=50, # number of randomly selected time series from dataset
     train_time_period=range(0, 100), 
@@ -79,7 +79,7 @@ from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType
 from cesnet_tszoo.configs import SeriesBasedConfig
 
-dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, is_series_based=True)
+dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.SERIES_BASED)
 config = SeriesBasedConfig(
     time_period=range(0, 250), 
     train_ts=100, # number of randomly selected time series from dataset

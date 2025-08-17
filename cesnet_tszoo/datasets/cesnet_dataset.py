@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, Datase
 import torch
 
 import cesnet_tszoo.version as version
-from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, get_config_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
+from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
 from cesnet_tszoo.datasets.loaders import collate_fn_simple
@@ -25,7 +25,7 @@ from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
 from cesnet_tszoo.pytables_data.utils.utils import get_time_indices, get_table_time_indices_path, get_ts_indices, get_table_identifiers_path, get_ts_row_ranges, get_column_types, get_column_names, get_additional_data, load_database
 from cesnet_tszoo.datasets.loaders import create_multiple_df_from_dataloader, create_single_df_from_dataloader, create_numpy_from_dataloader
-from cesnet_tszoo.utils.file_utils import pickle_load, pickle_dump, yaml_dump
+from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType
@@ -38,7 +38,7 @@ from cesnet_tszoo.configs.config_loading import load_config
 @dataclass
 class CesnetDataset(ABC):
     """
-    Base class for cesnet datasets. This class should **not** be used directly. Instead, use one of the derived classes, such as [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset].
+    Base class for cesnet datasets. This class should **not** be used directly. Instead, use one of the derived classes, such as [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`CombinedCesnetDataset`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset].
 
     The dataset provides multiple ways to access the data:
 
@@ -91,6 +91,7 @@ class CesnetDataset(ABC):
 
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize] is called:
     Attributes:
+        dataset_type: Type of this dataset.
         dataset_config: Configuration of the dataset.
         train_dataset: Training set as a `BaseDataset` instance wrapping the PyTables database.
         val_dataset: Validation set as a `BaseDataset` instance wrapping the PyTables database.
@@ -159,11 +160,11 @@ class CesnetDataset(ABC):
 
         The following configuration attributes are used during initialization:
 
-        | Dataset config                    | Description                                                                                    |
-        | --------------------------------- | ---------------------------------------------------------------------------------------------- |
-        | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config". |
-        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
-        | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
+        | Dataset config                         | Description                                                                                    |
+        | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+        | `init_workers`                         | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.   |
+        | `nan_threshold`                        | Filters out time series with missing values exceeding the specified threshold.                 |
 
         Parameters:
             dataset_config: Desired configuration of the dataset.
@@ -909,26 +910,26 @@ class CesnetDataset(ABC):
 
         Can affect following configuration. 
 
-        | Dataset config                     | Description                                                                                                                                     |
-        | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-        | `default_values`                   | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |  
-        | `sliding_window_size`              | Number of times in one window. Impacts dataloader behavior. Refer to relevant config for details.                                               |
-        | `sliding_window_prediction_size`   | Number of times to predict from sliding_window_size. Refer to relevant config for details.                                                      |
-        | `sliding_window_step`              | Number of times to move by after each window. Refer to relevant config for details.                                                             |
-        | `set_shared_size`                  | How much times should time periods share. Order of sharing is training set < validation set < test set. Refer to relevant config for details.   |           
-        | `train_batch_size`                 | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
-        | `val_batch_size`                   | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
-        | `test_batch_size`                  | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
-        | `all_batch_size`                   | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
-        | `fill_missing_with`                | Defines how to fill missing values in the dataset.                                                                                              |     
-        | `transform_with`                       | Defines the transformer to transform the dataset.                                                                                                    |     
-        | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers.                                  |   
-        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                            |   
-        | `train_workers`                    | Number of workers for loading training data.                                                                                                    |
-        | `val_workers`                      | Number of workers for loading validation data.                                                                                                  |
-        | `test_workers`                     | Number of workers for loading test data.                                                                                                        |
-        | `all_workers`                      | Number of workers for loading all data.                                                                                                         |     
-        | `init_workers`                     | Number of workers for dataset configuration.                                                                                                    |                        
+        | Dataset config                          | Description                                                                                                                                     |
+        | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+        | `default_values`                        | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |  
+        | `sliding_window_size`                   | Number of times in one window. Impacts dataloader behavior. Refer to relevant config for details.                                               |
+        | `sliding_window_prediction_size`        | Number of times to predict from sliding_window_size. Refer to relevant config for details.                                                      |
+        | `sliding_window_step`                   | Number of times to move by after each window. Refer to relevant config for details.                                                             |
+        | `set_shared_size`                       | How much times should time periods share. Order of sharing is training set < validation set < test set. Refer to relevant config for details.   |           
+        | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
+        | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
+        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
+        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
+        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
+        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               |     
+        | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers.                        |   
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
+        | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
+        | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
+        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |
+        | `all_workers`                           | Number of workers for loading all data.                                                                                                         |     
+        | `init_workers`                          | Number of workers for dataset configuration.                                                                                                    |                        
 
         Parameters:
             default_values: Default values for missing data, applied before fillers. `Defaults: config`.  
@@ -1115,11 +1116,11 @@ class CesnetDataset(ABC):
 
         Affects following configuration. 
 
-        | Dataset config                     | Description                                                                                                    |
-        | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-        | `transform_with`                       | Defines the transformer to transform the dataset.                                                                   |     
+        | Dataset config                          | Description                                                                                                              |
+        | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                        |     
         | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. |   
-        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                           |    
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                |    
 
         Parameters:
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
@@ -1543,11 +1544,11 @@ Dataset details:
 
         The following configuration attributes are used during initialization:
 
-        | Dataset config                    | Description                                                                                    |
-        | --------------------------------- | ---------------------------------------------------------------------------------------------- |
-        | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config". |
-        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
-        | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |  
+        | Dataset config                         | Description                                                                                    |
+        | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+        | `init_workers`                         | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.   |
+        | `nan_threshold`                        | Filters out time series with missing values exceeding the specified threshold.                 |  
 
         Parameters:
             identifier: Name of the pickle file.

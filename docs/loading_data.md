@@ -29,7 +29,7 @@ Relevant configuration values:
 from cesnet_tszoo.utils.enums import TimeFormat
 from cesnet_tszoo.configs import TimeBasedConfig
 
-config = TimeBasedConfig(ts_ids=54, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, test_ts_ids=22, features_to_take="all", time_format=TimeFormat.ID_TIME,
+config = TimeBasedConfig(ts_ids=54, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, features_to_take="all", time_format=TimeFormat.ID_TIME,
                          train_workers=0, val_workers=0, test_workers=0, all_workers=0, init_workers=0,
                          train_batch_size=32, val_batch_size=64, test_batch_size=128, all_batch_size=128)
 
@@ -45,9 +45,6 @@ dataloader = time_based_dataset.get_val_dataloader(workers="config")
 # test_time_period must be set
 dataloader = time_based_dataset.get_test_dataloader(workers="config")
 
-# test_time_period and test_ts_ids must be set
-dataloader = time_based_dataset.get_test_other_dataloader(workers="config")
-
 # Always usable
 dataloader = time_based_dataset.get_all_dataloader(workers="config")
 
@@ -55,7 +52,7 @@ dataloader = time_based_dataset.get_all_dataloader(workers="config")
 batches = []
 
 for batch in tqdm(dataloader):
-    # batch is a Numpy array of shape (ts_ids/test_ts_ids, batch_size, features_to_take + used ids)
+    # batch is a Numpy array of shape (ts_ids, batch_size, features_to_take + used ids)
     batches.append(batch)
 
 ```
@@ -117,7 +114,7 @@ for batch in tqdm(dataloader):
 from cesnet_tszoo.utils.enums import TimeFormat
 from cesnet_tszoo.configs import TimeBasedConfig
 
-config = TimeBasedConfig(ts_ids=54, train_time_period=range(0, 1000), val_time_period=range(1000, 1500), test_time_period=range(1500, 2000), test_ts_ids=22, features_to_take=["n_flows"], time_format=TimeFormat.ID_TIME,
+config = TimeBasedConfig(ts_ids=54, train_time_period=range(0, 1000), val_time_period=range(1000, 1500), test_time_period=range(1500, 2000), features_to_take=["n_flows"], time_format=TimeFormat.ID_TIME,
                          train_workers=0, val_workers=0, test_workers=0, all_workers=0, init_workers=0,
                          train_batch_size=32, val_batch_size=64, test_batch_size=128, all_batch_size=128,
                          sliding_window_size=22, sliding_window_prediction_size=2, sliding_window_step=2, set_shared_size=0.05)
@@ -149,7 +146,7 @@ time_based_dataset.set_sliding_window(sliding_window_size=22, sliding_window_pre
 ### Loading data as Dataframe
 - Batch size has no effect.
 - Sliding window has no effect.
-- Returns every time series in `ts_ids`/`test_ts_ids` with sets specified time period.
+- Returns every time series in `ts_ids` with sets specified time period.
 - Data is returned as Pandas Dataframe.
 
 ```python
@@ -157,7 +154,7 @@ time_based_dataset.set_sliding_window(sliding_window_size=22, sliding_window_pre
 from cesnet_tszoo.utils.enums import TimeFormat
 from cesnet_tszoo.configs import TimeBasedConfig
 
-config = TimeBasedConfig(ts_ids=54, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, test_ts_ids=22, features_to_take="all", time_format=TimeFormat.ID_TIME,
+config = TimeBasedConfig(ts_ids=54, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, features_to_take="all", time_format=TimeFormat.ID_TIME,
                          train_workers=0, val_workers=0, test_workers=0, all_workers=0, init_workers=0)
 
 time_based_dataset.set_dataset_config_and_initialize(config)
@@ -174,10 +171,6 @@ dfs = time_based_dataset.get_val_df(as_single_dataframe=False, workers="config")
 df = time_based_dataset.get_test_df(as_single_dataframe=True, workers="config") # loads time series from ts_ids of test_time_period into one Pandas Dataframe
 dfs = time_based_dataset.get_test_df(as_single_dataframe=False, workers="config") # loads time series from ts_ids of test_time_period into seperate Pandas Dataframes
 
-# test_time_period and test_ts_ids must be set
-df = time_based_dataset.get_test_other_df(as_single_dataframe=True, workers="config") # loads time series from test_ts_ids of test_time_period into one Pandas Dataframe
-dfs = time_based_dataset.get_test_other_df(as_single_dataframe=False, workers="config") # loads time series from ts_ids of test_time_period into seperate Pandas Dataframes
-
 # Always usable
 df = time_based_dataset.get_all_df(as_single_dataframe=True, workers="config") # loads time series from ts_ids of all time period into one Pandas Dataframe
 dfs = time_based_dataset.get_all_df(as_single_dataframe=False, workers="config") # loads time series from ts_ids of all time period into seperate Pandas Dataframes
@@ -187,7 +180,7 @@ dfs = time_based_dataset.get_all_df(as_single_dataframe=False, workers="config")
 ### Loading data as singular Numpy array 
 - Batch size has no effect.
 - Sliding window has no effect.
-- Returns every time series in `ts_ids`/`test_ts_ids` with sets specified time period.
+- Returns every time series in `ts_ids` with sets specified time period.
 - Data is returned as one Numpy array.
 - Follows similar rules to Dataloader batches, regarding shape (excluding sliding window parameters).
 
@@ -196,7 +189,7 @@ dfs = time_based_dataset.get_all_df(as_single_dataframe=False, workers="config")
 from cesnet_tszoo.utils.enums import TimeFormat
 from cesnet_tszoo.configs import TimeBasedConfig
 
-config = TimeBasedConfig(ts_ids=54, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, test_ts_ids=22, features_to_take="all", time_format=TimeFormat.ID_TIME,
+config = TimeBasedConfig(ts_ids=54, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, features_to_take="all", time_format=TimeFormat.ID_TIME,
                          train_workers=0, val_workers=0, test_workers=0, all_workers=0, init_workers=0)
 
 time_based_dataset.set_dataset_config_and_initialize(config)
@@ -209,9 +202,6 @@ numpy_array = time_based_dataset.get_val_numpy(workers="config")
 
 # test_time_period must be set
 numpy_array = time_based_dataset.get_test_numpy(workers="config")
-
-# test_time_period and test_ts_ids must be set
-numpy_array = time_based_dataset.get_test_other_numpy(workers="config")
 
 # Always usable
 numpy_array = time_based_dataset.get_all_numpy(workers="config")

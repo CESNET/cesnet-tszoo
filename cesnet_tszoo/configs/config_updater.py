@@ -144,7 +144,7 @@ class ConfigUpdater:
                                                    test_batch_size=self.config_to_update.test_batch_size,
                                                    fill_missing_with=self.config_to_update.fill_missing_with,
                                                    transform_with=self.config_to_update.transform_with,
-                                                   partial_fit_initialized_transformers=self.config_to_update.partial_fit_initialized_transformers,
+                                                   partial_fit_initialized_transformer=self.config_to_update.partial_fit_initialized_transformers,
                                                    include_time=self.config_to_update.include_time,
                                                    include_ts_id=self.config_to_update.include_ts_id,
                                                    time_format=self.config_to_update.time_format,
