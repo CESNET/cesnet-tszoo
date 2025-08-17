@@ -1,4 +1,3 @@
-from logging import Logger
 import logging
 
 from packaging.version import Version
@@ -6,7 +5,7 @@ from copy import deepcopy
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs import CombinedConfig
-from cesnet_tszoo.utils.enums import DatasetType, SourceType, AgreggationType, TransformerType, ScalerType
+from cesnet_tszoo.utils.enums import DatasetType, TransformerType, ScalerType
 import cesnet_tszoo.version as version
 
 
@@ -114,7 +113,6 @@ class ConfigUpdater:
         elif self.config_to_update.test_ts_ids is None:
             self.logger.debug("Updating config as TimeBasedConfig.")
             self.config_to_update.dataset_type = DatasetType.TIME_BASED
-
             self.config_to_update.uses_all_time_period = True
             delattr(self.config_to_update, "used_test_other_workers")
             delattr(self.config_to_update, "test_ts_row_ranges")
