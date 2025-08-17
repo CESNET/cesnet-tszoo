@@ -164,6 +164,8 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
     def _set_feature_transformers(self) -> None:
         """Creates and/or validates transformers based on the `transform_with` parameter. """
 
+        self.create_transformer_per_time_series = False
+
         if self.transform_with is None:
             self.transform_with_display = None
             self.are_transformers_premade = False
@@ -180,7 +182,6 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
 
         # Treat transform_with as already initialized transformer
         if not isinstance(self.transform_with, (type, TransformerType)):
-            self.create_transformer_per_time_series = False
 
             self.transformers = self.transform_with
 

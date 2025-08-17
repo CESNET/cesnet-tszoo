@@ -220,6 +220,8 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
     def _set_feature_transformers(self) -> None:
         """Creates and/or validates transformers based on the `transform_with` parameter. """
 
+        self.create_transformer_per_time_series = False
+
         if self.transform_with is None:
             self.transform_with_display = None
             self.are_transformers_premade = False

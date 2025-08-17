@@ -1,15 +1,16 @@
 from datetime import datetime, timezone
 from typing import Optional, Literal
 from dataclasses import dataclass, field
-from copy import deepcopy
+from numbers import Number
 
 import numpy as np
-import pandas as pd
+import numpy.typing as npt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, TransformerType, FillerType
 from cesnet_tszoo.configs.combined_config import CombinedConfig
+from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.pytables_data.combined_initializer_dataset import CombinedInitializerDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
@@ -56,6 +57,104 @@ class CombinedCesnetDataset(CesnetDataset):
         assert isinstance(dataset_config, CombinedConfig), "CombinedCesnetDataset can only use CombinedConfig."
 
         super(CombinedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
+
+    def apply_transformer(self, transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                          partial_fit_initialized_transformers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
+        """Used for updating transformer and relevenat configurations set in config.
+
+        Set parameter to `config` to keep it as it is config.
+
+        If exception is thrown during set, no changes are made.
+
+        Affects following configuration. 
+
+        | Dataset config                         | Description                                                                                                    |
+        | -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+        | `transform_with`                       | Defines the transformer to transform the dataset.                                                              |     
+        | `partial_fit_initialized_transformers` | If `True`, partial fitting on train set is performed when using initiliazed transformers.                      |    
+
+        Parameters:
+            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.  
+            workers: How many workers to use when setting new transformer. `Defaults: config`.      
+        """
+
+        if self.dataset_config is None or not self.dataset_config.is_initialized:
+            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating transformer values.")
+
+        self.update_dataset_config_and_initialize(transform_with=transform_with, partial_fit_initialized_transformers=partial_fit_initialized_transformers, workers=workers)
+
+    def update_dataset_config_and_initialize(self,
+                                             default_values: list[Number] | npt.NDArray[np.number] | dict[str, Number] | Number | Literal["default"] | None | Literal["config"] = "config",
+                                             sliding_window_size: int | None | Literal["config"] = "config",
+                                             sliding_window_prediction_size: int | None | Literal["config"] = "config",
+                                             sliding_window_step: int | Literal["config"] = "config",
+                                             set_shared_size: float | int | Literal["config"] = "config",
+                                             train_batch_size: int | Literal["config"] = "config",
+                                             val_batch_size: int | Literal["config"] = "config",
+                                             test_batch_size: int | Literal["config"] = "config",
+                                             all_batch_size: int | Literal["config"] = "config",
+                                             fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
+                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             partial_fit_initialized_transformers: bool | Literal["config"] = "config",
+                                             train_workers: int | Literal["config"] = "config",
+                                             val_workers: int | Literal["config"] = "config",
+                                             test_workers: int | Literal["config"] = "config",
+                                             all_workers: int | Literal["config"] = "config",
+                                             init_workers: int | Literal["config"] = "config",
+                                             workers: int | Literal["config"] = "config",
+                                             display_config_details: bool = False):
+        """Used for updating selected configurations set in config.
+
+        Set parameter to `config` to keep it as it is config.
+
+        If exception is thrown during set, no changes are made.
+
+        Can affect following configuration. 
+
+        | Dataset config                          | Description                                                                                                                                     |
+        | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+        | `default_values`                        | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |  
+        | `sliding_window_size`                   | Number of times in one window. Impacts dataloader behavior. Refer to relevant config for details.                                               |
+        | `sliding_window_prediction_size`        | Number of times to predict from sliding_window_size. Refer to relevant config for details.                                                      |
+        | `sliding_window_step`                   | Number of times to move by after each window. Refer to relevant config for details.                                                             |
+        | `set_shared_size`                       | How much times should time periods share. Order of sharing is training set < validation set < test set. Refer to relevant config for details.   |           
+        | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
+        | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
+        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
+        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
+        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
+        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               |     
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
+        | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
+        | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
+        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |
+        | `all_workers`                           | Number of workers for loading all data.                                                                                                         |     
+        | `init_workers`                          | Number of workers for dataset configuration.                                                                                                    |                        
+
+        Parameters:
+            default_values: Default values for missing data, applied before fillers. `Defaults: config`.  
+            sliding_window_size: Number of times in one window. `Defaults: config`.
+            sliding_window_prediction_size: Number of times to predict from sliding_window_size. `Defaults: config`.
+            sliding_window_step: Number of times to move by after each window. `Defaults: config`.
+            set_shared_size: How much times should time periods share. `Defaults: config`.            
+            train_batch_size: Number of samples per batch for train set. `Defaults: config`.
+            val_batch_size: Number of samples per batch for val set. `Defaults: config`.
+            test_batch_size: Number of samples per batch for test set. `Defaults: config`.
+            all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
+            fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
+            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
+            train_workers: Number of workers for loading training data. `Defaults: config`.
+            val_workers: Number of workers for loading validation data. `Defaults: config`.
+            test_workers: Number of workers for loading test data. `Defaults: config`.
+            all_workers: Number of workers for loading all data.  `Defaults: config`.
+            init_workers: Number of workers for dataset configuration. `Defaults: config`.                          
+            workers: How many workers to use when updating configuration. `Defaults: config`.  
+            display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
+        """
+
+        return super(CombinedCesnetDataset, self).update_dataset_config_and_initialize(default_values, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test"]) -> dict:
         """
