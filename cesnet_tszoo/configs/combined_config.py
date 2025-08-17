@@ -60,31 +60,31 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
 
         if self.train_ts is None or self.train_time_period is None:
             if self.train_ts is not None:
-                self.train_ts = None
-                self.logger.warning("train_ts will be ignored because train_time_period is set to None.")
+                self.logger.error("When train_ts is not None you must set train_time_period or set train_ts as None.")
+                raise ValueError("When train_ts is not None you must set train_time_period or set train_ts as None.")
             if self.train_time_period is not None:
-                self.train_time_period = None
-                self.logger.warning("train_time_period will be ignored because train_ts is set to None.")
+                self.logger.error("When train_time_period is not None you must set train_ts or set train_time_period as None.")
+                raise ValueError("When train_time_period is not None you must set train_ts or set train_time_period as None.")
 
         if self.val_ts is None or self.val_time_period is None:
             if self.val_ts is not None:
-                self.val_ts = None
-                self.logger.warning("val_ts will be ignored because val_time_period is set to None.")
+                self.logger.error("When val_ts is not None you must set val_time_period or set val_ts as None.")
+                raise ValueError("When val_ts is not None you must set val_time_period or set val_ts as None.")
             if self.val_time_period is not None:
-                self.val_time_period = None
-                self.logger.warning("val_time_period will be ignored because val_ts is set to None.")
+                self.logger.error("When val_time_period is not None you must set val_ts or set val_time_period as None.")
+                raise ValueError("When val_time_period is not None you must set val_ts or set val_time_period as None.")
 
         if self.test_ts is None or self.test_time_period is None:
             if self.test_ts is not None:
-                self.test_ts = None
-                self.logger.warning("test_ts will be ignored because test_time_period is set to None.")
+                self.logger.error("When test_ts is not None you must set test_time_period or set test_ts as None.")
+                raise ValueError("When test_ts is not None you must set test_time_period or set test_ts as None.")
             if self.test_time_period is not None:
-                self.test_time_period = None
-                self.logger.warning("test_time_period will be ignored because test_ts is set to None.")
+                self.logger.error("When test_time_period is not None you must set test_ts or set test_time_period as None.")
+                raise ValueError("When test_time_period is not None you must set test_ts or set test_time_period as None.")
 
         if self.train_ts is None and self.val_ts is None and self.test_ts is None:
-            self.logger.error("No set for time series has been set. You must set at least one time series set.")
-            raise ValueError("No set for time series has been set. You must set at least one time series set.")
+            self.logger.error("No set for time series has been set. You must set at least one time series set and its respective time period.")
+            raise ValueError("No set for time series has been set. You must set at least one time series set and its respective time period.")
 
         self._validate_time_periods_init()
         self._validate_ts_init()
