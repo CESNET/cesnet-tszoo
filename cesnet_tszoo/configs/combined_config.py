@@ -252,7 +252,6 @@ class CombinedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
             transformer_part = f"Transformer type: {str(self.transform_with_display)}"
         else:
             transformer_part = f'''Transformer type: {str(self.transform_with_display)}
-        Is transformer per Time series: {self.create_transformer_per_time_series}
         Are transformers premade: {self.are_transformers_premade}
         Are premade transformers partial_fitted: {self.partial_fit_initialized_transformers}'''
 
