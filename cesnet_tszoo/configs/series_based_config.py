@@ -30,7 +30,6 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
     **Important Notes:**
 
     - Custom fillers must inherit from the [`fillers`][cesnet_tszoo.utils.filler.Filler] base class.
-    - Fillers can carry over values from the train set to the validation and test sets. For example, [`ForwardFiller`][cesnet_tszoo.utils.filler.ForwardFiller] can carry over values from previous sets.
     - It is recommended to use the [`transformers`][cesnet_tszoo.utils.transformer.Transformer] base class, though this is not mandatory as long as it meets the required methods.
         - If a transformer is already initialized and `partial_fit_initialized_transformers` is `False`, the transformer does not require `partial_fit`.
         - Otherwise, the transformer must support `partial_fit`.
@@ -53,8 +52,8 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
 
     Attributes:
         all_ts: If no specific sets (train/val/test) are provided, all time series IDs are used. When any set is defined, only the time series IDs in defined sets are used.
-        train_ts_row_ranges: Initialized when `train_ts_id` is set. Contains time series IDs in train set with their respective time ID ranges.
-        val_ts_row_ranges: Initialized when `val_ts_id` is set. Contains time series IDs in validation set with their respective time ID ranges.
+        train_ts_row_ranges: Initialized when `train_ts` is set. Contains time series IDs in train set with their respective time ID ranges.
+        val_ts_row_ranges: Initialized when `val_ts` is set. Contains time series IDs in validation set with their respective time ID ranges.
         test_ts_row_ranges: Initialized when `test_ts` is set. Contains time series IDs in test set with their respective time ID ranges.
         all_ts_row_ranges: Initialized when `all_ts` is set. Contains time series IDs in all set with their respective time ID ranges.
         display_time_period: Used to display the configured value of `time_period`.
