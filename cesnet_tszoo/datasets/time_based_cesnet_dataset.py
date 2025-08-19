@@ -1,10 +1,8 @@
 from datetime import datetime, timezone
 from typing import Optional, Literal
 from dataclasses import dataclass, field
-from copy import deepcopy
 
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
@@ -20,7 +18,7 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 class TimeBasedCesnetDataset(CesnetDataset):
     """This class is used for time-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] with parameter `dataset_type` = `DatasetType.TIME_BASED`.
 
-    Time-based means batch size affects number of returned times in one batch. Which time series are returned does not change.
+    Time-based means batch size affects number of returned times in one batch and all sets have the same time series. Which time series are returned does not change.
 
     The dataset provides multiple ways to access the data:
 

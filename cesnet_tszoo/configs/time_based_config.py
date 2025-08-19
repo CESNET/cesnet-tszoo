@@ -215,6 +215,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         DatasetConfig._update_batch_sizes(self, train_batch_size, val_batch_size, test_batch_size, all_batch_size)
 
     def _update_sliding_window(self, sliding_window_size: int | None, sliding_window_prediction_size: int | None, sliding_window_step: int | None, set_shared_size: float | int, all_time_ids: np.ndarray):
+        """Updates values related to sliding window. """
         TimeBasedHandler._update_sliding_window(self, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, all_time_ids, self.has_train(), self.has_val(), self.has_test(), self.has_all())
 
     def _get_train(self) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
