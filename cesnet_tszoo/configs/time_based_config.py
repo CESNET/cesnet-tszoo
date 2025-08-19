@@ -21,7 +21,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
     Used to configure the following:
 
-    - Train, validation, test, test_other, all sets (time period, sizes, features, window size)
+    - Train, validation, test, all sets (time period, sizes, features, window size)
     - Handling missing values (default values, [`fillers`][cesnet_tszoo.utils.filler])
     - Data transformation using [`transformers`][cesnet_tszoo.utils.transformer]
     - Dataloader options (train/val/test/all/init workers, batch sizes)
@@ -115,7 +115,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values. `Default: TimeFormat.ID_TIME`
         train_workers: Number of workers for loading training data. `0` means that the data will be loaded in the main process. `Default: 4`
         val_workers: Number of workers for loading validation data. `0` means that the data will be loaded in the main process. `Default: 3`
-        test_workers: Number of workers for loading test and test_other data. `0` means that the data will be loaded in the main process. `Default: 2`
+        test_workers: Number of workers for loading test data. `0` means that the data will be loaded in the main process. `Default: 2`
         all_workers: Number of workers for loading all data. `0` means that the data will be loaded in the main process. `Default: 4`
         init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process. `Default: 4`
         nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately. `Default: 1.0`
