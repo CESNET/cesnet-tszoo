@@ -38,7 +38,7 @@ from cesnet_tszoo.configs.config_loading import load_config
 @dataclass
 class CesnetDataset(ABC):
     """
-    Base class for cesnet datasets. This class should **not** be used directly. Instead, use one of the derived classes, such as [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset].
+    Base class for cesnet datasets. This class should **not** be used directly. Instead, use one of the derived classes, such as [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`CombinedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.CombinedCesnetDataset].
 
     The dataset provides multiple ways to access the data:
 

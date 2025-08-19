@@ -1,6 +1,6 @@
-# Time-based dataset class
+# Disjoint-time-based dataset class
 
-::: cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset
+::: cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset
     options:
         heading_level: 2
         show_root_heading: true
@@ -15,19 +15,16 @@
         - apply_transformer
         - set_default_values
         - set_workers
-        - set_batch_sizes        
+        - set_batch_sizes
         - get_train_dataloader
         - get_val_dataloader
         - get_test_dataloader
-        - get_all_dataloader
         - get_train_df
         - get_val_df
         - get_test_df
-        - get_all_df
         - get_train_numpy
         - get_val_numpy
         - get_test_numpy
-        - get_all_numpy
         - display_dataset_details
         - display_config
         - get_feature_names

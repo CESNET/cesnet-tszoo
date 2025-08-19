@@ -154,7 +154,7 @@ class CesnetDatabase(ABC):
         return dataset
 
     @classmethod
-    def get_expected_paths(cls, data_root: str, database_name: str):
+    def get_expected_paths(cls, data_root: str, database_name: str) -> dict:
         """Returns expected path for the provided `data_root` and `database_name`
 
         Args:

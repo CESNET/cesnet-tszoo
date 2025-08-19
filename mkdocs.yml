@@ -26,6 +26,7 @@ nav:
   - Introduction: index.md
   - Installation: installation.md
   - Overview of datasets: datasets_overview.md
+  - Approaches to datasets: dataset_approaches.md
   - Transformers: transformers.md
   - Fillers: fillers.md
   - Benchmarks: benchmarks.md
@@ -48,6 +49,9 @@ nav:
     - Time-based:
       - TimeBasedCesnetDataset: reference_time_based_cesnet_dataset.md
       - TimeBasedConfig: reference_time_based_config.md
+    - Disjoint-time-based:
+      - DisjointTimeBasedCesnetDataset: reference_disjoint_time_based_cesnet_dataset.md
+      - DisjointTimeBasedConfig: reference_disjoint_time_based_config.md      
     - Series-based:
       - SeriesBasedCesnetDataset: reference_series_based_cesnet_dataset.md    
       - SeriesBasedConfig: reference_series_based_config.md

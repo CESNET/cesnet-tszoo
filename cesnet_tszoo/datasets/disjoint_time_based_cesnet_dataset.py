@@ -19,18 +19,82 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 
 @dataclass
 class DisjointTimeBasedCesnetDataset(CesnetDataset):
+    """This class is used for disjoint-time-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] with parameter `dataset_type` = `DatasetType.DISJOINT_TIME_BASED`.
+
+    Disjoint-time-based means batch size affects number of returned times in one batch and each set can have different time series. Which time series are returned does not change.
+
+    The dataset provides multiple ways to access the data:
+
+    - **Iterable PyTorch DataLoader**: For batch processing.
+    - **Pandas DataFrame**: For loading the entire training, validation or test set at once.
+    - **Numpy array**: For loading the entire training, validation or test set at once. 
+    - See [loading data][loading-data] for more details.
+
+    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `TimeBasedDataset`, `SplittedDataset`, `TimeBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize]) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
+    interface. These wrappers are compatible with PyTorch’s [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader), providing efficient parallel data loading. 
+
+    The dataset configuration is done through the [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig] class.       
+
+    **Intended usage:**
+
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    2. Create an instance of [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
+       This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
+    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
+    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_numpy].
+    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_numpy].  
+
+    Alternatively you can use [`load_benchmark`][cesnet_tszoo.benchmarks.load_benchmark]
+
+    1. Call [`load_benchmark`][cesnet_tszoo.benchmarks.load_benchmark] with the desired benchmark. You can use your own saved benchmark or you can use already built-in one. This will download the dataset and annotations (if available) if they have not been previously downloaded.
+    2. Retrieve the initialized dataset using [`get_initialized_dataset`][cesnet_tszoo.benchmarks.Benchmark.get_initialized_dataset]. This will provide a dataset that is ready to use.
+    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
+    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_numpy].
+    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_numpy].  
+
+    Parameters:
+        database_name: Name of the database.
+        dataset_path: Path to the dataset file.     
+        configs_root: Path to the folder where configurations are saved.
+        benchmarks_root: Path to the folder where benchmarks are saved.
+        annotations_root: Path to the folder where annotations are saved.
+        source_type: The source type of the dataset.
+        aggregation: The aggregation type for the selected source type.
+        ts_id_name: Name of the id used for time series.
+        default_values: Default values for each available feature.
+        additional_data: Available small datasets. Can get them by calling [`get_additional_data`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_additional_data] with their name.
+
+    Attributes:
+        time_indices: Available time IDs for the dataset.
+        ts_indices: Available time series IDs for the dataset.
+        annotations: Annotations for the selected dataset.
+        logger: Logger for displaying information.  
+        imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
+        imported_annotations_time_identifier: Identifier for the imported annotations of type `AnnotationType.ID_TIME`.
+        imported_annotations_both_identifier: Identifier for the imported annotations of type `AnnotationType.BOTH`.  
+
+    The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize] is called.
+
+    Attributes:
+        dataset_type: Type of this dataset.
+        dataset_config: Configuration of the dataset.
+        train_dataset: Training set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
+        val_dataset: Validation set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
+        test_dataset: Test set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.  
+        train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
+        val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
+        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.              
+    """
 
     dataset_config: Optional[DisjointTimeBasedConfig] = field(default=None, init=False)
 
     train_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     val_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     test_dataset: Optional[SplittedDataset] = field(default=None, init=False)
-    all_dataset: Optional[SplittedDataset] = field(default=None, init=False)
 
     train_dataloader: Optional[DataLoader] = field(default=None, init=False)
     val_dataloader: Optional[DataLoader] = field(default=None, init=False)
     test_dataloader: Optional[DataLoader] = field(default=None, init=False)
-    all_dataloader: Optional[DataLoader] = field(default=None, init=False)
 
     dataset_type: DatasetType = field(default=DatasetType.DISJOINT_TIME_BASED, init=False)
 
@@ -38,15 +102,15 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
     def set_dataset_config_and_initialize(self, dataset_config: DisjointTimeBasedConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
         """
-        Initialize training set, validation est, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig].
+        Initialize training set, validation est, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig].
 
         The following configuration attributes are used during initialization:
 
-        | Dataset config                    | Description                                                                                    |
-        | --------------------------------- | ---------------------------------------------------------------------------------------------- |
-        | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
-        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
-        | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
+        | Dataset config                              | Description                                                                                    |
+        | ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+        | `init_workers`                              | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
+        | `partial_fit_initialized_transformers`      | Determines whether initialized transformers should be partially fitted on the training data.   |
+        | `nan_threshold`                             | Filters out time series with missing values exceeding the specified threshold.                 |
 
         Parameters:
             dataset_config: Desired configuration of the dataset.
@@ -93,14 +157,12 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                                              train_batch_size: int | Literal["config"] = "config",
                                              val_batch_size: int | Literal["config"] = "config",
                                              test_batch_size: int | Literal["config"] = "config",
-                                             all_batch_size: int | Literal["config"] = "config",
                                              fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
-                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
                                              partial_fit_initialized_transformers: bool | Literal["config"] = "config",
                                              train_workers: int | Literal["config"] = "config",
                                              val_workers: int | Literal["config"] = "config",
                                              test_workers: int | Literal["config"] = "config",
-                                             all_workers: int | Literal["config"] = "config",
                                              init_workers: int | Literal["config"] = "config",
                                              workers: int | Literal["config"] = "config",
                                              display_config_details: bool = False):
@@ -121,15 +183,13 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         | `set_shared_size`                       | How much times should time periods share. Order of sharing is training set < validation set < test set. Refer to relevant config for details.   |           
         | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
         | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
-        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
-        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
+        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |                
         | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
         | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               |     
         | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
         | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
         | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
-        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |
-        | `all_workers`                           | Number of workers for loading all data.                                                                                                         |     
+        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |  
         | `init_workers`                          | Number of workers for dataset configuration.                                                                                                    |                        
 
         Parameters:
@@ -140,21 +200,19 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             set_shared_size: How much times should time periods share. `Defaults: config`.            
             train_batch_size: Number of samples per batch for train set. `Defaults: config`.
             val_batch_size: Number of samples per batch for val set. `Defaults: config`.
-            test_batch_size: Number of samples per batch for test set. `Defaults: config`.
-            all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
+            test_batch_size: Number of samples per batch for test set. `Defaults: config`.                 
             fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
             partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
             train_workers: Number of workers for loading training data. `Defaults: config`.
             val_workers: Number of workers for loading validation data. `Defaults: config`.
             test_workers: Number of workers for loading test data. `Defaults: config`.
-            all_workers: Number of workers for loading all data.  `Defaults: config`.
             init_workers: Number of workers for dataset configuration. `Defaults: config`.                          
             workers: How many workers to use when updating configuration. `Defaults: config`.  
             display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
         """
 
-        return super(DisjointTimeBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
+        return super(DisjointTimeBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_batch_size, val_batch_size, test_batch_size, "config", fill_missing_with, transform_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, "config", init_workers, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test"]) -> dict:
         """
@@ -244,8 +302,65 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         self.update_dataset_config_and_initialize(sliding_window_size=sliding_window_size, sliding_window_prediction_size=sliding_window_prediction_size, sliding_window_step=sliding_window_step, set_shared_size=set_shared_size, workers=workers)
         self.logger.info("Sliding window values has been changed successfuly.")
 
+    def set_batch_sizes(self, train_batch_size: int | Literal["config"] = "config", val_batch_size: int | Literal["config"] = "config", test_batch_size: int | Literal["config"] = "config") -> None:
+        """Used for updating batch sizes set in config.
+
+        Set parameter to `config` to keep it as it is config.
+
+        If exception is thrown during set, no changes are made.
+
+        Affects following configuration. 
+
+        | Dataset config                    | Description                                                                                                                                     |
+        | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+        | `train_batch_size`                | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
+        | `val_batch_size`                  | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
+        | `test_batch_size`                 | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |      
+
+        Parameters:
+            train_batch_size: Number of samples per batch for train set. `Defaults: config`.
+            val_batch_size: Number of samples per batch for val set. `Defaults: config`.
+            test_batch_size: Number of samples per batch for test set. `Defaults: config`.
+        """
+
+        if self.dataset_config is None or not self.dataset_config.is_initialized:
+            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating batch sizes.")
+
+        self.update_dataset_config_and_initialize(train_batch_size=train_batch_size, val_batch_size=val_batch_size, test_batch_size=test_batch_size, workers="config")
+        self.logger.info("Batch sizes has been changed successfuly.")
+
+    def set_workers(self, train_workers: int | Literal["config"] = "config", val_workers: int | Literal["config"] = "config",
+                    test_workers: int | Literal["config"] = "config", init_workers: int | Literal["config"] = "config") -> None:
+        """Used for updating workers set in config.
+
+        Set parameter to `config` to keep it as it is config.
+
+        If exception is thrown during set, no changes are made.
+
+        Affects following configuration. 
+
+        | Dataset config                 | Description                                    |
+        | ------------------------------ | ---------------------------------------------- |
+        | `train_workers`                | Number of workers for loading training data.   |
+        | `val_workers`                  | Number of workers for loading validation data. |
+        | `test_workers`                 | Number of workers for loading test data.       | 
+        | `init_workers`                 | Number of workers for dataset configuration.   |      
+
+        Parameters:
+            train_workers: Number of workers for loading training data. `Defaults: config`.
+            val_workers: Number of workers for loading validation data. `Defaults: config`.
+            test_workers: Number of workers for loading test data. `Defaults: config`.
+            init_workers: Number of workers for dataset configuration. `Defaults: config`.            
+        """
+
+        if self.dataset_config is None or not self.dataset_config.is_initialized:
+            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating workers.")
+
+        self.update_dataset_config_and_initialize(train_workers=train_workers, val_workers=val_workers, test_workers=test_workers, init_workers=init_workers, workers="config")
+        self.logger.info("Workers has been changed successfuly.")
+
     def _initialize_datasets(self) -> None:
-        """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
+        """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
             self.train_dataset = SplittedDataset(self.dataset_path,
@@ -303,7 +418,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
     def _initialize_transformers_and_details(self, workers: int) -> None:
         """
-        Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
+        Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
 
         Goes through data to validate time series against `nan_threshold`, fit/partial fit `transformers` and prepare `fillers`.
         """
@@ -355,7 +470,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
     def _update_export_config_copy(self) -> None:
         """
-        Called at the end of [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize] or when changing config values. 
+        Called at the end of [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize] or when changing config values. 
 
         Updates values of config used for saving config.
         """
@@ -413,6 +528,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         return self._get_time_based_dataloader(dataset, workers, take_all, batch_size)
 
     def __initialize_transformers_and_details_for_set(self, ts_ids, ts_row_ranges, time_period, fillers, workers, set_name):
+        """Initializes transformers and details for provided time series. """
         init_dataset = CombinedInitializerDataset(self.dataset_path,
                                                   self.dataset_config._get_table_data_path(),
                                                   self.dataset_config.ts_id_name,

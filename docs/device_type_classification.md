@@ -46,12 +46,9 @@ dataset.apply_transformer(TransformerType.MIN_MAX_SCALER)
 # (optional) Change sliding window setting
 dataset.set_sliding_window(sliding_window_size=80, sliding_window_prediction_size=24, sliding_window_step=1, set_shared_size=80)
 
-# (optional) Change batch sizes
-dataset.set_batch_sizes(all_batch_size=32)
-
 # or to update all at once which is usually faster
 # dataset.update_dataset_config_and_initialize(default_values=0, sliding_window_size=80, sliding_window_prediction_size=24, sliding_window_step=1, set_shared_size=80, 
-#                                              fill_missing_with=FillerType.MEAN_FILLER, transform_with=TransformerType.MIN_MAX_SCALER, all_batch_size=32)
+#                                              fill_missing_with=FillerType.MEAN_FILLER, transform_with=TransformerType.MIN_MAX_SCALER)
 
 # Process with your own defined model
 model = Model()
