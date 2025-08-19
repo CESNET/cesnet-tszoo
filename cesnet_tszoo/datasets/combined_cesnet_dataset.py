@@ -9,7 +9,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
 from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, TransformerType, FillerType
-from cesnet_tszoo.configs.combined_config import CombinedConfig
+from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.pytables_data.combined_initializer_dataset import CombinedInitializerDataset
@@ -20,7 +20,7 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 @dataclass
 class CombinedCesnetDataset(CesnetDataset):
 
-    dataset_config: Optional[CombinedConfig] = field(default=None, init=False)
+    dataset_config: Optional[DisjointTimeBasedConfig] = field(default=None, init=False)
 
     train_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     val_dataset: Optional[SplittedDataset] = field(default=None, init=False)
@@ -32,11 +32,11 @@ class CombinedCesnetDataset(CesnetDataset):
     test_dataloader: Optional[DataLoader] = field(default=None, init=False)
     all_dataloader: Optional[DataLoader] = field(default=None, init=False)
 
-    dataset_type: DatasetType = field(default=DatasetType.COMBINED, init=False)
+    dataset_type: DatasetType = field(default=DatasetType.DISJOINT_TIME_BASED, init=False)
 
-    _export_config_copy: Optional[CombinedConfig] = field(default=None, init=False)
+    _export_config_copy: Optional[DisjointTimeBasedConfig] = field(default=None, init=False)
 
-    def set_dataset_config_and_initialize(self, dataset_config: CombinedConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
+    def set_dataset_config_and_initialize(self, dataset_config: DisjointTimeBasedConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
         """
         Initialize training set, validation est, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig].
 
@@ -54,7 +54,7 @@ class CombinedCesnetDataset(CesnetDataset):
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
 
-        assert isinstance(dataset_config, CombinedConfig), "CombinedCesnetDataset can only use CombinedConfig."
+        assert isinstance(dataset_config, DisjointTimeBasedConfig), "CombinedCesnetDataset can only use DisjointTimeBasedConfig."
 
         super(CombinedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
 

@@ -1,3 +1,3 @@
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
-from cesnet_tszoo.configs.combined_config import CombinedConfig
+from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig

@@ -24,7 +24,7 @@ class CESNET_TimeSeries24(CesnetDatabase):
 
     @classmethod
     def get_dataset(cls, data_root: str, source_type: SourceType | Literal["ip_addresses_sample", "ip_addresses_full", "institution_subnets", "institutions"], aggregation: AgreggationType | Literal["10_minutes", "1_hour", "1_day"],
-                    dataset_type: DatasetType | Literal["time_based", "series_based", "combined"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | CombinedCesnetDataset:
+                    dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | CombinedCesnetDataset:
         """
         Create new dataset instance.
 

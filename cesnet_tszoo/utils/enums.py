@@ -162,7 +162,7 @@ class DatasetType(Enum):
     SERIES_BASED = "series_based"
     """This type of dataset is defined by train/val/test time series sets and one time period set. """
 
-    COMBINED = "combined"
+    DISJOINT_TIME_BASED = "disjoint_time_based"
     """This type of dataset is defined by train/val/test time series sets and their respective time period sets. """
 
 

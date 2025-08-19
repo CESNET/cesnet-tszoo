@@ -4,7 +4,7 @@ from packaging.version import Version
 from copy import deepcopy
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
-from cesnet_tszoo.configs import CombinedConfig
+from cesnet_tszoo.configs import DisjointTimeBasedConfig
 from cesnet_tszoo.utils.enums import DatasetType, TransformerType, ScalerType
 import cesnet_tszoo.version as version
 
@@ -122,33 +122,33 @@ class ConfigUpdater:
             delattr(self.config_to_update, "used_singular_test_other_time_series")
 
         else:
-            self.logger.debug("Updating config as CombinedConfig. Where ts_ids will be set to train_ts, val_ts and test_ts_ids will be set to test_ts")
-            self.config_to_update.dataset_type = DatasetType.COMBINED
+            self.logger.debug("Updating config as DisjointTimeBasedConfig. Where ts_ids will be set to train_ts, val_ts and test_ts_ids will be set to test_ts")
+            self.config_to_update.dataset_type = DatasetType.DISJOINT_TIME_BASED
 
-            self.config_to_update = CombinedConfig(train_ts=self.config_to_update.ts_ids.copy(),
-                                                   val_ts=self.config_to_update.ts_ids.copy(),
-                                                   test_ts=self.config_to_update.test_ts_ids,
-                                                   train_time_period=self.config_to_update.train_time_period,
-                                                   val_time_period=self.config_to_update.val_time_period,
-                                                   test_time_period=self.config_to_update.test_time_period,
-                                                   features_to_take=self.config_to_update.features_to_take,
-                                                   default_values=self.config_to_update.default_values,
-                                                   sliding_window_size=self.config_to_update.sliding_window_size,
-                                                   sliding_window_prediction_size=self.config_to_update.sliding_window_prediction_size,
-                                                   sliding_window_step=self.config_to_update.sliding_window_step,
-                                                   set_shared_size=self.config_to_update.set_shared_size,
-                                                   train_batch_size=self.config_to_update.train_batch_size,
-                                                   val_batch_size=self.config_to_update.val_batch_size,
-                                                   test_batch_size=self.config_to_update.test_batch_size,
-                                                   fill_missing_with=self.config_to_update.fill_missing_with,
-                                                   transform_with=self.config_to_update.transform_with,
-                                                   partial_fit_initialized_transformer=self.config_to_update.partial_fit_initialized_transformers,
-                                                   include_time=self.config_to_update.include_time,
-                                                   include_ts_id=self.config_to_update.include_ts_id,
-                                                   time_format=self.config_to_update.time_format,
-                                                   train_workers=self.config_to_update.train_workers,
-                                                   val_workers=self.config_to_update.val_workers,
-                                                   test_workers=self.config_to_update.test_workers,
-                                                   init_workers=self.config_to_update.init_workers,
-                                                   nan_threshold=self.config_to_update.nan_threshold,
-                                                   random_state=self.config_to_update.random_state)
+            self.config_to_update = DisjointTimeBasedConfig(train_ts=self.config_to_update.ts_ids.copy(),
+                                                            val_ts=self.config_to_update.ts_ids.copy(),
+                                                            test_ts=self.config_to_update.test_ts_ids,
+                                                            train_time_period=self.config_to_update.train_time_period,
+                                                            val_time_period=self.config_to_update.val_time_period,
+                                                            test_time_period=self.config_to_update.test_time_period,
+                                                            features_to_take=self.config_to_update.features_to_take,
+                                                            default_values=self.config_to_update.default_values,
+                                                            sliding_window_size=self.config_to_update.sliding_window_size,
+                                                            sliding_window_prediction_size=self.config_to_update.sliding_window_prediction_size,
+                                                            sliding_window_step=self.config_to_update.sliding_window_step,
+                                                            set_shared_size=self.config_to_update.set_shared_size,
+                                                            train_batch_size=self.config_to_update.train_batch_size,
+                                                            val_batch_size=self.config_to_update.val_batch_size,
+                                                            test_batch_size=self.config_to_update.test_batch_size,
+                                                            fill_missing_with=self.config_to_update.fill_missing_with,
+                                                            transform_with=self.config_to_update.transform_with,
+                                                            partial_fit_initialized_transformer=self.config_to_update.partial_fit_initialized_transformers,
+                                                            include_time=self.config_to_update.include_time,
+                                                            include_ts_id=self.config_to_update.include_ts_id,
+                                                            time_format=self.config_to_update.time_format,
+                                                            train_workers=self.config_to_update.train_workers,
+                                                            val_workers=self.config_to_update.val_workers,
+                                                            test_workers=self.config_to_update.test_workers,
+                                                            init_workers=self.config_to_update.init_workers,
+                                                            nan_threshold=self.config_to_update.nan_threshold,
+                                                            random_state=self.config_to_update.random_state)

@@ -36,10 +36,10 @@ class CesnetDatabase(ABC):
     4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy].
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy].   
 
-    When using [`CombinedCesnetDataset`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset] (`dataset_type` = `DatasetType.COMBINED`):
+    When using [`CombinedCesnetDataset`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset] (`dataset_type` = `DatasetType.DISJOINT_TIME_BASED`):
 
     1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
-    2. Create an instance of [`CombinedConfig`][cesnet_tszoo.configs.combined_config.CombinedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.set_dataset_config_and_initialize]. 
+    2. Create an instance of [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.combined_config.DisjointTimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_train_numpy] to get training data for chosen model.
     4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_val_numpy].
@@ -131,7 +131,7 @@ class CesnetDatabase(ABC):
             dataset = SeriesBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
         elif dataset_type == DatasetType.TIME_BASED:
             dataset = TimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
-        elif dataset_type == DatasetType.COMBINED:
+        elif dataset_type == DatasetType.DISJOINT_TIME_BASED:
             dataset = CombinedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
         else:
             raise NotImplementedError()
@@ -146,8 +146,8 @@ class CesnetDatabase(ABC):
             logger.info("Dataset is series-based. Use cesnet_tszoo.configs.SeriesBasedConfig")
         elif dataset_type == DatasetType.TIME_BASED:
             logger.info("Dataset is time-based. Use cesnet_tszoo.configs.TimeBasedConfig")
-        elif dataset_type == DatasetType.COMBINED:
-            logger.info("Dataset is combined. Use cesnet_tszoo.configs.CombinedConfig")
+        elif dataset_type == DatasetType.DISJOINT_TIME_BASED:
+            logger.info("Dataset is disjoint_time_based. Use cesnet_tszoo.configs.DisjointTimeBasedConfig")
         else:
             raise NotImplementedError()
 
