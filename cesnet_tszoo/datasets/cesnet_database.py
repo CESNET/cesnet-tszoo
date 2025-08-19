@@ -4,7 +4,7 @@ from abc import ABC
 
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
-from cesnet_tszoo.datasets.combined_cesnet_dataset import CombinedCesnetDataset
+from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.utils.download import resumable_download
 
@@ -36,14 +36,14 @@ class CesnetDatabase(ABC):
     4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy].
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy].   
 
-    When using [`CombinedCesnetDataset`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset] (`dataset_type` = `DatasetType.DISJOINT_TIME_BASED`):
+    When using [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] (`dataset_type` = `DatasetType.DISJOINT_TIME_BASED`):
 
     1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
-    2. Create an instance of [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.combined_config.DisjointTimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.set_dataset_config_and_initialize]. 
+    2. Create an instance of [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.combined_config.DisjointTimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
-    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_train_numpy] to get training data for chosen model.
-    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_val_numpy].
-    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset.get_test_numpy].   
+    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
+    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_numpy].
+    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_numpy].   
 
     Used class attributes:
 
@@ -89,12 +89,12 @@ class CesnetDatabase(ABC):
             data_root: Path to the folder where the dataset will be stored. Each database has its own subfolder `data_root/tszoo/databases/database_name/`.
             source_type: The source type of the desired dataset.
             aggregation: The aggregation type for the selected source type.
-            dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`CombinedCesnetDataset`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset].
+            dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset].
             check_errors: Whether to validate if the dataset is corrupted. `Default: False`
             display_details: Whether to display details about the available data in chosen dataset. `Default: False`
 
         Returns:
-            [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`CombinedCesnetDataset`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset].
+            [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset].
         """
 
         logger = logging.getLogger("wrapper_dataset")
@@ -132,7 +132,7 @@ class CesnetDatabase(ABC):
         elif dataset_type == DatasetType.TIME_BASED:
             dataset = TimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
         elif dataset_type == DatasetType.DISJOINT_TIME_BASED:
-            dataset = CombinedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
+            dataset = DisjointTimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
         else:
             raise NotImplementedError()
 

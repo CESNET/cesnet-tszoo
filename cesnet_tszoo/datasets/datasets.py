@@ -2,7 +2,7 @@ from typing import Literal
 
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
-from cesnet_tszoo.datasets.combined_cesnet_dataset import CombinedCesnetDataset
+from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
 from cesnet_tszoo.datasets.cesnet_database import CesnetDatabase
 from cesnet_tszoo.datasets.datasets_constants import _CESNET_TIME_SERIES24_ID_NAMES, _CESNET_TIME_SERIES24_DEFAULT_VALUES, _CESNET_TIME_SERIES24_AGGREGATIONS, _CESNET_TIME_SERIES24_SOURCE_TYPES, _CESNET_AGG23_ID_NAMES, _CESNET_AGG23_DEFAULT_VALUES, _CESNET_AGG23_AGGREGATIONS, _CESNET_AGG23_SOURCE_TYPES, _CESNET_TIME_SERIES24_ADDITIONAL_DATA
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
@@ -24,7 +24,7 @@ class CESNET_TimeSeries24(CesnetDatabase):
 
     @classmethod
     def get_dataset(cls, data_root: str, source_type: SourceType | Literal["ip_addresses_sample", "ip_addresses_full", "institution_subnets", "institutions"], aggregation: AgreggationType | Literal["10_minutes", "1_hour", "1_day"],
-                    dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | CombinedCesnetDataset:
+                    dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
         """
         Create new dataset instance.
 
@@ -32,12 +32,12 @@ class CESNET_TimeSeries24(CesnetDatabase):
             data_root: Path to the folder where the dataset will be stored. Each database has its own subfolder `data_root/tszoo/databases/database_name/`.
             source_type: The source type of the desired dataset.
             aggregation: The aggregation type for the selected source type.
-            dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`CombinedCesnetDataset`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset].
+            dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset].
             check_errors: Whether to validate if the dataset is corrupted. `Default: False`
             display_details: Whether to display details about the available data in chosen dataset. `Default: False`
 
         Returns:
-            [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`CombinedCesnetDataset`][cesnet_tszoo.datasets.combined_cesnet_dataset.CombinedCesnetDataset].
+            [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset].
         """
 
         return super(CESNET_TimeSeries24, cls).get_dataset(data_root, source_type, aggregation, dataset_type, check_errors, display_details)

@@ -18,7 +18,7 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 
 
 @dataclass
-class CombinedCesnetDataset(CesnetDataset):
+class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
     dataset_config: Optional[DisjointTimeBasedConfig] = field(default=None, init=False)
 
@@ -54,9 +54,9 @@ class CombinedCesnetDataset(CesnetDataset):
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
 
-        assert isinstance(dataset_config, DisjointTimeBasedConfig), "CombinedCesnetDataset can only use DisjointTimeBasedConfig."
+        assert isinstance(dataset_config, DisjointTimeBasedConfig), "DisjointTimeBasedCesnetDataset can only use DisjointTimeBasedConfig."
 
-        super(CombinedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
+        super(DisjointTimeBasedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
 
     def apply_transformer(self, transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
                           partial_fit_initialized_transformers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
@@ -154,7 +154,7 @@ class CombinedCesnetDataset(CesnetDataset):
             display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
         """
 
-        return super(CombinedCesnetDataset, self).update_dataset_config_and_initialize(default_values, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
+        return super(DisjointTimeBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test"]) -> dict:
         """
@@ -370,7 +370,7 @@ class CombinedCesnetDataset(CesnetDataset):
         self._export_config_copy.sliding_window_step = self.dataset_config.sliding_window_step
         self._export_config_copy.set_shared_size = self.dataset_config.set_shared_size
 
-        super(CombinedCesnetDataset, self)._update_export_config_copy()
+        super(DisjointTimeBasedCesnetDataset, self)._update_export_config_copy()
 
     def _get_singular_time_series_dataset(self, parent_dataset: SplittedDataset, ts_id: int) -> SplittedDataset:
         """Returns dataset for single time series """
