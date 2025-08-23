@@ -6,11 +6,10 @@ import logging
 
 import numpy as np
 import numpy.typing as npt
-from packaging.version import Version
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
-from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, ScalerType, DatasetType
+from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.transformer import Transformer
 
 
@@ -95,6 +94,7 @@ class DatasetConfig(ABC):
                  all_batch_size: int,
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None,
                  transform_with: type | TransformerType | list[Transformer] | np.ndarray[Transformer] | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None,
+                 handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None,
                  partial_fit_initialized_transformers: bool,
                  include_time: bool,
                  include_ts_id: bool,
@@ -123,15 +123,18 @@ class DatasetConfig(ABC):
         self.database_name = None
         self.transform_with_display = None
         self.fill_missing_with_display = None
+        self.handle_anomalies_with_display = None
         self.features_to_take_without_ids = None
         self.indices_of_features_to_take_no_ids = None
         self.is_transformer_custom = False
         self.is_filler_custom = False
+        self.is_anomaly_handler_custom = False
         self.ts_id_name = None
         self.used_times = None
         self.used_ts_ids = None
         self.used_ts_row_ranges = None
         self.used_fillers = None
+        self.used_anomaly_handlers = None
         self.used_singular_train_time_series = None
         self.used_singular_val_time_series = None
         self.used_singular_test_time_series = None
@@ -142,6 +145,7 @@ class DatasetConfig(ABC):
         self.val_fillers = None
         self.test_fillers = None
         self.all_fillers = None
+        self.anomaly_handlers = None
         self.is_initialized = False
         self.version = version.current_version
         self.export_update_needed = False
@@ -154,6 +158,7 @@ class DatasetConfig(ABC):
         self.all_batch_size = all_batch_size
         self.fill_missing_with = fill_missing_with
         self.transform_with = transform_with
+        self.handle_anomalies_with = handle_anomalies_with
         self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
         self.include_time = include_time
         self.include_ts_id = include_ts_id
@@ -212,6 +217,10 @@ class DatasetConfig(ABC):
         # Validate and process missing data filler type
         if isinstance(self.fill_missing_with, (str, FillerType)):
             self.fill_missing_with = FillerType(self.fill_missing_with)
+
+        # Validate and process anomaly handler type
+        if isinstance(self.handle_anomalies_with, (str, AnomalyHandlerType)):
+            self.handle_anomalies_with = AnomalyHandlerType(self.handle_anomalies_with)
 
     def _update_batch_sizes(self, train_batch_size: int, val_batch_size: int, test_batch_size: int, all_batch_size: int) -> None:
 
@@ -317,6 +326,10 @@ class DatasetConfig(ABC):
         self._set_fillers()
         self.logger.debug("Fillers have been successfully set.")
 
+        # Set anomaly handlers
+        self._set_anomaly_handlers()
+        self.logger.debug("Anomaly handlers have been successfully set.")
+
         # Final validation and finalization
         self._validate_finalization()
 
@@ -419,6 +432,11 @@ class DatasetConfig(ABC):
     @abstractmethod
     def _set_fillers(self) -> None:
         """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
+        ...
+
+    @abstractmethod
+    def _set_anomaly_handlers(self) -> None:
+        """Creates and/or validates anomaly handlers based on the `handle_anomalies_with` parameter. """
         ...
 
     @abstractmethod

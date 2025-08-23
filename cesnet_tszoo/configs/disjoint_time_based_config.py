@@ -8,8 +8,9 @@ import numpy.typing as npt
 
 from cesnet_tszoo.utils.filler import filler_from_input_to_type
 from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer_type, Transformer
+from cesnet_tszoo.utils.anomaly_handler import anomaly_handler_from_input_to_anomaly_handler_type
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
-from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType
+from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
@@ -139,6 +140,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                  test_batch_size: int = 128,
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
                  transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None = None,
+                 handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None = None,
                  partial_fit_initialized_transformer: bool = False,
                  include_time: bool = True,
                  include_ts_id: bool = True,
@@ -150,11 +152,12 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                  nan_threshold: float = 1.0,
                  random_state: int | None = None):
 
+        self.allow_ts_id_overlap = False
         self.logger = logging.getLogger("disjoint_time_based_config")
 
         TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, 1, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
         SeriesBasedHandler.__init__(self, self.logger, True, train_ts, val_ts, test_ts)
-        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, 1, fill_missing_with, transform_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
+        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, 1, fill_missing_with, transform_with, handle_anomalies_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
                                train_workers, val_workers, test_workers, 1, init_workers, nan_threshold, False, DatasetType.DISJOINT_TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
 
     def _validate_construction(self) -> None:
@@ -346,11 +349,30 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.all_ts])
         self.logger.debug("Fillers for all set are set.")
 
+    def _set_anomaly_handlers(self):
+
+        if self.handle_anomalies_with is None:
+            self.logger.debug("No anomaly handler is used because handle_anomalies_with is set to None.")
+            return
+
+        if not self.has_train():
+            self.logger.error("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
+            raise ValueError("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
+
+        self.logger.info("Anomaly handler will only be used for train set, because of nature of disjoint-time-based.")
+
+        self.handle_anomalies_with, self.handle_anomalies_with_display = anomaly_handler_from_input_to_anomaly_handler_type(self.handle_anomalies_with)
+        self.is_anomaly_handler_custom = "Custom" in self.handle_anomalies_with_display
+
+        self.anomaly_handlers = np.array([self.handle_anomalies_with() for _ in self.train_ts])
+
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos."""
 
         self._validate_time_periods_overlap()
-        # self._validate_ts_overlap()
+
+        if not self.allow_ts_id_overlap:
+            self._validate_ts_overlap()
 
     def __str__(self) -> str:
 
@@ -394,6 +416,8 @@ Config Details
         Filler type: {str(self.fill_missing_with_display)}
     Transformers
         {transformer_part}
+    Anomaly handler
+        Anomaly handler type (train set): {str(self.handle_anomalies_with_display)}
     Batch sizes
         Train batch size: {self.train_batch_size}
         Val batch size: {self.val_batch_size}
