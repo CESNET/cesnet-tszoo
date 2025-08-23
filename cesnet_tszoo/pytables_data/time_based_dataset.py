@@ -12,13 +12,16 @@ class TimeBasedDataset(BaseDataset):
     Returns `batch_size` times for each time series in `ts_row_ranges`.
     """
 
-    def __init__(self, database_path, table_data_path, ts_id_name, ts_row_ranges, time_period, features_to_take, indices_of_features_to_take_no_ids, default_values, fillers, is_transformer_per_time_series, include_time, include_ts_id, time_format, transformers):
-        super().__init__(database_path, table_data_path, ts_id_name, ts_row_ranges, time_period, features_to_take, indices_of_features_to_take_no_ids, default_values, fillers, include_time, include_ts_id, time_format, transformers)
+    def __init__(self, database_path, table_data_path, ts_id_name, ts_row_ranges, time_period, features_to_take,
+                 indices_of_features_to_take_no_ids, default_values, fillers, is_transformer_per_time_series, include_time, include_ts_id, time_format, transformers, anomaly_handlers):
+
+        super().__init__(database_path, table_data_path, ts_id_name, ts_row_ranges, time_period, features_to_take,
+                         indices_of_features_to_take_no_ids, default_values, fillers, include_time, include_ts_id, time_format, transformers, anomaly_handlers)
 
         self.is_transformer_per_time_series = is_transformer_per_time_series
 
     def __getitem__(self, batch_idx) -> Any:
-        data = self.load_data_from_table(self.ts_row_ranges, self.time_period[batch_idx], self.fillers)
+        data = self.load_data_from_table(self.ts_row_ranges, self.time_period[batch_idx], self.fillers, self.anomaly_handlers)
 
         if self.include_time:
             if self.time_format == TimeFormat.ID_TIME:

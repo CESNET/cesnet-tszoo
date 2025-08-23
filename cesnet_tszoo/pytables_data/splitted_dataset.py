@@ -7,6 +7,7 @@ import numpy as np
 from cesnet_tszoo.pytables_data.time_based_dataset import TimeBasedDataset
 from cesnet_tszoo.utils.filler import Filler
 from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
 from cesnet_tszoo.utils.enums import TimeFormat
 
 
@@ -19,7 +20,8 @@ class SplittedDataset(Dataset):
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int],
                  default_values: np.ndarray, fillers: np.ndarray[Filler] | None, is_transformer_per_time_series: bool,
-                 include_time: bool, include_ts_id: bool, time_format: TimeFormat, workers: int, feature_transformers: np.ndarray[Transformer] | Transformer | None):
+                 include_time: bool, include_ts_id: bool, time_format: TimeFormat, workers: int, feature_transformers: np.ndarray[Transformer] | Transformer | None,
+                 anomaly_handlers: np.ndarray[AnomalyHandler]):
         super().__init__()
 
         self.database_path = database_path
@@ -44,6 +46,8 @@ class SplittedDataset(Dataset):
         self.feature_transformers = feature_transformers
         self.indices_of_features_to_take_no_ids = indices_of_features_to_take_no_ids
         self.is_transformer_per_time_series = is_transformer_per_time_series
+
+        self.anomaly_handlers = anomaly_handlers
 
         self.datasets = []
         self.dataloaders = []
@@ -125,6 +129,10 @@ class SplittedDataset(Dataset):
             if self.fillers is not None:
                 fillers = self.fillers[offset:offset + size]
 
+            anomaly_handlers = None
+            if self.anomaly_handlers is not None:
+                anomaly_handlers = self.anomaly_handlers[offset:offset + size]
+
             dataset = TimeBasedDataset(self.database_path,
                                        self.table_data_path,
                                        self.ts_id_name,
@@ -138,7 +146,8 @@ class SplittedDataset(Dataset):
                                        self.include_time,
                                        self.include_ts_id,
                                        self.time_format,
-                                       transformers)
+                                       transformers,
+                                       anomaly_handlers)
             self.datasets.append(dataset)
             offset += size
 
