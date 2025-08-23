@@ -8,7 +8,7 @@ import numpy.typing as npt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, TransformerType, FillerType, DatasetType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, TransformerType, FillerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
@@ -130,6 +130,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                              all_batch_size: int | Literal["config"] = "config",
                                              fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
                                              transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"] = "config",
                                              partial_fit_initialized_transformers: bool | Literal["config"] = "config",
                                              train_workers: int | Literal["config"] = "config",
                                              val_workers: int | Literal["config"] = "config",
@@ -180,7 +181,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
         """
 
-        return super(SeriesBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, "config", "config", "config", "config", train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
+        return super(SeriesBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, "config", "config", "config", "config", train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, handle_anomalies_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test", "all"]) -> dict:
         """
@@ -254,7 +255,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                     self.dataset_config.include_time,
                                                     self.dataset_config.include_ts_id,
                                                     self.dataset_config.time_format,
-                                                    self.dataset_config.transformers)
+                                                    self.dataset_config.transformers,
+                                                    self.dataset_config.anomaly_handlers)
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
@@ -270,7 +272,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                   self.dataset_config.include_time,
                                                   self.dataset_config.include_ts_id,
                                                   self.dataset_config.time_format,
-                                                  self.dataset_config.transformers)
+                                                  self.dataset_config.transformers,
+                                                  None)
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
@@ -286,7 +289,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                    self.dataset_config.include_time,
                                                    self.dataset_config.include_ts_id,
                                                    self.dataset_config.time_format,
-                                                   self.dataset_config.transformers)
+                                                   self.dataset_config.transformers,
+                                                   None)
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all():
@@ -302,7 +306,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                   self.dataset_config.include_time,
                                                   self.dataset_config.include_ts_id,
                                                   self.dataset_config.time_format,
-                                                  self.dataset_config.transformers)
+                                                  self.dataset_config.transformers,
+                                                  None)
             self.logger.debug("all_dataset initiliazed.")
 
     def _initialize_transformers_and_details(self, workers: int) -> None:
@@ -323,7 +328,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                      self.dataset_config.features_to_take,
                                                      self.dataset_config.indices_of_features_to_take_no_ids,
                                                      self.dataset_config.default_values,
-                                                     self.dataset_config.all_fillers)
+                                                     self.dataset_config.all_fillers,
+                                                     self.dataset_config.anomaly_handlers)
 
         sampler = SequentialSampler(init_dataset)
         dataloader = DataLoader(init_dataset,
@@ -343,7 +349,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         self.logger.info("Updating config on train/val/test/all and selected time period.")
         for i, data in enumerate(tqdm(dataloader)):
-            train_data, count_values, is_train, is_val, is_test, offsetted_idx = data[0]
+            train_data, count_values, is_train, is_val, is_test, offsetted_idx, anomaly_handler = data[0]
 
             missing_percentage = count_values[1] / (count_values[0] + count_values[1])
 
@@ -362,6 +368,9 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 if self.dataset_config.transform_with is not None and is_train and (not self.dataset_config.are_transformers_premade or self.dataset_config.partial_fit_initialized_transformers):
                     self.dataset_config.transformers.partial_fit(train_data)
 
+                if anomaly_handler is not None:
+                    self.dataset_config.anomaly_handlers[i] = anomaly_handler
+
         if workers == 0:
             init_dataset.cleanup()
 
@@ -374,6 +383,9 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             if self.dataset_config.fill_missing_with is not None:
                 self.dataset_config.train_fillers = self.dataset_config.train_fillers[train_ts_ids_to_take]
+
+            if self.dataset_config.handle_anomalies_with is not None:
+                self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[train_ts_ids_to_take]
 
             self.logger.debug("Train set updated: %s time series left.", len(train_ts_ids_to_take))
 
@@ -414,6 +426,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         self.dataset_config.used_ts_row_ranges = self.dataset_config.all_ts_row_ranges
         self.dataset_config.used_fillers = self.dataset_config.all_fillers
         self.dataset_config.used_times = self.time_indices
+        self.dataset_config.used_anomaly_handlers = self.dataset_config.anomaly_handlers
 
         self.logger.info("Dataset initialization complete. Configuration updated.")
 
@@ -478,6 +491,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         filler = None if parent_dataset.fillers is None else parent_dataset.fillers[time_series_position:time_series_position + 1]
         transformer = None if parent_dataset.transformers is None else parent_dataset.transformers
+        anomaly_handler = None if parent_dataset.anomaly_handlers is None else parent_dataset.anomaly_handlers[time_series_position:time_series_position + 1]
 
         dataset = SeriesBasedDataset(self.dataset_path,
                                      self.dataset_config._get_table_data_path(),
@@ -491,7 +505,9 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                      self.dataset_config.include_time,
                                      self.dataset_config.include_ts_id,
                                      self.dataset_config.time_format,
-                                     transformer)
+                                     transformer,
+                                     anomaly_handler
+                                     )
         self.logger.debug("Singular time series dataset initiliazed.")
 
         return dataset
