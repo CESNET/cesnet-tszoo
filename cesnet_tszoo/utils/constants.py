@@ -33,3 +33,8 @@ ROBUST_SCALER = "robust_scaler"
 POWER_TRANSFORMER = "power_transformer"
 QUANTILE_TRANSFORMER = "quantile_transformer"
 L2_NORMALIZER = "l2_normalizer"
+
+# Anomaly handlers
+
+Z_SCORE = "z-score"
+INTERQUARTILE_RANGE = "interquartile_range"
