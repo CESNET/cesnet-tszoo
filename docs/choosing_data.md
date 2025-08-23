@@ -12,13 +12,12 @@ Each dataset type will have its own part because of multiple differences of avai
 Relevant configuration values:
 
 - `ts_ids` - Defines which time series IDs are used for train/val/test/all.
-- `test_ts_ids` - Defines which time series IDs are used in the test_other set.
 - `train_time_period`/`val_time_period`/`test_time_period` - Defines time periods for train/val/test sets.
 - `features_to_take` - Defines which features are used.
 - `include_time` - If True, time data is included in the returned values.
 - `include_ts_id` - If True, time series IDs are included in the returned values.
 - `time_format` - Format for the returned time data.
-- `random_state` - Fixes randomness for reproducibility when setting `ts_ids` or `test_ts_ids`
+- `random_state` - Fixes randomness for reproducibility when setting `ts_ids`
 
 ### Selecting which time series to load
 - Sets time series that will be used for train/val/test/all sets
@@ -39,19 +38,6 @@ config = TimeBasedConfig(ts_ids=0.1, random_state = 111)
 config = TimeBasedConfig(ts_ids=[0,1,2,3,4,5])
 
 # Call on time-based dataset to use created config
-time_based_dataset.set_dataset_config_and_initialize(config)
-
-```
-
-You can also specify time series for `test_ts_ids`, but they will only be used when `test_time_period` is set. They can be set the same way as `ts_ids`
-
-```python
-
-from cesnet_tszoo.configs import TimeBasedConfig
-
-# Both ts_ids and test_ts_ids will contain unique time series.
-config = TimeBasedConfig(ts_ids=54, test_ts_ids=20, test_time_period=range(0, 1000), random_state = 111)
-
 time_based_dataset.set_dataset_config_and_initialize(config)
 
 ```
@@ -124,6 +110,100 @@ config = TimeBasedConfig(ts_ids=54, train_time_period=None, val_time_period=None
 config = TimeBasedConfig(ts_ids=54, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2)
 
 time_based_dataset.set_dataset_config_and_initialize(config)
+
+```
+
+## [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] dataset
+
+!!! info "Note"
+    For every configuration and more detailed examples refer to Jupyter notebook [`disjoint_time_based_choosing_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/disjoint_time_based_choosing_data.ipynb)
+
+Relevant configuration values:
+
+- `train_ts`/`val_ts`/`test_ts` - Defines time series for train/val/test.
+- `train_time_period`/`val_time_period`/`test_time_period` - Defines time periods for train/val/test sets.
+- `features_to_take` - Defines which features are used.
+- `include_time` - If True, time data is included in the returned values.
+- `include_ts_id` - If True, time series IDs are included in the returned values.
+- `time_format` - Format for the returned time data.
+- `random_state` - Fixes randomness for reproducibility when setting `train_ts`/`val_ts`/`test_ts`
+
+### Selecting which time series to load
+- Sets time series that will be used for train/val/test/all sets
+
+```python
+
+from cesnet_tszoo.configs import DisjointTimeBasedConfig
+
+# Sets time series used in sets with count. Chosen randomly from available time series.
+# Affected by random_state.
+config = DisjointTimeBasedConfig(train_ts=100, val_ts=50, test_ts=20, train_time_period=0.7, val_time_period=0.2, test_time_period=0.1, random_state = 111)
+
+# Sets time series used in sets with percentage of time series in dataset. Chosen randomly from available time series.
+# Affected by random_state.
+config = DisjointTimeBasedConfig(train_ts=0.5, val_ts=0.2, test_ts=0.1, train_time_period=0.7, val_time_period=0.2, test_time_period=0.1, random_state = 111)
+
+# Sets with specific time series
+config = DisjointTimeBasedConfig(train_ts=[0], val_ts=[1], test_ts=[2], train_time_period=0.7, val_time_period=0.2, test_time_period=0.1, random_state = 111)
+
+# Call on disjoint-time-based dataset to use created config
+disjoint_dataset.set_dataset_config_and_initialize(config)
+
+```
+
+### Selecting which time period to use for each set
+- Sets time period for every set and their time series
+- `train_time_period` is used for `train_ts`
+- `val_time_period` is used for `val_ts`
+- `test_time_period` is used for `test_ts`
+- Either both time series and their time period must be set or both has to be None
+- Can use `nan_threshold` to set how many nan values will be tolerated for time series and their time period.
+    - `nan_threshold` = 1.0, means that time series can be completely empty.
+    - is applied after sets.
+    - Is checked seperately for every set.
+- Sets must follow these rules:
+    - Used time periods must be connected.
+    - Sets can share subset of times.
+    - start of `train_time_period` < start of `val_time_period` < start of `test_time_period`.
+
+```python
+
+from datetime import datetime
+
+from cesnet_tszoo.configs import DisjointTimeBasedConfig
+
+# Sets sets as range of time indices.
+config = DisjointTimeBasedConfig(train_ts=0.5, val_ts=0.2, test_ts=0.1, train_time_period=range(0, 2000), val_time_period=range(2000, 4000), test_time_period=range(4000, 5000))
+
+# Sets sets with tuple of datetime objects.
+# Datetime objects are expected to be of UTC.
+config = DisjointTimeBasedConfig(train_ts=0.5, val_ts=0.2, test_ts=0.1, train_time_period=(datetime(2023, 10, 9, 0), datetime(2023, 11, 9, 23)), val_time_period=(datetime(2023, 11, 9, 23), datetime(2023, 12, 9, 23)), test_time_period=(datetime(2023, 12, 9, 23), datetime(2023, 12, 25, 23)))
+
+# Sets sets a percentage of whole time period from dataset.
+# Always starts from first time.
+config = DisjointTimeBasedConfig(train_ts=0.5, val_ts=0.2, test_ts=0.1, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2)
+
+disjoint_dataset.set_dataset_config_and_initialize(config)
+
+```
+
+### Selecting features
+- Affects which features will be returned when loading data.
+- Setting `include_time` as True will add time to features that return when loading data.
+- Setting `include_ts_id` as True will add time series id to features that return when loading data.
+
+```python
+
+from cesnet_tszoo.utils.enums import TimeFormat
+from cesnet_tszoo.configs import DisjointTimeBasedConfig
+
+config = DisjointTimeBasedConfig(train_ts=0.5, val_ts=0.2, test_ts=0.1, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, features_to_take="all")
+
+config = DisjointTimeBasedConfig(train_ts=0.5, val_ts=0.2, test_ts=0.1, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, features_to_take=["n_flows", "n_packets"])
+
+config = DisjointTimeBasedConfig(train_ts=0.5, val_ts=0.2, test_ts=0.1, train_time_period=0.5, val_time_period=0.3, test_time_period=0.2, features_to_take=["n_flows", "n_packets"], include_time=True, include_ts_id=True, time_format=TimeFormat.ID_TIME)
+
+disjoint_dataset.set_dataset_config_and_initialize(config)
 
 ```
 

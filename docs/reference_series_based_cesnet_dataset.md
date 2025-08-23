@@ -10,6 +10,12 @@
         inherited_members: true
         members:
         - set_dataset_config_and_initialize
+        - update_dataset_config_and_initialize
+        - apply_filler
+        - apply_transformer
+        - set_default_values
+        - set_workers
+        - set_batch_sizes        
         - get_train_dataloader
         - get_val_dataloader
         - get_test_dataloader

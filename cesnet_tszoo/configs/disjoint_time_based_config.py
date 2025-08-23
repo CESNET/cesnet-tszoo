@@ -15,9 +15,9 @@ from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandle
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 
 
-class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
+class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
     """
-    This class is used for configuring the [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset].
+    This class is used for configuring the [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset].
 
     Used to configure the following:
 
@@ -30,35 +30,36 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
     **Important Notes:**
 
     - Custom fillers must inherit from the [`fillers`][cesnet_tszoo.utils.filler.Filler] base class.
-    - Fillers can carry over values from the train set to the validation and test sets. For example, [`ForwardFiller`][cesnet_tszoo.utils.filler.ForwardFiller] can carry over values from previous sets.    
     - It is recommended to use the [`transformers`][cesnet_tszoo.utils.transformer.Transformer] base class, though this is not mandatory as long as it meets the required methods.
-        - If transformers are already initialized and `create_transformer_per_time_series` is `True` and `partial_fit_initialized_transformers` is `True` then transformers must support `partial_fit`.
-        - If `create_transformer_per_time_series` is `True`, transformers must have a `fit` method and `transform_with` should be a list of transformers.
-        - If `create_transformer_per_time_series` is `False`, transformers must support `partial_fit`.
-        - Transformers must implement the `transform` method.
-        - The `fit/partial_fit` and `transform` methods must accept an input of type `np.ndarray` with shape `(times, features)`.
+        - If a transformer is already initialized and `partial_fit_initialized_transformers` is `False`, the transformer does not require `partial_fit`.
+        - Otherwise, the transformer must support `partial_fit`.
+        - Transformers must implement `transform` method.
+        - Both `partial_fit` and `transform` methods must accept an input of type `np.ndarray` with shape `(times, features)`.
     - `train_time_period`, `val_time_period`, `test_time_period` can overlap, but they should keep order of `train_time_period` < `val_time_period` < `test_time_period`
 
-    For available configuration options, refer to [here][cesnet_tszoo.configs.time_based_config.TimeBasedConfig--configuration-options].
+    For available configuration options, refer to [here][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig--configuration-options].
 
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
         used_val_workers: Tracks the number of validation workers in use. Helps determine if the validation dataloader should be recreated based on worker changes.
         used_test_workers: Tracks the number of test workers in use. Helps determine if the test dataloader should be recreated based on worker changes.
-        used_all_workers: Tracks the total number of all workers in use. Helps determine if the all dataloader should be recreated based on worker changes.
         uses_all_time_period: Whether all time period set should be used.
+        uses_all_ts: Whether all time series set should be used.
         import_identifier: Tracks the name of the config upon import. None if not imported.
         logger: Logger for displaying information.     
 
-    The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize] is called:
+    The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize] is called:
 
     Attributes:
         display_train_time_period: Used to display the configured value of `train_time_period`.
         display_val_time_period: Used to display the configured value of `val_time_period`.
         display_test_time_period: Used to display the configured value of `test_time_period`.
-        display_all_time_period: Used to display the configured value of `all_time_period`.
-        all_time_period: If no specific sets (train/val/test) are provided, all time IDs are used. When any set is defined, only the time IDs in defined sets are used.
-        ts_row_ranges: Initialized when `ts_ids` is set. Contains time series IDs in `ts_ids` with their respective time ID ranges (same as `all_time_period`).
+        train_ts_row_ranges: Initialized when `train_ts` is set. Contains time series IDs in train set with their respective time ID ranges.
+        val_ts_row_ranges: Initialized when `val_ts` is set. Contains time series IDs in validation set with their respective time ID ranges.
+        test_ts_row_ranges: Initialized when `test_ts` is set. Contains time series IDs in test set with their respective time ID ranges.        
+        all_time_period: Contains total used time period.
+        all_ts: Contains all used time series.
+        all_ts_row_ranges: Contains time series IDs in all set with their respective time ID ranges.
 
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
@@ -76,14 +77,13 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         used_fillers: List of all fillers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
-        used_singular_test_time_series: Currently used singular test set time series for dataloader.
-        used_singular_all_time_series: Currently used singular all set time series for dataloader.        
+        used_singular_test_time_series: Currently used singular test set time series for dataloader.     
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
         are_transformers_premade: Indicates whether the transformers are premade.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
-        all_fillers: Fillers used for the all set. `None` if no filler is used or all set is not used.
+        all_fillers: Fillers used for the all set.
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
         version: Version of cesnet-tszoo this config was made in.
         export_update_needed: Whether config was updated to newer version and should be exported.     
@@ -91,11 +91,13 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
     # Configuration options
 
     Attributes:
-        ts_ids: Defines which time series IDs are used for train/val/test/all. Can be a list of IDs, or an integer/float to specify a random selection. An `int` specifies the number of random time series, and a `float` specifies the proportion of available time series. 
-                `int` and `float` must be greater than 0, and a float should be smaller or equal to 1.0.  
-        train_time_period: Defines the time period for training set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. `Default: None`
-        val_time_period: Defines the time period for validation set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. `Default: None`
-        test_time_period: Defines the time period for test set. Can be a range of time IDs or a tuple of datetime objects. `Default: None`
+        train_ts: Defines which time series IDs are used in the training set. Can be a list of IDs, or an integer/float to specify a random selection. An `int` specifies the number of random time series, and a `float` specifies the proportion of available time series. 
+                  `int` and `float` must be greater than 0, and a float should be smaller or equal to 1.0. Using `int` or `float` guarantees that no time series from other sets will be used. Must be used with `train_time_period`.
+        val_ts: Defines which time series IDs are used in the validation set. Same as `train_ts` but for the validation set. Must be used with `val_time_period`.
+        test_ts: Defines which time series IDs are used in the test set. Same as `train_ts` but for the test set. Must be used with `test_time_period`.
+        train_time_period: Defines the time period for training set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. Must be used with `train_ts`. `Default: None`
+        val_time_period: Defines the time period for validation set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. Must be used with `val_ts`. `Default: None`
+        test_time_period: Defines the time period for test set. Can be a range of time IDs or a tuple of datetime objects. Must be used with `test_ts`. `Default: None`
         features_to_take: Defines which features are used. `Default: "all"`                  
         default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature. `Default: "default"`
         sliding_window_size: Number of times in one window. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows. `Default: None`
@@ -105,25 +107,24 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         train_batch_size: Batch size for the train dataloader. Affects number of returned times in one batch. `Default: 32`
         val_batch_size: Batch size for the validation dataloader. Affects number of returned times in one batch. `Default: 64`
         test_batch_size: Batch size for the test dataloader. Affects number of returned times in one batch. `Default: 128`
-        all_batch_size: Batch size for the all dataloader. Affects number of returned times in one batch. `Default: 128`   
         fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.Filler] base class. `Default: None`
         transform_with: Defines the transformer used to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s). `Default: None`
-        create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Default: True`
         partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Default: False`
         include_time: If `True`, time data is included in the returned values. `Default: True`
         include_ts_id: If `True`, time series IDs are included in the returned values. `Default: True`
         time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values. `Default: TimeFormat.ID_TIME`
         train_workers: Number of workers for loading training data. `0` means that the data will be loaded in the main process. `Default: 4`
         val_workers: Number of workers for loading validation data. `0` means that the data will be loaded in the main process. `Default: 3`
-        test_workers: Number of workers for loading test data. `0` means that the data will be loaded in the main process. `Default: 2`
-        all_workers: Number of workers for loading all data. `0` means that the data will be loaded in the main process. `Default: 4`
+        test_workers: Number of workers for loading test. `0` means that the data will be loaded in the main process. `Default: 2`
         init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process. `Default: 4`
         nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately. `Default: 1.0`
         random_state: Fixes randomness for reproducibility during configuration and dataset initialization. `Default: None`                   
     """
 
     def __init__(self,
-                 ts_ids: list[int] | npt.NDArray[np.int_] | float | int,
+                 train_ts: list[int] | npt.NDArray[np.int_] | float | int | None,
+                 val_ts: list[int] | npt.NDArray[np.int_] | float | int | None,
+                 test_ts: list[int] | npt.NDArray[np.int_] | float | int | None,
                  train_time_period: tuple[datetime, datetime] | range | float | None = None,
                  val_time_period: tuple[datetime, datetime] | range | float | None = None,
                  test_time_period: tuple[datetime, datetime] | range | float | None = None,
@@ -136,58 +137,66 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                  train_batch_size: int = 32,
                  val_batch_size: int = 64,
                  test_batch_size: int = 128,
-                 all_batch_size: int = 128,
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
-                 transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None = None,
-                 create_transformer_per_time_series: bool = True,
-                 partial_fit_initialized_transformers: bool = False,
+                 transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None = None,
+                 partial_fit_initialized_transformer: bool = False,
                  include_time: bool = True,
                  include_ts_id: bool = True,
                  time_format: TimeFormat | Literal["id_time", "datetime", "unix_time", "shifted_unix_time"] = TimeFormat.ID_TIME,
                  train_workers: int = 4,
                  val_workers: int = 3,
                  test_workers: int = 2,
-                 all_workers: int = 4,
                  init_workers: int = 4,
                  nan_threshold: float = 1.0,
                  random_state: int | None = None):
 
-        self.ts_ids = ts_ids
+        self.logger = logging.getLogger("disjoint_time_based_config")
 
-        self.ts_row_ranges = None
-
-        self.logger = logging.getLogger("time_config")
-
-        TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, all_batch_size, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
-        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
-                               train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, create_transformer_per_time_series, DatasetType.TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
+        TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, 1, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
+        SeriesBasedHandler.__init__(self, self.logger, True, train_ts, val_ts, test_ts)
+        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, 1, fill_missing_with, transform_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
+                               train_workers, val_workers, test_workers, 1, init_workers, nan_threshold, False, DatasetType.DISJOINT_TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
 
     def _validate_construction(self) -> None:
-        """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig._dataset_init]. """
+        """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig._dataset_init]. """
 
         DatasetConfig._validate_construction(self)
 
+        if self.train_ts is None or self.train_time_period is None:
+            if self.train_ts is not None:
+                self.logger.error("When train_ts is not None you must set train_time_period or set train_ts as None.")
+                raise ValueError("When train_ts is not None you must set train_time_period or set train_ts as None.")
+            if self.train_time_period is not None:
+                self.logger.error("When train_time_period is not None you must set train_ts or set train_time_period as None.")
+                raise ValueError("When train_time_period is not None you must set train_ts or set train_time_period as None.")
+
+        if self.val_ts is None or self.val_time_period is None:
+            if self.val_ts is not None:
+                self.logger.error("When val_ts is not None you must set val_time_period or set val_ts as None.")
+                raise ValueError("When val_ts is not None you must set val_time_period or set val_ts as None.")
+            if self.val_time_period is not None:
+                self.logger.error("When val_time_period is not None you must set val_ts or set val_time_period as None.")
+                raise ValueError("When val_time_period is not None you must set val_ts or set val_time_period as None.")
+
+        if self.test_ts is None or self.test_time_period is None:
+            if self.test_ts is not None:
+                self.logger.error("When test_ts is not None you must set test_time_period or set test_ts as None.")
+                raise ValueError("When test_ts is not None you must set test_time_period or set test_ts as None.")
+            if self.test_time_period is not None:
+                self.logger.error("When test_time_period is not None you must set test_ts or set test_time_period as None.")
+                raise ValueError("When test_time_period is not None you must set test_ts or set test_time_period as None.")
+
+        if self.train_ts is None and self.val_ts is None and self.test_ts is None:
+            self.logger.error("No set for time series has been set. You must set at least one time series set and its respective time period.")
+            raise ValueError("No set for time series has been set. You must set at least one time series set and its respective time period.")
+
+        self._validate_time_periods_init()
+        self._validate_ts_init()
         self._validate_set_shared_size_init()
         self._validate_sliding_window_init()
         self._update_batch_sizes(self.train_batch_size, self.val_batch_size, self.test_batch_size, self.all_batch_size)
 
-        assert self.ts_ids is not None, "ts_ids must not be None"
-
-        split_float_total = 0
-
-        if isinstance(self.ts_ids, (float, int)):
-            assert self.ts_ids > 0, "ts_ids must be greater than 0"
-            if isinstance(self.ts_ids, float):
-                split_float_total += self.ts_ids
-
-        # Check if the total of float splits exceeds 1.0
-        if split_float_total > 1.0:
-            self.logger.error("The total of the float split sizes is greater than 1.0. Current total: %s", split_float_total)
-            raise ValueError("Total value of used float split sizes can't be greater than 1.0.")
-
-        self._validate_time_periods_init()
-
-        self.logger.debug("Time-based configuration validated successfully.")
+        self.logger.debug("Disjoint-time-based configuration validated successfully.")
 
     def _update_batch_sizes(self, train_batch_size: int, val_batch_size: int, test_batch_size: int, all_batch_size: int) -> None:
 
@@ -208,9 +217,6 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             if isinstance(self.test_batch_size, int) and total_window_size > self.test_batch_size:
                 self.test_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
                 self.logger.info("test_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if isinstance(self.all_batch_size, int) and total_window_size > self.all_batch_size:
-                self.all_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("all_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
 
         DatasetConfig._update_batch_sizes(self, train_batch_size, val_batch_size, test_batch_size, all_batch_size)
 
@@ -220,35 +226,35 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
     def _get_train(self) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
         """Returns the indices corresponding to the training set. """
-        return self.ts_ids, self.train_time_period
+        return self.train_ts, self.train_time_period
 
     def _get_val(self) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
         """Returns the indices corresponding to the validation set. """
-        return self.ts_ids, self.val_time_period
+        return self.val_ts, self.val_time_period
 
     def _get_test(self) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
         """Returns the indices corresponding to the test set. """
-        return self.ts_ids, self.test_time_period
+        return self.test_ts, self.test_time_period
 
     def _get_all(self) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
         """Returns the indices corresponding to the all set. """
-        return self.ts_ids, self.all_time_period
+        return None, None
 
     def has_train(self) -> bool:
         """Returns whether training set is used. """
-        return self.train_time_period is not None
+        return self.train_ts is not None and self.train_time_period is not None
 
     def has_val(self) -> bool:
         """Returns whether validation set is used. """
-        return self.val_time_period is not None
+        return self.val_ts is not None and self.val_time_period is not None
 
     def has_test(self) -> bool:
         """Returns whether test set is used. """
-        return self.test_time_period is not None
+        return self.test_ts is not None and self.test_time_period is not None
 
     def has_all(self) -> bool:
         """Returns whether all set is used. """
-        return self.all_time_period is not None
+        return False
 
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:
         """Validates and filters `train_time_period`, `val_time_period`, `test_time_period` and `all_time_period` based on `dataset` and `aggregation`. """
@@ -256,33 +262,14 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         self._prepare_and_set_time_period_sets(all_time_ids, self.time_format)
 
     def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
-        """ Validates and filters inputted time series id from `ts_ids` based on `dataset` and `source_type`. Handles random set."""
+        """ Validates and filters inputted time series id from `train_ts`, `val_ts` and `test_ts` based on `dataset` and `source_type`. Handles random set."""
 
-        random_ts_ids = all_ts_ids[self.ts_id_name]
-        random_indices = np.arange(len(all_ts_ids))
-
-        # Process ts_ids if it was specified with times series ids
-        if not isinstance(self.ts_ids, (float, int)):
-            self.ts_ids, self.ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.ts_ids, all_ts_ids, all_ts_row_ranges, None, None, self.logger, self.ts_id_name, self.random_state)
-
-            mask = np.isin(random_ts_ids, self.ts_ids, invert=True)
-            random_ts_ids = random_ts_ids[mask]
-            random_indices = random_indices[mask]
-
-            self.logger.debug("ts_ids set: %s", self.ts_ids)
-
-        # Convert proportions to total values
-        if isinstance(self.ts_ids, float):
-            self.ts_ids = int(self.ts_ids * len(random_ts_ids))
-            self.logger.debug("ts_ids converted to total values: %s", self.ts_ids)
-
-        # Process random ts_ids if it is to be randomly made
-        if isinstance(self.ts_ids, int):
-            self.ts_ids, self.ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.ts_ids, random_indices, self.logger, self.ts_id_name, self.random_state)
-            self.logger.debug("Random ts_ids set with %s time series.", self.ts_ids)
+        self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state)
 
     def _set_feature_transformers(self) -> None:
         """Creates and/or validates transformers based on the `transform_with` parameter. """
+
+        self.create_transformer_per_time_series = False
 
         if self.transform_with is None:
             self.transform_with_display = None
@@ -298,35 +285,8 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                 self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
             self.partial_fit_initialized_transformers = False
 
-        # Treat transform_with as a list of initialized transformers
-        if isinstance(self.transform_with, (list, np.ndarray)):
-            self.create_transformer_per_time_series = True
-
-            self.transformers = np.array(self.transform_with)
-            self.transform_with = None
-
-            assert len(self.transformers) == len(self.ts_ids), "Number of time series in ts_ids does not match with number of provided transformers."
-
-            # Ensure that all transformers in the list are of the same type
-            for transformer in self.transformers:
-                if isinstance(transformer, (type, TransformerType)):
-                    raise ValueError("transformer_with as a list of transformers must contain only initialized transformers.")
-
-                new_transform_with, self.transform_with_display = transformer_from_input_to_transformer_type(type(transformer), check_for_fit=False, check_for_partial_fit=self.partial_fit_initialized_transformers)
-
-                if self.transform_with is None:
-                    self.transform_with = new_transform_with
-                elif self.transform_with != new_transform_with:
-                    raise ValueError("Transformers in transform_with must all be of the same type.")
-
-            self.are_transformers_premade = True
-
-            self.is_transformer_custom = "Custom" in self.transform_with_display
-            self.logger.debug("Using list of initialized transformers of type: %s", self.transform_with_display)
-
         # Treat transform_with as already initialized transformer
-        elif not isinstance(self.transform_with, (type, TransformerType)):
-            self.create_transformer_per_time_series = False
+        if not isinstance(self.transform_with, (type, TransformerType)):
 
             self.transformers = self.transform_with
 
@@ -354,12 +314,8 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             self.are_transformers_premade = False
 
             self.is_transformer_custom = "Custom" in self.transform_with_display
-            if self.create_transformer_per_time_series:
-                self.transformers = np.array([self.transform_with() for _ in self.ts_ids])
-                self.logger.debug("Using list of uninitialized transformers of type: %s", self.transform_with_display)
-            else:
-                self.transformers = self.transform_with()
-                self.logger.debug("Using uninitialized transformer of type: %s", self.transform_with_display)
+            self.transformers = self.transform_with()
+            self.logger.debug("Using uninitialized transformer of type: %s", self.transform_with_display)
 
     def _set_fillers(self) -> None:
         """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
@@ -373,28 +329,28 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
         # Set the fillers for the training set
         if self.has_train():
-            self.train_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
+            self.train_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.train_ts])
             self.logger.debug("Fillers for training set are set.")
 
         # Set the fillers for the validation set
         if self.has_val():
-            self.val_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
+            self.val_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.val_ts])
             self.logger.debug("Fillers for validation set are set.")
 
         # Set the fillers for the test set
         if self.has_test():
-            self.test_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
+            self.test_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
 
         # Set the fillers for the all set
-        if self.has_all():
-            self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
-            self.logger.debug("Fillers for all set are set.")
+        self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.all_ts])
+        self.logger.debug("Fillers for all set are set.")
 
     def _validate_finalization(self) -> None:
-        """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos. """
+        """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos."""
 
         self._validate_time_periods_overlap()
+        # self._validate_ts_overlap()
 
     def __str__(self) -> str:
 
@@ -402,7 +358,6 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             transformer_part = f"Transformer type: {str(self.transform_with_display)}"
         else:
             transformer_part = f'''Transformer type: {str(self.transform_with_display)}
-        Is transformer per Time series: {self.create_transformer_per_time_series}
         Are transformers premade: {self.are_transformers_premade}
         Are premade transformers partial_fitted: {self.partial_fit_initialized_transformers}'''
 
@@ -419,12 +374,13 @@ Config Details
     Source: {str(self.source_type)}
 
     Time series
-        Time series IDS: {get_abbreviated_list_string(self.ts_ids)}
+        Train time series IDs: {get_abbreviated_list_string(self.train_ts)}
+        Val time series IDs: {get_abbreviated_list_string(self.val_ts)}
+        Test time series IDs: {get_abbreviated_list_string(self.test_ts)}
     Time periods
         Train time periods: {str(self.display_train_time_period)}
         Val time periods: {str(self.display_val_time_period)}
         Test time periods: {str(self.display_test_time_period)}
-        All time periods: {str(self.display_all_time_period)}
     Features
         Taken features: {str(self.features_to_take_without_ids)}
         Default values: {self.default_values}
@@ -434,7 +390,6 @@ Config Details
         Sliding window size: {self.sliding_window_size}
         Sliding window prediction size: {self.sliding_window_prediction_size}
         Sliding window step size: {self.sliding_window_step}
-        Set shared size: {self.set_shared_size}
     Fillers
         Filler type: {str(self.fill_missing_with_display)}
     Transformers
@@ -443,13 +398,11 @@ Config Details
         Train batch size: {self.train_batch_size}
         Val batch size: {self.val_batch_size}
         Test batch size: {self.test_batch_size}
-        All batch size: {self.all_batch_size}
     Default workers
         Init worker count: {str(self.init_workers)}
         Train worker count: {str(self.train_workers)}
         Val worker count: {str(self.val_workers)}
         Test worker count: {str(self.test_workers)}
-        All worker count: {str(self.all_workers)}
     Other
         Nan threshold: {str(self.nan_threshold)}
         Random state: {self.random_state}

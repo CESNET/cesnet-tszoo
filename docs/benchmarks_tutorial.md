@@ -2,7 +2,7 @@
 
 This tutorial will look at how to use benchmarks.
 
-Only time-based will be used, because all methods work almost the same way for series-based.
+Only time-based will be used, because all methods work almost the same way for other dataset types.
 
 !!! info "Note"
     For every option and more detailed examples refer to Jupyter notebook [`benchmarks`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/benchmarks.ipynb)
@@ -57,7 +57,7 @@ dataset = benchmark.get_initialized_dataset(display_config_details=True, check_e
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.configs import TimeBasedConfig                                                                            
 
-time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.IP_ADDRESSES_FULL, aggregation=AgreggationType.AGG_1_DAY, is_series_based=False, display_details=True)
+time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.IP_ADDRESSES_FULL, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED, display_details=True)
 config = TimeBasedConfig([1548925, 443967], train_time_period=1.0, features_to_take=["n_flows", "n_packets", "n_bytes"], transform_with=None)
 
 # Call on time-based dataset to use created config -> must be done before saving exporting benchmark

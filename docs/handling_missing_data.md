@@ -2,7 +2,7 @@
 
 This tutorial will look at some configuration options used for handling missing data.
 
-Only time-based will be used, because all methods work almost the same way for series-based.
+Only time-based will be used, because all methods work almost the same way for other dataset types.
 
 !!! info "Note"
     For every configuration and more detailed examples refer to Jupyter notebook [`handling_missing_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/handling_missing_data.ipynb)

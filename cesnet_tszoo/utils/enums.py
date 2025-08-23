@@ -153,6 +153,19 @@ class DataloaderOrder(Enum):
     """Loaded data will be in the selected order. """
 
 
+class DatasetType(Enum):
+    """Types of datasets. """
+
+    TIME_BASED = "time_based"
+    """This type of dataset is defined by train/val/test time periods and one time series set. """
+
+    SERIES_BASED = "series_based"
+    """This type of dataset is defined by train/val/test time series sets and one time period set. """
+
+    DISJOINT_TIME_BASED = "disjoint_time_based"
+    """This type of dataset is defined by train/val/test time series sets and their respective time period sets. """
+
+
 class ScalerType(Enum):
     """Obsolete, dont use. Only for backward compatibility. """
 

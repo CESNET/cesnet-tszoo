@@ -8,7 +8,7 @@ import numpy.typing as npt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, TransformerType, FillerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, TransformerType, FillerType, DatasetType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
@@ -20,7 +20,7 @@ from cesnet_tszoo.utils.transformer import Transformer
 @dataclass
 class SeriesBasedCesnetDataset(CesnetDataset):
     """
-    This class is used for series-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] with parameter `is_series_based` = `True`.
+    This class is used for series-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] with parameter `dataset_type` = `DatasetType.SERIES_BASED`.
 
     Series-based means batch size affects number of returned time series in one batch. Which times for each time series are returned does not change.
 
@@ -63,7 +63,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         aggregation: The aggregation type for the selected source type.
         ts_id_name: Name of the id used for time series.
         default_values: Default values for each available feature.
-        additional_data: Available small datasets. Can get them by calling [`get_additional_data`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_additional_data] with their name.
+        additional_data: Available small datasets. Can get them by calling [`get_additional_data`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_additional_data] with their name.
 
     Attributes:
         time_indices: Available time IDs for the dataset.
@@ -72,11 +72,12 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         logger: Logger for displaying information.  
         imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
         imported_annotations_time_identifier: Identifier for the imported annotations of type `AnnotationType.ID_TIME`.
-        imported_annotations_both_identifier: Identifier for the imported annotations of type `AnnotationType.BOTH`.  
+        imported_annotations_both_identifier: Identifier for the imported annotations of type `AnnotationType.BOTH`.   
 
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize] is called.
 
     Attributes:
+        dataset_type: Type of this dataset.
         dataset_config: Configuration of the dataset.
         train_dataset: Training set as a `SeriesBasedDataset` instance wrapping the PyTables database.
         val_dataset: Validation set as a `SeriesBasedDataset` instance wrapping the PyTables database.
@@ -95,7 +96,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     test_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
     all_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
 
-    is_series_based: bool = field(default=True, init=False)
+    dataset_type: DatasetType = field(default=DatasetType.SERIES_BASED, init=False)
 
     _export_config_copy: Optional[SeriesBasedConfig] = field(default=None, init=False)
 
@@ -105,11 +106,11 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         The following configuration attributes are used during initialization:
 
-        | Dataset config                    | Description                                                                                    |
-        | --------------------------------- | ---------------------------------------------------------------------------------------------- |
-        | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
-        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
-        | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
+        | Dataset config                         | Description                                                                                    |
+        | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+        | `init_workers`                         | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
+        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.   |
+        | `nan_threshold`                        | Filters out time series with missing values exceeding the specified threshold.                 |
 
         Parameters:
             dataset_config: Desired configuration of the dataset.
@@ -145,21 +146,21 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         Can affect following configuration. 
 
-        | Dataset config                     | Description                                                                                                                                     |
-        | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-        | `default_values`                   | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |           
-        | `train_batch_size`                 | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
-        | `val_batch_size`                   | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
-        | `test_batch_size`                  | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
-        | `all_batch_size`                   | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
-        | `fill_missing_with`                | Defines how to fill missing values in the dataset.                                                                                              |     
-        | `transform_with`                       | Defines the transformer to transform the dataset.                                                                                                    |      
-        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                            |   
-        | `train_workers`                    | Number of workers for loading training data.                                                                                                    |
-        | `val_workers`                      | Number of workers for loading validation data.                                                                                                  |
-        | `test_workers`                     | Number of workers for loading test data.                                                                                                        |
-        | `all_workers`                      | Number of workers for loading all data.                                                                                                         |     
-        | `init_workers`                     | Number of workers for dataset configuration.                                                                                                    |                        
+        | Dataset config                          | Description                                                                                                                                     |
+        | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+        | `default_values`                        | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |           
+        | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
+        | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
+        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
+        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
+        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
+        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               |      
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
+        | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
+        | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
+        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |
+        | `all_workers`                           | Number of workers for loading all data.                                                                                                         |     
+        | `init_workers`                          | Number of workers for dataset configuration.                                                                                                    |                        
 
         Parameters:
             default_values: Default values for missing data, applied before fillers. `Defaults: config`.            
@@ -209,19 +210,19 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         result = {}
 
         if about == SplitType.TRAIN:
-            if not self.dataset_config.has_train:
+            if not self.dataset_config.has_train():
                 raise ValueError("Train set is not used.")
             ts_ids = self.dataset_config.train_ts
         elif about == SplitType.VAL:
-            if not self.dataset_config.has_val:
+            if not self.dataset_config.has_val():
                 raise ValueError("Val set is not used.")
             ts_ids = self.dataset_config.val_ts
         elif about == SplitType.TEST:
-            if not self.dataset_config.has_test:
+            if not self.dataset_config.has_test():
                 raise ValueError("Test set is not used.")
             ts_ids = self.dataset_config.test_ts
         elif about == SplitType.ALL:
-            if not self.dataset_config.has_all:
+            if not self.dataset_config.has_all():
                 raise ValueError("All set is not used.")
             ts_ids = self.dataset_config.all_ts
         else:
@@ -240,7 +241,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     def _initialize_datasets(self) -> None:
         """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
 
-        if self.dataset_config.has_train:
+        if self.dataset_config.has_train():
             self.train_dataset = SeriesBasedDataset(self.dataset_path,
                                                     self.dataset_config._get_table_data_path(),
                                                     self.dataset_config.ts_id_name,
@@ -256,7 +257,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                     self.dataset_config.transformers)
             self.logger.debug("train_dataset initiliazed.")
 
-        if self.dataset_config.has_val:
+        if self.dataset_config.has_val():
             self.val_dataset = SeriesBasedDataset(self.dataset_path,
                                                   self.dataset_config._get_table_data_path(),
                                                   self.dataset_config.ts_id_name,
@@ -272,7 +273,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                   self.dataset_config.transformers)
             self.logger.debug("val_dataset initiliazed.")
 
-        if self.dataset_config.has_test:
+        if self.dataset_config.has_test():
             self.test_dataset = SeriesBasedDataset(self.dataset_path,
                                                    self.dataset_config._get_table_data_path(),
                                                    self.dataset_config.ts_id_name,
@@ -288,7 +289,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                                    self.dataset_config.transformers)
             self.logger.debug("test_dataset initiliazed.")
 
-        if self.dataset_config.has_all:
+        if self.dataset_config.has_all():
             self.all_dataset = SeriesBasedDataset(self.dataset_path,
                                                   self.dataset_config._get_table_data_path(),
                                                   self.dataset_config.ts_id_name,
@@ -365,7 +366,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             init_dataset.cleanup()
 
         # Update sets based on filtered time series
-        if self.dataset_config.has_train:
+        if self.dataset_config.has_train():
             if len(train_ts_ids_to_take) == 0:
                 raise ValueError("No time series left in training set after applying nan_threshold.")
             self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[train_ts_ids_to_take]
@@ -376,7 +377,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             self.logger.debug("Train set updated: %s time series left.", len(train_ts_ids_to_take))
 
-        if self.dataset_config.has_val:
+        if self.dataset_config.has_val():
             if len(val_ts_ids_to_take) == 0:
                 raise ValueError("No time series left in validation set after applying nan_threshold.")
             self.dataset_config.val_ts_row_ranges = self.dataset_config.val_ts_row_ranges[val_ts_ids_to_take]
@@ -387,7 +388,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             self.logger.debug("Validation set updated: %s time series selected.", len(val_ts_ids_to_take))
 
-        if self.dataset_config.has_test:
+        if self.dataset_config.has_test():
             if len(test_ts_ids_to_take) == 0:
                 raise ValueError("No time series left in test set after applying nan_threshold.")
             self.dataset_config.test_ts_row_ranges = self.dataset_config.test_ts_row_ranges[test_ts_ids_to_take]
@@ -398,7 +399,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             self.logger.debug("Test set updated: %s time series selected.", len(test_ts_ids_to_take))
 
-        if self.dataset_config.has_all:
+        if self.dataset_config.has_all():
             if len(all_ts_ids_to_take) == 0:
                 raise ValueError("No series left in all set after applying nan_threshold.")
             self.dataset_config.all_ts = self.dataset_config.all_ts[all_ts_ids_to_take]
@@ -425,15 +426,15 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         self._export_config_copy.database_name = self.database_name
 
-        if self.dataset_config.has_train:
+        if self.dataset_config.has_train():
             self._export_config_copy.train_ts = self.dataset_config.train_ts.copy()
             self.logger.debug("Updated train_ts of _export_config_copy.")
 
-        if self.dataset_config.has_val:
+        if self.dataset_config.has_val():
             self._export_config_copy.val_ts = self.dataset_config.val_ts.copy()
             self.logger.debug("Updated val_ts of _export_config_copy.")
 
-        if self.dataset_config.has_test:
+        if self.dataset_config.has_test():
             self._export_config_copy.test_ts = self.dataset_config.test_ts.copy()
             self.logger.debug("Updated test_ts of _export_config_copy.")
 
@@ -449,10 +450,10 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         Affects following configuration. 
 
-        | Dataset config                     | Description                                                                                                    |
-        | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-        | `transform_with`                       | Defines the transformer to transform the dataset.                                                                   |     
-        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                           |    
+        | Dataset config                         | Description                                                                                                    |
+        | -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+        | `transform_with`                       | Defines the transformer to transform the dataset.                                                              |     
+        | `partial_fit_initialized_transformers` | If `True`, partial fitting on train set is performed when using initiliazed transformers.                      |    
 
         Parameters:
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
