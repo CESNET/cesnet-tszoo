@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import warnings
 
 import numpy as np
-import sklearn.preprocessing as sk
 
 from cesnet_tszoo.utils.enums import AnomalyHandlerType
 from cesnet_tszoo.utils.constants import Z_SCORE, INTERQUARTILE_RANGE
@@ -24,6 +23,7 @@ class ZScore(AnomalyHandler):
     def __init__(self):
         self.mean = None
         self.std = None
+        self.threshold = 3
 
     def fit(self, data: np.ndarray):
         warnings.filterwarnings("ignore")
@@ -34,9 +34,11 @@ class ZScore(AnomalyHandler):
     def transform_anomalies(self, data: np.ndarray, default_values: np.ndarray):
         temp = data - self.mean
         z_score = np.divide(temp, self.std, out=np.zeros_like(temp, dtype=float), where=self.std != 0)
-        mask_outliers = np.abs(z_score) > 3
+        mask_outliers = np.abs(z_score) > self.threshold
 
-        data[mask_outliers] = np.take(default_values, np.where(mask_outliers)[1])
+        clipped_values = self.mean + np.sign(z_score) * self.threshold * self.std
+
+        data[mask_outliers] = clipped_values[mask_outliers]
 
 
 class InterquartileRange(AnomalyHandler):
