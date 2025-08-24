@@ -42,13 +42,23 @@ class ZScore(AnomalyHandler):
 class InterquartileRange(AnomalyHandler):
 
     def __init__(self):
-        self.transformer = sk.MinMaxScaler()
+        self.lower_bound = None
+        self.upper_bound = None
+        self.iqr = None
 
     def fit(self, data: np.ndarray):
-        self.transformer.fit(data)
+        q25, q75 = np.percentile(data, [25, 75], axis=0)
+        self.iqr = q75 - q25
+
+        self.lower_bound = q25 - 1.5 * self.iqr
+        self.upper_bound = q75 + 1.5 * self.iqr
 
     def transform_anomalies(self, data: np.ndarray, default_values: np.ndarray):
-        return self.transformer.transform(data)
+        mask_lower_outliers = data < self.lower_bound
+        mask_upper_outliers = data > self.upper_bound
+
+        data[mask_lower_outliers] = np.take(self.lower_bound, np.where(mask_lower_outliers)[1])
+        data[mask_upper_outliers] = np.take(self.upper_bound, np.where(mask_upper_outliers)[1])
 
 
 def input_has_fit_method(to_check) -> bool:
