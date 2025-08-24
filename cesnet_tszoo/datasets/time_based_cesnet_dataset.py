@@ -289,7 +289,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
         """
         Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
 
-        Goes through data to validate time series against `nan_threshold`, fit/partial fit `transformers` and prepare `fillers`.
+        Goes through data to validate time series against `nan_threshold`, fit/partial fit `transformers`, `anomaly handlers` and prepare `fillers`.
         """
 
         init_dataset = TimeBasedInitializerDataset(self.dataset_path,

@@ -155,7 +155,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
         | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
         | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
-        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               |      
+        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               | 
+        | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the train set.                                                                               |     
         | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
         | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
         | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
@@ -171,6 +172,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
             fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            handle_anomalies_with: Defines the anomaly handler to handle anomalies in the train set. `Defaults: config`.
             partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
             train_workers: Number of workers for loading training data. `Defaults: config`.
             val_workers: Number of workers for loading validation data. `Defaults: config`.
@@ -314,7 +316,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         """
         Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
 
-        Goes through data to validate time series against `nan_threshold`, partial fit `transformers` and prepare `fillers`.
+        Goes through data to validate time series against `nan_threshold`, partial fit `transformers`, fit `anomaly handlers` and prepare `fillers`.
         """
 
         init_dataset = SeriesBasedInitializerDataset(self.dataset_path,

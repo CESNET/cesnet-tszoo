@@ -922,8 +922,9 @@ class CesnetDataset(ABC):
         | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
         | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
         | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
-        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
-        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               |     
+        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |                
+        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               | 
+        | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the dataset.                                                                                 |            
         | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers.                        |   
         | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
         | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
@@ -944,6 +945,7 @@ class CesnetDataset(ABC):
             all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
             fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            handle_anomalies_with: Defines the anomaly handler to handle anomalies in the dataset. `Defaults: config`.  
             create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Defaults: config`.  
             partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
             train_workers: Number of workers for loading training data. `Defaults: config`.
@@ -1114,6 +1116,22 @@ class CesnetDataset(ABC):
         self.logger.info("Filler has been changed successfuly.")
 
     def apply_anomaly_handler(self, handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"], workers: int | Literal["config"] = "config") -> None:
+        """Used for updating anomaly handler set in config.
+
+        Set parameter to `config` to keep it as it is config.
+
+        If exception is thrown during set, no changes are made.
+
+        Affects following configuration. 
+
+        | Dataset config                     | Description                                                            |
+        | ---------------------------------- | ---------------------------------------------------------------------- |
+        | `handle_anomalies_with`            | Defines the anomaly handler to handle anomalies in the dataset.        |     
+
+        Parameters:
+            handle_anomalies_with: Defines the anomaly handler to handle anomalies in the dataset. `Defaults: config`.  
+            workers: How many workers to use when setting new filler. `Defaults: config`.      
+        """
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating anomaly handler.")
 
@@ -2108,7 +2126,7 @@ Dataset details:
 
     @abstractmethod
     def _initialize_transformers_and_details(self, workers: int) -> None:
-        """ Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. Goes through data to validate time series against `nan_threshold`, fit `transformers` and prepare `fillers`"""
+        """ Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. Goes through data to validate time series against `nan_threshold`, fit `transformers`, fit `anomaly handlers` and prepare `fillers`"""
         ...
 
     def _update_export_config_copy(self) -> None:
