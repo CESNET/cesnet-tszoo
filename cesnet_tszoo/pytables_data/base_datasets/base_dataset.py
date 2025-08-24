@@ -146,7 +146,7 @@ class BaseDataset(Dataset, ABC):
                     first_next_existing_values_distance = upper_valid_rows[ID_TIME_COLUMN_NAME][len(existing_indices)]
 
             if anomaly_handlers_to_use is not None:
-                anomaly_handlers_to_use[i].transform_anomalies(result[i, :, self.offset_exclude_feature_ids:].view(), self.default_values)
+                anomaly_handlers_to_use[i].transform_anomalies(result[i, :, self.offset_exclude_feature_ids:].view())
 
             result[i, missing_indices, self.offset_exclude_feature_ids:] = self.default_values
 

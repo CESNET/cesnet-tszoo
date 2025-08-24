@@ -101,4 +101,4 @@ class SeriesBasedInitializerDataset(InitializerDataset):
 
         if idx < len(self.train_ts_row_ranges):
             self.anomaly_handlers[idx].fit(data[:, self.offset_exclude_feature_ids:])
-            self.anomaly_handlers[idx].transform_anomalies(data[:, self.offset_exclude_feature_ids:], self.default_values)
+            self.anomaly_handlers[idx].transform_anomalies(data[:, self.offset_exclude_feature_ids:])

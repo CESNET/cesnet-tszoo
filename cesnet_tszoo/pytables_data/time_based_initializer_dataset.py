@@ -155,4 +155,4 @@ class TimeBasedInitializerDataset(InitializerDataset):
             return
 
         self.anomaly_handlers[idx].fit(data[:len(self.train_time_period), self.offset_exclude_feature_ids:])
-        self.anomaly_handlers[idx].transform_anomalies(data[:, self.offset_exclude_feature_ids:], self.default_values)
+        self.anomaly_handlers[idx].transform_anomalies(data[:, self.offset_exclude_feature_ids:])

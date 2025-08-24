@@ -14,7 +14,7 @@ class AnomalyHandler(ABC):
         ...
 
     @abstractmethod
-    def transform_anomalies(self, data: np.ndarray, default_values: np.ndarray) -> np.ndarray:
+    def transform_anomalies(self, data: np.ndarray) -> np.ndarray:
         ...
 
 
@@ -25,13 +25,13 @@ class ZScore(AnomalyHandler):
         self.std = None
         self.threshold = 3
 
-    def fit(self, data: np.ndarray):
+    def fit(self, data: np.ndarray) -> None:
         warnings.filterwarnings("ignore")
         self.mean = np.nanmean(data, axis=0)
         self.std = np.nanstd(data, axis=0)
         warnings.filterwarnings("always")
 
-    def transform_anomalies(self, data: np.ndarray, default_values: np.ndarray):
+    def transform_anomalies(self, data: np.ndarray) -> np.ndarray:
         temp = data - self.mean
         z_score = np.divide(temp, self.std, out=np.zeros_like(temp, dtype=float), where=self.std != 0)
         mask_outliers = np.abs(z_score) > self.threshold
@@ -48,14 +48,14 @@ class InterquartileRange(AnomalyHandler):
         self.upper_bound = None
         self.iqr = None
 
-    def fit(self, data: np.ndarray):
+    def fit(self, data: np.ndarray) -> None:
         q25, q75 = np.percentile(data, [25, 75], axis=0)
         self.iqr = q75 - q25
 
         self.lower_bound = q25 - 1.5 * self.iqr
         self.upper_bound = q75 + 1.5 * self.iqr
 
-    def transform_anomalies(self, data: np.ndarray, default_values: np.ndarray):
+    def transform_anomalies(self, data: np.ndarray) -> np.ndarray:
         mask_lower_outliers = data < self.lower_bound
         mask_upper_outliers = data > self.upper_bound
 
