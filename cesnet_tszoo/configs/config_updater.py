@@ -161,4 +161,4 @@ class ConfigUpdater:
         self.config_to_update.handle_anomalies_with_display = None
         self.config_to_update.is_anomaly_handler_custom = False
         self.config_to_update.anomaly_handlers = None
-        self.used_anomaly_handlers = None
+        self.config_to_update.used_anomaly_handlers = None
