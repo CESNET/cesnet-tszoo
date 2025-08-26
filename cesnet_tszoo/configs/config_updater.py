@@ -37,6 +37,8 @@ class ConfigUpdater:
             self.__update_to_new_config_type_support()
             self.__add_anomaly_handler()
 
+            self.config_to_update.export_update_needed = True
+
             self.config_to_update.version = version.VERSION_0_1_3
             self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_0_1_3)
 
@@ -56,13 +58,10 @@ class ConfigUpdater:
         if Version(self.config_to_update.version) < Version(version.current_version):
             self.logger.warning("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.config_to_update.version, version.current_version)
             self.logger.warning("Will try to update the config. It is recommended to recreate this config or at least export this config alone or through benchmark to create updated config file.")
-            self.config_to_update.export_update_needed = True
         elif Version(self.config_to_update.version) > Version(version.current_version):
             self.logger.error("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.config_to_update.version, version.current_version)
             self.logger.error("Update cesnet-tszoo package to use this config.")
             raise ValueError(f"Imported config was made for cesnet-tszoo package of version '{self.config_to_update.version}', but current used cesnet-tszoo package version is '{version.current_version}'!")
-        else:
-            self.config_to_update.export_update_needed = False
 
     def __scaler_to_transformer_version_update(self):
         self.logger.debug("Updating attributes from scaler variant to transformer variant.")
