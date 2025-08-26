@@ -154,6 +154,8 @@ class ConfigUpdater:
                                                             nan_threshold=self.config_to_update.nan_threshold,
                                                             random_state=self.config_to_update.random_state)
 
+            self.config_to_update.allow_ts_id_overlap = True
+
     def __add_anomaly_handler(self):
         self.logger.debug("Adding anomaly handler attributes.")
 
