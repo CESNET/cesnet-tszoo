@@ -4,7 +4,8 @@ annotations_time_identifier: null
 annotations_ts_identifier: null
 config_identifier: 63882fe052f8
 database_name: CESNET-TimeSeries24
+dataset_type: time_based
 description: null
-is_series_based: false
-related_results_identifier: 63882fe052f8
+related_results_identifier: null
 source_type: institutions
+version: 0.1.3

@@ -25,4 +25,6 @@ def load_config(identifier: str, config_root: str, database_name: str, source_ty
 
     config = config_updater.try_get_updated_config()
 
+    config.import_identifier = identifier
+
     return config

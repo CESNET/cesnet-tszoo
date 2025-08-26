@@ -1634,7 +1634,7 @@ Dataset details:
         self._update_annotations_imported_status(on, identifier)
         self.logger.info("Annotations successfully saved to %s", path)
 
-    def save_config(self, identifier: str, create_with_details_file: bool = True, force_write: bool = False) -> None:
+    def save_config(self, identifier: str, create_with_details_file: bool = True, force_write: bool = False, **kwargs) -> None:
         """ 
         Saves the config as a pickle file.
 
@@ -1647,10 +1647,13 @@ Dataset details:
             force_write: If set to `True`, will overwrite any existing files with the same name. `Default: False`            
         """
 
+        default_kwargs = {'hard_force': False}
+        kwargs = {**default_kwargs, **kwargs}
+
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to save config.")
 
-        if exists_built_in_config(identifier):
+        if not kwargs["hard_force"] and exists_built_in_config(identifier):
             raise ValueError("Built-in config with this identifier already exists. Choose another identifier.")
 
         # Ensure the config directory exists
@@ -1688,7 +1691,7 @@ Dataset details:
         self.dataset_config.export_update_needed = False
         self.logger.info("Config successfully saved")
 
-    def save_benchmark(self, identifier: str, force_write: bool = False) -> None:
+    def save_benchmark(self, identifier: str, force_write: bool = False, **kwargs) -> None:
         """ 
         Saves the benchmark as a YAML file.
 
@@ -1703,10 +1706,13 @@ Dataset details:
             force_write: If set to `True`, will overwrite any existing files with the same name. `Default: False`            
         """
 
+        default_kwargs = {'hard_force': False}
+        kwargs = {**default_kwargs, **kwargs}
+
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to save benchmark.")
 
-        if exists_built_in_benchmark(identifier):
+        if not kwargs["hard_force"] and exists_built_in_benchmark(identifier):
             raise ValueError("Built-in benchmark with this identifier already exists. Choose another identifier.")
 
         # Determine annotation names based on the available annotations and whether the annotations were imported
@@ -1740,7 +1746,7 @@ Dataset details:
 
         # If the config was not imported, save it
         if self.dataset_config.import_identifier is None or self.dataset_config.export_update_needed:
-            self.save_config(export_benchmark.config_identifier, force_write=force_write)
+            self.save_config(export_benchmark.config_identifier, force_write=force_write, hard_force=kwargs["hard_force"])
         else:
             self.logger.info("Using already existing config with identifier: %s", self.dataset_config.import_identifier)
 
