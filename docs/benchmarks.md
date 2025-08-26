@@ -42,12 +42,12 @@ This benchmarks are in process of making and they will be added soon.
 
 This benchmarks are in process of making and they will be added soon.
 
-## Available dataset configs from related works
+## Available dataset benchmarks from related works
 
-For supporting reproducibility of approaches, the CESNET-TS-Zoo allows to share ts-zoo configs with others using pull request from forked repository.
+For supporting reproducibility of approaches, the CESNET-TS-Zoo allows to share ts-zoo benchmarks with others using pull request from forked repository.
 
-Each related work contains configs and example of usage. Please follow authors instruction in example to ensure comparable results. Following configs are already included in the ts-zoo:
+Each related work contains benchmarks and example of usage. Please follow authors instruction in example to ensure comparable results. Following benchmarks are already included in the ts-zoo:
 
-| DOI  | Task | Configs link |
+| DOI  | Task | Benchmarks link |
 |:-----------------|:-----------------:|:-----------------:|
-| <https://doi.org/10.48550/arXiv.2503.17410> | Univariate forecasting  | [configs][arxiv.org/abs/2503.17410]  |
+| <https://doi.org/10.48550/arXiv.2503.17410> | Univariate forecasting  | [benchmarks][arxiv.org/abs/2503.17410]  |
