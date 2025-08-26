@@ -21,7 +21,7 @@ Related config parameters in [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.di
 !!! warning "Only used on train set"
     Anomaly handler will only be used for train set, because of nature of disjoint-time-based. 
 
-## Using transformers on series-based dataset
+## Using anomaly handlers on series-based dataset
 Related config parameters in [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig]:
 
 - `handle_anomalies_with`:  Defines the anomaly handlers to handle anomalies in the train set. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or pass a type of custom anomaly handler.
