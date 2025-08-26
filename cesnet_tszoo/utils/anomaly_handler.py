@@ -134,9 +134,9 @@ def input_has_fit_method(to_check) -> bool:
 
 
 def input_has_transform(to_check) -> bool:
-    """Checks whether `to_check` has transform method. """
+    """Checks whether `to_check` has transform_anomalies method. """
 
-    transform_method = getattr(to_check, "transform", None)
+    transform_method = getattr(to_check, "transform_anomalies", None)
     if callable(transform_method):
         return True
 
