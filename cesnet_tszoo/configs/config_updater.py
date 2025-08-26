@@ -35,6 +35,7 @@ class ConfigUpdater:
 
             self.__scaler_to_transformer_version_update()
             self.__update_to_new_config_type_support()
+            self.__add_anomaly_handler()
 
             self.config_to_update.version = version.VERSION_0_1_3
             self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_0_1_3)
@@ -152,3 +153,12 @@ class ConfigUpdater:
                                                             init_workers=self.config_to_update.init_workers,
                                                             nan_threshold=self.config_to_update.nan_threshold,
                                                             random_state=self.config_to_update.random_state)
+
+    def __add_anomaly_handler(self):
+        self.logger.debug("Adding anomaly handler attributes.")
+
+        self.config_to_update.handle_anomalies_with = None
+        self.config_to_update.handle_anomalies_with_display = None
+        self.config_to_update.is_anomaly_handler_custom = False
+        self.config_to_update.anomaly_handlers = None
+        self.config_to_update.used_anomaly_handlers = None

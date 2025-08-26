@@ -12,8 +12,9 @@ class SeriesBasedDataset(BaseDataset):
 
     def __getitem__(self, batch_idx):
         fillers = self.fillers[batch_idx] if self.fillers is not None else None
+        anomaly_handlers = self.anomaly_handlers[batch_idx] if self.anomaly_handlers is not None else None
 
-        data = self.load_data_from_table(self.ts_row_ranges[batch_idx], self.time_period, fillers)
+        data = self.load_data_from_table(self.ts_row_ranges[batch_idx], self.time_period, fillers, anomaly_handlers)
 
         if self.include_time:
             if self.time_format == TimeFormat.ID_TIME:

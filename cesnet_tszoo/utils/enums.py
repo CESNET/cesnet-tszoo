@@ -98,6 +98,16 @@ class TransformerType(Enum):
     """Represents transformer [`QuantileTransformer`][cesnet_tszoo.utils.transformer.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """
 
 
+class AnomalyHandlerType(Enum):
+    """Built-in anomaly handler types. """
+
+    Z_SCORE = "z-score"
+    """Represents anomaly handler [`ZScore`][cesnet_tszoo.utils.anomaly_handler.ZScore]. Equivalent to literal `z-score`. """
+
+    INTERQUARTILE_RANGE = "interquartile_range"
+    """Represents anomaly handler [`InterquartileRange`][cesnet_tszoo.utils.anomaly_handler.InterquartileRange]. Equivalent to literal `interquartile_range`. """
+
+
 class TimeFormat(Enum):
     """Different supported time formats. """
 

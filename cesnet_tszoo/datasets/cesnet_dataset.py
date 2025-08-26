@@ -28,7 +28,7 @@ from cesnet_tszoo.datasets.loaders import create_multiple_df_from_dataloader, cr
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
 from cesnet_tszoo.utils.transformer import Transformer
-from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType
+from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 from cesnet_tszoo.utils.download import resumable_download
@@ -38,7 +38,7 @@ from cesnet_tszoo.configs.config_loading import load_config
 @dataclass
 class CesnetDataset(ABC):
     """
-    Base class for cesnet datasets. This class should **not** be used directly. Instead, use one of the derived classes, such as [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`CombinedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.CombinedCesnetDataset].
+    Base class for cesnet datasets. This class should **not** be used directly. Instead, use one of the derived classes, such as [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset], [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] or [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset].
 
     The dataset provides multiple ways to access the data:
 
@@ -893,6 +893,7 @@ class CesnetDataset(ABC):
                                              all_batch_size: int | Literal["config"] = "config",
                                              fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
                                              transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"] = "config",
                                              create_transformer_per_time_series: bool | Literal["config"] = "config",
                                              partial_fit_initialized_transformers: bool | Literal["config"] = "config",
                                              train_workers: int | Literal["config"] = "config",
@@ -921,8 +922,9 @@ class CesnetDataset(ABC):
         | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
         | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
         | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
-        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
-        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               |     
+        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |                
+        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               | 
+        | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the dataset.                                                                                 |            
         | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers.                        |   
         | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
         | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
@@ -943,6 +945,7 @@ class CesnetDataset(ABC):
             all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
             fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            handle_anomalies_with: Defines the anomaly handler to handle anomalies in the dataset. `Defaults: config`.  
             create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Defaults: config`.  
             partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
             train_workers: Number of workers for loading training data. `Defaults: config`.
@@ -1005,6 +1008,11 @@ class CesnetDataset(ABC):
         else:
             requires_init = True
 
+        if handle_anomalies_with == "config":
+            handle_anomalies_with = self._export_config_copy.handle_anomalies_with
+        else:
+            requires_init = True
+
         if train_workers == "config":
             train_workers = self.dataset_config.train_workers
         if val_workers == "config":
@@ -1033,6 +1041,7 @@ class CesnetDataset(ABC):
                 self._export_config_copy.all_batch_size = all_batch_size
                 self._export_config_copy.fill_missing_with = fill_missing_with
                 self._export_config_copy.transform_with = transform_with
+                self._export_config_copy.handle_anomalies_with = handle_anomalies_with
                 self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
                 self._export_config_copy.create_transformer_per_time_series = create_transformer_per_time_series
                 self._export_config_copy.train_workers = train_workers
@@ -1105,6 +1114,29 @@ class CesnetDataset(ABC):
 
         self.update_dataset_config_and_initialize(fill_missing_with=fill_missing_with, workers=workers)
         self.logger.info("Filler has been changed successfuly.")
+
+    def apply_anomaly_handler(self, handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"], workers: int | Literal["config"] = "config") -> None:
+        """Used for updating anomaly handler set in config.
+
+        Set parameter to `config` to keep it as it is config.
+
+        If exception is thrown during set, no changes are made.
+
+        Affects following configuration. 
+
+        | Dataset config                     | Description                                                            |
+        | ---------------------------------- | ---------------------------------------------------------------------- |
+        | `handle_anomalies_with`            | Defines the anomaly handler to handle anomalies in the dataset.        |     
+
+        Parameters:
+            handle_anomalies_with: Defines the anomaly handler to handle anomalies in the dataset. `Defaults: config`.  
+            workers: How many workers to use when setting new filler. `Defaults: config`.      
+        """
+        if self.dataset_config is None or not self.dataset_config.is_initialized:
+            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating anomaly handler.")
+
+        self.update_dataset_config_and_initialize(handle_anomalies_with=handle_anomalies_with, workers=workers)
+        self.logger.info("Anomaly handler has been changed successfuly.")
 
     def apply_transformer(self, transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
                           create_transformer_per_time_series: bool | Literal["config"] = "config", partial_fit_initialized_transformers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
@@ -1846,6 +1878,12 @@ Dataset details:
             filler = np.array([self.dataset_config.used_fillers[id_result]])
             self.logger.debug("Filler applied for missing data based on ts_id %d.", id_result)
 
+        # Handle anomaly handler
+        anomaly_handler = None
+        if self.dataset_config.handle_anomalies_with is not None and id_result < len(self.dataset_config.anomaly_handlers):
+            anomaly_handler = np.array([self.dataset_config.used_anomaly_handlers[id_result]])
+            self.logger.debug("Anomaly handler applied for anomalies based on ts_id %d.", id_result)
+
         ts_row_range = np.array([self.dataset_config.used_ts_row_ranges[id_result]])
 
         dataset = SeriesBasedDataset(self.dataset_path,
@@ -1860,7 +1898,8 @@ Dataset details:
                                      False,
                                      False,
                                      time_format,
-                                     transformer)
+                                     transformer,
+                                     anomaly_handler)
 
         time_series = None
 
@@ -2087,7 +2126,7 @@ Dataset details:
 
     @abstractmethod
     def _initialize_transformers_and_details(self, workers: int) -> None:
-        """ Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. Goes through data to validate time series against `nan_threshold`, fit `transformers` and prepare `fillers`"""
+        """ Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. Goes through data to validate time series against `nan_threshold`, fit `transformers`, fit `anomaly handlers` and prepare `fillers`"""
         ...
 
     def _update_export_config_copy(self) -> None:

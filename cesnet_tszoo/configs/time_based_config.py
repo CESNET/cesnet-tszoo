@@ -8,8 +8,9 @@ import numpy.typing as npt
 
 from cesnet_tszoo.utils.filler import filler_from_input_to_type
 from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer_type, Transformer
+from cesnet_tszoo.utils.anomaly_handler import anomaly_handler_from_input_to_anomaly_handler_type
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
-from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType
+from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
@@ -23,6 +24,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
     - Train, validation, test, all sets (time period, sizes, features, window size)
     - Handling missing values (default values, [`fillers`][cesnet_tszoo.utils.filler])
+    - Handling anomalies ([`anomaly handlers`][cesnet_tszoo.utils.anomaly_handler])
     - Data transformation using [`transformers`][cesnet_tszoo.utils.transformer]
     - Dataloader options (train/val/test/all/init workers, batch sizes)
     - Plotting
@@ -30,7 +32,8 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
     **Important Notes:**
 
     - Custom fillers must inherit from the [`fillers`][cesnet_tszoo.utils.filler.Filler] base class.
-    - Fillers can carry over values from the train set to the validation and test sets. For example, [`ForwardFiller`][cesnet_tszoo.utils.filler.ForwardFiller] can carry over values from previous sets.    
+    - Fillers can carry over values from the train set to the validation and test sets. For example, [`ForwardFiller`][cesnet_tszoo.utils.filler.ForwardFiller] can carry over values from previous sets.   
+    - Custom anomaly handlers must inherit from the [`anomaly handlers`][cesnet_tszoo.utils.anomaly_handler.AnomalyHandler] base class.
     - It is recommended to use the [`transformers`][cesnet_tszoo.utils.transformer.Transformer] base class, though this is not mandatory as long as it meets the required methods.
         - If transformers are already initialized and `create_transformer_per_time_series` is `True` and `partial_fit_initialized_transformers` is `True` then transformers must support `partial_fit`.
         - If `create_transformer_per_time_series` is `True`, transformers must have a `fit` method and `transform_with` should be a list of transformers.
@@ -65,15 +68,18 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         database_name: Specifies which database this config applies to.
         transform_with_display: Used to display the configured type of `transform_with`.
         fill_missing_with_display: Used to display the configured type of `fill_missing_with`.
+        handle_anomalies_with_display: Used to display the configured type of `handle_anomalies_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
         is_transformer_custom: Flag indicating whether the transformer is custom.
         is_filler_custom: Flag indicating whether the filler is custom.
+        is_anomaly_handler_custom: Flag indicating whether the anomaly handler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
         used_times: List of all times used in the configuration.
         used_ts_ids: List of all time series IDs used in the configuration.
         used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
         used_fillers: List of all fillers used in the configuration.
+        used_anomaly_handlers: List of all anomaly handlers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
@@ -84,6 +90,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
         all_fillers: Fillers used for the all set. `None` if no filler is used or all set is not used.
+        anomaly_handlers: Prepared anomaly handlers for fitting/handling anomalies. Can be array of anomaly handlers or `None`.
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
         version: Version of cesnet-tszoo this config was made in.
         export_update_needed: Whether config was updated to newer version and should be exported.     
@@ -108,6 +115,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         all_batch_size: Batch size for the all dataloader. Affects number of returned times in one batch. `Default: 128`   
         fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.Filler] base class. `Default: None`
         transform_with: Defines the transformer used to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s). `Default: None`
+        handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler. `Default: None`
         create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Default: True`
         partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Default: False`
         include_time: If `True`, time data is included in the returned values. `Default: True`
@@ -139,6 +147,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                  all_batch_size: int = 128,
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
                  transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None = None,
+                 handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None = None,
                  create_transformer_per_time_series: bool = True,
                  partial_fit_initialized_transformers: bool = False,
                  include_time: bool = True,
@@ -159,7 +168,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         self.logger = logging.getLogger("time_config")
 
         TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, all_batch_size, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
-        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
+        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, handle_anomalies_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
                                train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, create_transformer_per_time_series, DatasetType.TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
 
     def _validate_construction(self) -> None:
@@ -391,6 +400,24 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for all set are set.")
 
+    def _set_anomaly_handlers(self):
+        """Creates and/or validates anomaly handlers based on the `handle_anomalies_with` parameter. """
+
+        if self.handle_anomalies_with is None:
+            self.logger.debug("No anomaly handler is used because handle_anomalies_with is set to None.")
+            return
+
+        if not self.has_train():
+            self.logger.error("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
+            raise ValueError("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
+
+        self.logger.info("Anomaly handler will be used for all sets and trained on train set, because of nature of disjoint-time-based.")
+
+        self.handle_anomalies_with, self.handle_anomalies_with_display = anomaly_handler_from_input_to_anomaly_handler_type(self.handle_anomalies_with)
+        self.is_anomaly_handler_custom = "Custom" in self.handle_anomalies_with_display
+
+        self.anomaly_handlers = np.array([self.handle_anomalies_with() for _ in self.ts_ids])
+
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos. """
 
@@ -439,6 +466,8 @@ Config Details
         Filler type: {str(self.fill_missing_with_display)}
     Transformers
         {transformer_part}
+    Anomaly handler
+        Anomaly handler type: {str(self.handle_anomalies_with_display)}        
     Batch sizes
         Train batch size: {self.train_batch_size}
         Val batch size: {self.val_batch_size}
