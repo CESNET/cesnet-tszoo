@@ -70,6 +70,19 @@ class Transformer(ABC):
         """
         ...
 
+    @abstractmethod
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+        """
+        Transforms the input transformed data to their original representation for a given time series part.
+
+        Parameters:
+            transformed_data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+
+        Returns:
+            The original representation of transformed data, with the same shape as the input `(times, features)`.            
+        """
+        ...
+
 
 class MinMaxScaler(Transformer):
     """
@@ -81,14 +94,17 @@ class MinMaxScaler(Transformer):
     def __init__(self):
         self.transformer = sk.MinMaxScaler()
 
-    def fit(self, data: np.ndarray):
+    def fit(self, data: np.ndarray) -> None:
         self.transformer.fit(data)
 
     def partial_fit(self, data: np.ndarray) -> None:
         self.transformer.partial_fit(data)
 
-    def transform(self, data: np.ndarray):
+    def transform(self, data: np.ndarray) -> np.ndarray:
         return self.transformer.transform(data)
+
+    def inverse_transform(self, transformed_data) -> np.ndarray:
+        return self.transformer.inverse_transform(transformed_data)
 
 
 class StandardScaler(Transformer):
@@ -101,14 +117,17 @@ class StandardScaler(Transformer):
     def __init__(self):
         self.transformer = sk.StandardScaler()
 
-    def fit(self, data: np.ndarray):
+    def fit(self, data: np.ndarray) -> None:
         self.transformer.fit(data)
 
     def partial_fit(self, data: np.ndarray) -> None:
         self.transformer.partial_fit(data)
 
-    def transform(self, data: np.ndarray):
+    def transform(self, data: np.ndarray) -> np.ndarray:
         return self.transformer.transform(data)
+
+    def inverse_transform(self, transformed_data):
+        return self.transformer.inverse_transform(transformed_data)
 
 
 class MaxAbsScaler(Transformer):
@@ -130,6 +149,9 @@ class MaxAbsScaler(Transformer):
     def transform(self, data: np.ndarray):
         return self.transformer.transform(data)
 
+    def inverse_transform(self, transformed_data):
+        return self.transformer.inverse_transform(transformed_data)
+
 
 class LogTransformer(Transformer):
     """
@@ -148,6 +170,9 @@ class LogTransformer(Transformer):
         log_data = np.ma.log(data)
 
         return log_data.filled(np.nan)
+
+    def inverse_transform(self, transformed_data):
+        return np.exp(transformed_data)
 
 
 class L2Normalizer(Transformer):
@@ -168,6 +193,9 @@ class L2Normalizer(Transformer):
 
     def transform(self, data: np.ndarray):
         return self.transformer.fit_transform(data)
+
+    def inverse_transform(self, transformed_data):
+        raise NotImplementedError("Normalizer does not support inverse_transform.")
 
 
 class RobustScaler(Transformer):
@@ -192,6 +220,9 @@ class RobustScaler(Transformer):
     def transform(self, data: np.ndarray):
         return self.transformer.transform(data)
 
+    def inverse_transform(self, transformed_data):
+        return self.transformer.inverse_transform(transformed_data)
+
 
 class PowerTransformer(Transformer):
     """
@@ -215,6 +246,9 @@ class PowerTransformer(Transformer):
     def transform(self, data: np.ndarray):
         return self.transformer.transform(data)
 
+    def inverse_transform(self, transformed_data):
+        return self.transformer.inverse_transform(transformed_data)
+
 
 class QuantileTransformer(Transformer):
     """
@@ -237,6 +271,9 @@ class QuantileTransformer(Transformer):
 
     def transform(self, data: np.ndarray):
         return self.transformer.transform(data)
+
+    def inverse_transform(self, transformed_data):
+        return self.transformer.inverse_transform(transformed_data)
 
 
 def input_has_fit_method(to_check) -> bool:
