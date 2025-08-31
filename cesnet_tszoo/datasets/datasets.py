@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, overload, Union
 
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
@@ -22,9 +22,27 @@ class CESNET_TimeSeries24(CesnetDatabase):
     aggregations = _CESNET_TIME_SERIES24_AGGREGATIONS
     additional_data = _CESNET_TIME_SERIES24_ADDITIONAL_DATA
 
+    @overload
+    @classmethod
+    def get_dataset(cls, data_root: str, source_type: SourceType | Literal["ip_addresses_sample", "ip_addresses_full", "institution_subnets", "institutions"],
+                    aggregation: AgreggationType | Literal["10_minutes", "1_hour", "1_day"],
+                    dataset_type: Literal[DatasetType.TIME_BASED, "time_based"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset: ...
+
+    @overload
+    @classmethod
+    def get_dataset(cls, data_root: str, source_type: SourceType | Literal["ip_addresses_sample", "ip_addresses_full", "institution_subnets", "institutions"],
+                    aggregation: AgreggationType | Literal["10_minutes", "1_hour", "1_day"],
+                    dataset_type: Literal[DatasetType.SERIES_BASED, "series_based"], check_errors: bool = False, display_details: bool = False) -> SeriesBasedCesnetDataset: ...
+
+    @overload
+    @classmethod
+    def get_dataset(cls, data_root: str, source_type: SourceType | Literal["ip_addresses_sample", "ip_addresses_full", "institution_subnets", "institutions"],
+                    aggregation: AgreggationType | Literal["10_minutes", "1_hour", "1_day"],
+                    dataset_type: Literal[DatasetType.DISJOINT_TIME_BASED, "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> DisjointTimeBasedCesnetDataset: ...
+
     @classmethod
     def get_dataset(cls, data_root: str, source_type: SourceType | Literal["ip_addresses_sample", "ip_addresses_full", "institution_subnets", "institutions"], aggregation: AgreggationType | Literal["10_minutes", "1_hour", "1_day"],
-                    dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
+                    dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> Union[TimeBasedCesnetDataset, SeriesBasedCesnetDataset, DisjointTimeBasedCesnetDataset]:
         """
         Create new dataset instance.
 
