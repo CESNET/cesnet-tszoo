@@ -118,6 +118,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
 
+        assert dataset_config is not None, "Used dataset_config cannot be None."
         assert isinstance(dataset_config, SeriesBasedConfig), f"This config is used for dataset of type '{dataset_config.dataset_type}'. Meanwhile this dataset is of type '{self.dataset_type}'."
 
         super(SeriesBasedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
