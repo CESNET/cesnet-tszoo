@@ -8,11 +8,13 @@ from cesnet_tszoo.files.utils import get_path_to_files_folder, get_benchmark_pat
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
+from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-from cesnet_tszoo.datasets.datasets import CESNET_TimeSeries24, CesnetDatabase
+from cesnet_tszoo.datasets.datasets import CESNET_TimeSeries24, CESNET_AGG23, CesnetDatabase
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
+from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
 from cesnet_tszoo.utils.enums import AnnotationType, SourceType, AgreggationType
 from cesnet_tszoo.utils.file_utils import yaml_load
 from cesnet_tszoo.utils.utils import ExportBenchmark
@@ -65,14 +67,14 @@ class Benchmark:
         self.related_results = None
         self.logger = logging.getLogger("benchmark")
 
-    def get_config(self) -> SeriesBasedConfig | TimeBasedConfig:
-        """Return config made for this benchmark. """
+    def get_config(self) -> SeriesBasedConfig | TimeBasedConfig | DisjointTimeBasedConfig:
+        """Returns config made for this benchmark. """
 
         return self.config
 
-    def get_initialized_dataset(self, display_config_details: bool = True, check_errors: bool = False, workers: Literal["config"] | int = "config") -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
+    def get_initialized_dataset(self, display_config_details: bool = True, check_errors: bool = False, workers: Literal["config"] | int = "config") -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
         """
-        Return dataset with intialized sets, transformers, fillers etc..
+        Returns dataset with intialized sets, transformers, fillers etc..
 
         This method uses following config attributes:
 
@@ -88,7 +90,7 @@ class Benchmark:
             workers: The number of workers to use during initialization. `Default: "config"`        
 
         Returns:
-            Return initialized dataset.
+            Returns initialized dataset.
         """
 
         if check_errors:
@@ -98,14 +100,14 @@ class Benchmark:
 
         return self.dataset
 
-    def get_dataset(self, check_errors: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
-        """Return dataset without initializing it.
+    def get_dataset(self, check_errors: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
+        """Returns dataset without initializing it.
 
         Parameters:
             check_errors: Whether to validate if dataset is not corrupted. `Default: False`
 
         Returns:
-            Return dataset used for this benchmark.
+            Returns dataset used for this benchmark.
         """
 
         if check_errors:
@@ -115,7 +117,7 @@ class Benchmark:
 
     def get_annotations(self, on: AnnotationType | Literal["id_time", "ts_id", "both"]) -> pd.DataFrame:
         """ 
-        Return the annotations as a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html).
+        Returns the annotations as a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html).
 
         Parameters:
             on: Specifies which annotations to return. If set to `"both"`, annotations will be applied as if `id_time` and `ts_id` were both set.         
@@ -128,7 +130,7 @@ class Benchmark:
 
     def get_related_results(self) -> pd.DataFrame | None:
         """
-        Return the related results as a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html), if they exist. 
+        Returns the related results as a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html), if they exist. 
 
         Returns:
             A Pandas DataFrame containing related results or None if not related results exist. 
@@ -148,7 +150,7 @@ def load_benchmark(identifier: str, data_root: str) -> Benchmark:
         data_root: Path to the folder where the dataset will be stored. Each database has its own subfolder `"data_root"/tszoo/databases/database_name/`.
 
     Returns:
-        Return benchmark with `config`, `annotations`, `dataset` and `related_results`.
+        Returns benchmark with `config`, `annotations`, `dataset` and `related_results`.
     """
 
     logger = logging.getLogger("benchmark")
@@ -171,11 +173,13 @@ def load_benchmark(identifier: str, data_root: str) -> Benchmark:
         raise ValueError("Invalid identifier.")
 
 
-def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
+def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
     """Returns `dataset` based on `export_benchmark`. """
 
     if export_benchmark.database_name == CESNET_TimeSeries24.name:
         dataset = CESNET_TimeSeries24.get_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
+    elif export_benchmark.database_name == CESNET_AGG23:
+        dataset = CESNET_AGG23.get_dataset(data_root, False, False)
     else:
         raise ValueError("Invalid database name.")
 
