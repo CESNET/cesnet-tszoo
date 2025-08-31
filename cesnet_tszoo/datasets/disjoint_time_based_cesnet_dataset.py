@@ -118,7 +118,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
 
-        assert isinstance(dataset_config, DisjointTimeBasedConfig), "DisjointTimeBasedCesnetDataset can only use DisjointTimeBasedConfig."
+        assert isinstance(dataset_config, DisjointTimeBasedConfig), f"This config is used for dataset of type '{dataset_config.dataset_type}'. Meanwhile this dataset is of type '{self.dataset_type}'."
 
         super(DisjointTimeBasedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
 
