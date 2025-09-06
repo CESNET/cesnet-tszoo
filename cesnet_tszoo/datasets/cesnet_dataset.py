@@ -1326,7 +1326,7 @@ Dataset details:
         return data_df
 
     def plot(self, ts_id: int, plot_type: Literal["scatter", "line"], features: list[str] | str | Literal["config"] = "config", feature_per_plot: bool = True,
-             time_format: TimeFormat | Literal["config", "id_time", "datetime", "unix_time", "shifted_unix_time"] = "config", use_transformers: bool = True, is_interactive: bool = True) -> None:
+             time_format: TimeFormat | Literal["config", "id_time", "datetime", "unix_time", "shifted_unix_time"] = "config", is_interactive: bool = True) -> None:
         """
         Displays a graph for the selected `ts_id` and its `features`.
 
@@ -1338,7 +1338,6 @@ Dataset details:
             features: The features to display in the plot. `Defaults: "config"`.
             feature_per_plot: Whether each feature should be displayed in a separate plot or combined into one. `Defaults: True`.
             time_format: The time format to use for the x-axis. `Defaults: "config"`.
-            use_transformers: Whether the data should be transformd. If `True`, transforming will be applied using the available transformer for the selected `ts_id`. `Defaults: True`.
             is_interactive: Whether the plot should be interactive (e.g., zoom, hover). `Defaults: True`.
         """
 
@@ -1353,7 +1352,7 @@ Dataset details:
             time_format = TimeFormat(time_format)
             self.logger.debug("Using specified time format: %s", time_format)
 
-        time_series, times, features = self._get_data_for_plot(ts_id, features, time_format, use_transformers)
+        time_series, times, features = self.__get_data_for_plot(ts_id, features, time_format)
         self.logger.debug("Received data for plotting. Time series, times, and features are ready.")
 
         plots = []
@@ -1826,7 +1825,12 @@ Dataset details:
             dataset.close()
             self.logger.debug("Dataset connection closed.")
 
-    def _get_data_for_plot(self, ts_id: int, features: list[str] | str, time_format: TimeFormat, use_transformers: bool) -> tuple[np.ndarray, np.ndarray]:
+    @abstractmethod
+    def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
+        """Dataset type specific retrieval of data. """
+        ...
+
+    def __get_data_for_plot(self, ts_id: int, features: list[str] | str, time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray, list[str]]:
         """Returns prepared data for plotting. """
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
@@ -1854,72 +1858,13 @@ Dataset details:
                 index_in_config_features = self.dataset_config.features_to_take_without_ids.index(feature)
                 features_indices.append(index_in_config_features)
 
-        # Validate the time series ID (ts_id)
-        id_result = np.argwhere(np.isin(self.dataset_config.used_ts_ids, ts_id)).ravel()
+        real_feature_indices = np.array(self.dataset_config.indices_of_features_to_take_no_ids)[features_indices]
+        real_feature_indices = real_feature_indices.astype(int)
 
-        if len(id_result) == 0:
-            raise ValueError(f"Invalid ts_id '{ts_id}'. The provided ts_id is not found in the available time series IDs.", self.dataset_config.used_ts_ids)
-        else:
-            id_result = id_result[0]
-            self.logger.debug("Valid ts_id found: %d", id_result)
-
-        # Handle transformers
-        transformer = None
-        if self.dataset_config.transform_with is not None and use_transformers:
-            if self.dataset_config.create_transformer_per_time_series and len(self.dataset_config.transformers) <= id_result:
-                self.logger.warning("Transformer will not be used for this ts_id as no transformer is available for it.")
-            elif self.dataset_config.create_transformer_per_time_series:
-                transformer = self.dataset_config.transformers[id_result]
-                self.logger.debug("Applicable transformer found.")
-            else:
-                transformer = self.dataset_config.transformers
-                self.logger.debug("Applicable transformer found.")
-        else:
-            if use_transformers:
-                self.logger.warning("Transformers are not set in the config and therefore will can not be applied.")
-
-        # Handle missing data filler
-        filler = None
-        if self.dataset_config.fill_missing_with is not None:
-            filler = np.array([self.dataset_config.used_fillers[id_result]])
-            self.logger.debug("Filler applied for missing data based on ts_id %d.", id_result)
-
-        # Handle anomaly handler
-        anomaly_handler = None
-        if self.dataset_config.handle_anomalies_with is not None and id_result < len(self.dataset_config.anomaly_handlers):
-            anomaly_handler = np.array([self.dataset_config.used_anomaly_handlers[id_result]])
-            self.logger.debug("Anomaly handler applied for anomalies based on ts_id %d.", id_result)
-
-        ts_row_range = np.array([self.dataset_config.used_ts_row_ranges[id_result]])
-
-        dataset = SeriesBasedDataset(self.dataset_path,
-                                     self.dataset_config._get_table_data_path(),
-                                     self.dataset_config.ts_id_name,
-                                     ts_row_range,
-                                     self.dataset_config.used_times,
-                                     self.dataset_config.features_to_take_without_ids,
-                                     np.arange(len(self.dataset_config.features_to_take_without_ids)),
-                                     self.dataset_config.default_values,
-                                     filler,
-                                     False,
-                                     False,
-                                     time_format,
-                                     transformer,
-                                     anomaly_handler)
-
-        time_series = None
-
-        dataloader = self._get_series_based_dataloader(dataset, 0, take_all=True, batch_size=None)
-
-        # Will only do one loop because take_all=True
-        for temp in dataloader:
-            time_series = temp[0]
-
-        times = self.get_data_about_set(SplitType.ALL)[time_format]
-
+        time_series, time_period = self._get_data_for_plot(ts_id, real_feature_indices, time_format)
         self.logger.debug("Time series data and corresponding time values retrieved.")
 
-        return time_series[:, features_indices], times, features
+        return time_series, time_period, features
 
     def _validate_annotation_ids(self, ts_id: int | None, id_time: int | None) -> None:
         """Validates whether the `ts_id` and `id_time` belong to this dataset. """

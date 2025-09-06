@@ -11,6 +11,7 @@ from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.pytables_data.time_based_initializer_dataset import TimeBasedInitializerDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
+from cesnet_tszoo.datasets.loaders import create_numpy_from_dataloader
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 
 
@@ -462,3 +463,44 @@ class TimeBasedCesnetDataset(CesnetDataset):
         """ Set time based dataloader for this dataset. """
 
         return self._get_time_based_dataloader(dataset, workers, take_all, batch_size)
+
+    def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
+        """Dataset type specific retrieval of data. """
+
+        # Validate the time series ID (ts_id)
+        id_result = np.argwhere(np.isin(self.dataset_config.ts_ids, ts_id)).ravel()
+
+        if len(id_result) == 0:
+            raise ValueError(f"Invalid ts_id '{ts_id}'. The provided ts_id is not found in the available time series IDs.", self.dataset_config.ts_ids)
+        else:
+            id_result = id_result[0]
+            self.logger.debug("Valid ts_id found: %d", id_result)
+
+        data = None
+
+        if self.dataset_config.has_train():
+            data = self.__update_data_for_plot(self.train_dataset, ts_id, feature_indices, data)
+
+        if self.dataset_config.has_val():
+            data = self.__update_data_for_plot(self.val_dataset, ts_id, feature_indices, data)
+
+        if self.dataset_config.has_test():
+            data = self.__update_data_for_plot(self.test_dataset, ts_id, feature_indices, data)
+
+        return data, self.get_data_about_set(SplitType.ALL)[time_format]
+
+    def __update_data_for_plot(self, dataset: SplittedDataset, ts_id: int, feature_indices: list[int], previous_data: Optional[np.ndarray]):
+        dataset = self._get_singular_time_series_dataset(dataset, ts_id)
+        dataloader = self._get_time_based_dataloader(dataset, 0, True, None)
+
+        temp_data = create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.TIME_BASED, True)
+
+        if (dataset.time_format == TimeFormat.DATETIME and dataset.include_time):
+            temp_data = temp_data[0]
+
+        temp_data = temp_data[0][:, feature_indices]
+
+        if previous_data is None:
+            return temp_data
+
+        return np.concatenate([previous_data, temp_data])
