@@ -195,14 +195,17 @@ class TimeBasedHandler(ABC):
         # Ensure sliding_window_size is either None or a valid integer greater than 1
         assert sliding_window_size is None or (isinstance(sliding_window_size, int) and sliding_window_size > 1), "sliding_window_size must be an integer greater than 1, or None."
 
-        # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 1
-        assert sliding_window_prediction_size is None or (isinstance(sliding_window_prediction_size, int) and sliding_window_prediction_size >= 1), "sliding_window_prediction_size must be an integer greater than 1, or None."
+        # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 0
+        assert sliding_window_prediction_size is None or (isinstance(sliding_window_prediction_size, int) and sliding_window_prediction_size >= 0), "sliding_window_prediction_size must be an integer greater than 0, or None."
 
-        # Both sliding_window_size and sliding_window_prediction_size must be set or None
-        assert (sliding_window_size is None and sliding_window_prediction_size is None) or (sliding_window_size is not None and sliding_window_prediction_size is not None), "Both sliding_window_size and sliding_window_prediction_size must be set or None."
+        # When sliding_window_prediction_size is set then sliding_window_size must be set too
+        assert (sliding_window_size is None and sliding_window_prediction_size is None) or (sliding_window_size is not None), "When sliding_window_prediction_size is set then sliding_window_size must be set too."
 
         # Adjust batch sizes based on sliding_window_size
         if sliding_window_size is not None:
+
+            if sliding_window_prediction_size is None:
+                sliding_window_prediction_size = 0
 
             if sliding_window_step <= 0:
                 raise ValueError("sliding_window_step must be greater or equal to 1.")
@@ -251,11 +254,14 @@ class TimeBasedHandler(ABC):
         # Ensure sliding_window_size is either None or a valid integer greater than 1
         assert self.sliding_window_size is None or (isinstance(self.sliding_window_size, int) and self.sliding_window_size > 1), "sliding_window_size must be an integer greater than 1, or None."
 
-        # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 1
-        assert self.sliding_window_prediction_size is None or (isinstance(self.sliding_window_prediction_size, int) and self.sliding_window_prediction_size >= 1), "sliding_window_prediction_size must be an integer greater than 1, or None."
+        # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 0
+        assert self.sliding_window_prediction_size is None or (isinstance(self.sliding_window_prediction_size, int) and self.sliding_window_prediction_size >= 0), "sliding_window_prediction_size must be an integer greater than 0, or None."
 
-        # Both sliding_window_size and sliding_window_prediction_size must be set or None
-        assert (self.sliding_window_size is None and self.sliding_window_prediction_size is None) or (self.sliding_window_size is not None and self.sliding_window_prediction_size is not None), "Both sliding_window_size and sliding_window_prediction_size must be set or None."
+        # When sliding_window_prediction_size is set then sliding_window_size must be set too
+        assert (self.sliding_window_size is None and self.sliding_window_prediction_size is None) or (self.sliding_window_size is not None), "When sliding_window_prediction_size is set then sliding_window_size must be set too."
+
+        if self.sliding_window_size is not None and self.sliding_window_prediction_size is None:
+            self.sliding_window_prediction_size = 0
 
     def _validate_time_periods_overlap(self):
         previous_first_time_id = None
