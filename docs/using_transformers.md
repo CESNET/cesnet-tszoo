@@ -19,6 +19,7 @@ Relevant configuration values:
 - Transformers are implemented as class.
     - You can create your own or use built-in one.
 - Transformer must implement `transform`.
+- Transformer can implement `inverse_transform`.
 - Transformers are applied after `default_values` and fillers took care of missing values.
 - To use transformers, train set must be implemented (unless transformers are already fitted and `partial_fit_initialized_transformers` is False).
 - `fit` method on transformer:
@@ -89,7 +90,10 @@ class CustomTransformer(Transformer):
         
         temp_min = np.min(data, axis=0)
         temp = np.vstack((self.min, temp_min)) 
-        self.min = np.min(temp, axis=0)            
+        self.min = np.min(temp, axis=0)      
+
+    def inverse_transform(self, transformed_data):
+        return transformed_data * (self.max - self.min) + self.min           
 
 config = TimeBasedConfig(ts_ids=[1367, 1368], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
                          transform_with=CustomTransformer, create_transformer_per_time_series=True)                                                                        
@@ -129,6 +133,32 @@ time_based_dataset.set_dataset_config_and_initialize(config)
 
 ```
 
+#### Getting pre-transform value
+- You can use `inverse_transform` for transformers you can get via `get_transformers()` to get pre-transform value.
+- `inverse_transformer` expects input as numpy array of shape `(times, features)` where features do not contain ids.
+
+```python
+
+from cesnet_tszoo.utils.enums import TransformerType
+from cesnet_tszoo.configs import TimeBasedConfig         
+
+config = TimeBasedConfig(ts_ids=[1367, 1368], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
+                         transform_with=TransformerType.MIN_MAX_SCALER, create_transformer_per_time_series=False)   
+
+time_based_dataset.set_dataset_config_and_initialize(config)                                                                           
+
+transformer = time_based_dataset.get_transformers()
+
+data = None
+for batch in time_based_dataset.get_train_dataloader():
+    data = batch[0, :, 2:]
+    break
+
+transformer.inverse_transform(data)[:10]
+
+```
+
+
 ## [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] dataset
 
 !!! info "Note"
@@ -145,6 +175,7 @@ Relevant configuration values:
 - Transformer is applied after `default_values` and fillers took care of missing values.
 - One transformer is used for all time series.
 - Transformer must implement `transform`.
+- Transformer can implement `inverse_transform`.
 - Transformer must implement `partial_fit` (unless transformer is already fitted and `partial_fit_initialized_transformers` is False).
 - To use transformer, train set must be implemented (unless transformer is already fitted and `partial_fit_initialized_transformers` is False).
 - You can change used transformer later with `update_dataset_config_and_initialize` or `apply_transformer`.
@@ -211,7 +242,10 @@ class CustomTransformer(Transformer):
         
         temp_min = np.min(data, axis=0)
         temp = np.vstack((self.min, temp_min)) 
-        self.min = np.min(temp, axis=0)            
+        self.min = np.min(temp, axis=0)      
+
+    def inverse_transform(self, transformed_data):
+        return transformed_data * (self.max - self.min) + self.min           
 
 config = DisjointTimeBasedConfig(train_ts=500, val_ts=None, test_ts=None, train_time_period=0.5, features_to_take=["n_flows", "n_packets"],
                                  transform_with=CustomTransformer, nan_threshold=0.5, random_state=1500)                                                                      
@@ -245,6 +279,33 @@ time_based_dataset.set_dataset_config_and_initialize(config)
 
 ```
 
+#### Getting pre-transform value
+- You can use `inverse_transform` for transformers you can get via `get_transformers()` to get pre-transform value.
+- `inverse_transformer` expects input as numpy array of shape `(times, features)` where features do not contain ids.
+
+```python
+
+from cesnet_tszoo.utils.enums import TransformerType
+from cesnet_tszoo.configs import DisjointTimeBasedConfig
+
+config = DisjointTimeBasedConfig(train_ts=500, val_ts=None, test_ts=None, train_time_period=0.5, features_to_take=["n_flows", "n_packets"],
+                                 transform_with=TransformerType.MIN_MAX_SCALER, nan_threshold=0.5, random_state=1500)                                                                          
+
+# Call on disjoint-time-based dataset to use created config
+disjoint_dataset.set_dataset_config_and_initialize(config)                                                                           
+
+transformer = disjoint_dataset.get_transformers()
+
+data = None
+for batch in disjoint_dataset.get_train_dataloader():
+    data = batch[0, :, 2:]
+    break
+
+transformer.inverse_transform(data)[:10]
+
+```
+
+
 ## [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] dataset
 
 !!! info "Note"
@@ -261,6 +322,7 @@ Relevant configuration values:
 - Transformer is applied after `default_values` and fillers took care of missing values.
 - One transformer is used for all time series.
 - Transformer must implement `transform`.
+- Transformer can implement `inverse_transform`.
 - Transformer must implement `partial_fit` (unless transformer is already fitted and `partial_fit_initialized_transformers` is False).
 - To use transformer, train set must be implemented (unless transformer is already fitted and `partial_fit_initialized_transformers` is False).
 - You can change used transformer later with `update_dataset_config_and_initialize` or `apply_transformer`.
@@ -327,7 +389,10 @@ class CustomTransformer(Transformer):
         
         temp_min = np.min(data, axis=0)
         temp = np.vstack((self.min, temp_min)) 
-        self.min = np.min(temp, axis=0)            
+        self.min = np.min(temp, axis=0)      
+
+    def inverse_transform(self, transformed_data):
+        return transformed_data * (self.max - self.min) + self.min           
 
 config = SeriesBasedConfig(time_period=0.5, train_ts=500, features_to_take=["n_flows", "n_packets"],
                            transform_with=CustomTransformer, nan_threshold=0.5, random_state=1500)                                                                    
@@ -359,4 +424,30 @@ config = SeriesBasedConfig(time_period=0.5, val_ts=500, features_to_take=["n_flo
 
 series_based_dataset.set_dataset_config_and_initialize(config)
 
-```    
+```   
+
+#### Getting pre-transform value
+- You can use `inverse_transform` for transformers you can get via `get_transformers()` to get pre-transform value.
+- `inverse_transformer` expects input as numpy array of shape `(times, features)` where features do not contain ids.
+
+```python
+
+from cesnet_tszoo.utils.enums import TransformerType
+from cesnet_tszoo.configs import SeriesBasedConfig
+
+config = SeriesBasedConfig(time_period=0.5, train_ts=500, features_to_take=["n_flows", "n_packets"],
+                           transform_with=TransformerType.MIN_MAX_SCALER, nan_threshold=0.5, random_state=1500)                                                                          
+
+# Call on series-based dataset to use created config
+series_based_dataset.set_dataset_config_and_initialize(config)                                                                       
+
+transformer = series_based_dataset.get_transformers()
+
+data = None
+for batch in series_based_dataset.get_train_dataloader():
+    data = batch[0, :, 2:]
+    break
+
+transformer.inverse_transform(data)[:10]
+
+```

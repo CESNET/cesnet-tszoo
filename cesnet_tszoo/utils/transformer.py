@@ -29,6 +29,9 @@ class Transformer(ABC):
                 log_data = np.ma.log(data)
 
                 return log_data.filled(np.nan)
+
+            def inverse_transform(self, transformed_data):
+                return np.exp(transformed_data)                
     """
 
     @abstractmethod
@@ -70,7 +73,6 @@ class Transformer(ABC):
         """
         ...
 
-    @abstractmethod
     def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
         """
         Transforms the input transformed data to their original representation for a given time series part.
