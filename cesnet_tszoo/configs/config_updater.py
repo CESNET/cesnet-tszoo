@@ -42,6 +42,12 @@ class ConfigUpdater:
             self.config_to_update.version = version.VERSION_0_1_3
             self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_0_1_3)
 
+        if Version(self.config_to_update.version) < Version(version.VERSION_2_0_0):
+            self.logger.warning("Config version is lower than '%s', updating config to match it.", version.VERSION_2_0_0)
+            self.config_to_update.export_update_needed = True
+            self.config_to_update.version = version.VERSION_2_0_0
+            self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_2_0_0)
+
         self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.current_version)
         self.config_to_update.version = version.current_version
 
