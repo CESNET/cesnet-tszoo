@@ -27,3 +27,6 @@ The `cesnet-tszoo` package requires Python >=3.10.
 | plotly       |                 |
 | PyYAML       |                 |
 | requests     |                 |
+| packaging    |                 |
+| importlib    |                 |
+| nbformat     | >=4.2.0         |
