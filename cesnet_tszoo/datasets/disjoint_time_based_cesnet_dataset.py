@@ -22,7 +22,7 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 class DisjointTimeBasedCesnetDataset(CesnetDataset):
     """This class is used for disjoint-time-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] with parameter `dataset_type` = `DatasetType.DISJOINT_TIME_BASED`.
 
-    Disjoint-time-based means batch size affects number of returned times in one batch and each set can have different time series. Which time series are returned does not change.
+    Disjoint-time-based means batch size affects number of returned times in one batch and each set can have different time series. Which time series are returned does not change. Additionally it supports sliding window.
 
     The dataset provides multiple ways to access the data:
 
