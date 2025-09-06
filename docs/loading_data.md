@@ -102,7 +102,7 @@ for batch in tqdm(dataloader):
 ```
 
 #### Sliding window
-- Both `sliding_window_size` and `sliding_window_prediction_size` must be set if you want to use sliding window.
+- When `sliding_window_prediction_size` is set then `sliding_window_size` must be set too if you want to use sliding window.
 - Batch sizes are used for background caching.
 - You can modify sliding window step size with `sliding_window_step`
 - You can use `set_shared_size` to set how many times time periods should share.
@@ -304,7 +304,7 @@ for batch in tqdm(dataloader):
 ```
 
 #### Sliding window
-- Both `sliding_window_size` and `sliding_window_prediction_size` must be set if you want to use sliding window.
+- When `sliding_window_prediction_size` is set then `sliding_window_size` must be set too if you want to use sliding window.
 - Batch sizes are used for background caching.
 - You can modify sliding window step size with `sliding_window_step`
 - You can use `set_shared_size` to set how many times time periods should share.
