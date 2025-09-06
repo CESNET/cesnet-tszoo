@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Optional
 
 import numpy as np
 
@@ -155,4 +154,4 @@ class TimeBasedInitializerDataset(InitializerDataset):
             return
 
         self.anomaly_handlers[idx].fit(data[:len(self.train_time_period), self.offset_exclude_feature_ids:])
-        self.anomaly_handlers[idx].transform_anomalies(data[:, self.offset_exclude_feature_ids:])
+        self.anomaly_handlers[idx].transform_anomalies(data[:len(self.train_time_period), self.offset_exclude_feature_ids:])

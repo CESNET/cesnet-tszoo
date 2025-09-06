@@ -245,7 +245,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                self.dataset_config.time_format,
                                                self.dataset_config.val_workers,
                                                self.dataset_config.transformers,
-                                               self.dataset_config.anomaly_handlers)
+                                               None)
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
@@ -264,7 +264,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                 self.dataset_config.time_format,
                                                 self.dataset_config.test_workers,
                                                 self.dataset_config.transformers,
-                                                self.dataset_config.anomaly_handlers)
+                                                None)
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all():
@@ -283,7 +283,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
                                                self.dataset_config.time_format,
                                                self.dataset_config.all_workers,
                                                self.dataset_config.transformers,
-                                               self.dataset_config.anomaly_handlers)
+                                               None)
             self.logger.debug("all_dataset initiliazed.")
 
     def _initialize_transformers_and_details(self, workers: int) -> None:
