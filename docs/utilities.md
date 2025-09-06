@@ -98,19 +98,18 @@ time_based_dataset.display_config()
 - Uses [`Plotly`](https://plotly.com/python/) library.
 - You can plot specific time series with method `plot`
 - You can set `ts_id` to any time series id used in config
-- Plot will always contains time period of all set
 - Config must be set before using
 
 ```python
 
 # Features will be taken from config
-dataset.plot(ts_id=10, plot_type="line", features="config", feature_per_plot=True, time_format="datetime", use_transformers=True)
+dataset.plot(ts_id=10, plot_type="line", features="config", feature_per_plot=True, time_format="datetime")
 
 # Specifies features as list... features must be set in used config
-dataset.plot(ts_id=10, plot_type="line", features=["n_flows", "n_packets"], feature_per_plot=True, time_format="datetime", use_transformers=True)
+dataset.plot(ts_id=10, plot_type="line", features=["n_flows", "n_packets"], feature_per_plot=True, time_format="datetime")
 
 # Can specify single feature... still must be set in used config
-dataset.plot(ts_id=10, plot_type="line", features="n_flows", feature_per_plot=True, time_format="datetime", use_transformers=True)
+dataset.plot(ts_id=10, plot_type="line", features="n_flows", feature_per_plot=True, time_format="datetime")
 
 ```
 

@@ -368,7 +368,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
             self.logger.error("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
             raise ValueError("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
 
-        self.logger.info("Anomaly handler will only be used for train set, because of nature of disjoint-time-based.")
+        self.logger.info("Anomaly handler will only be used for train set.")
 
         self.handle_anomalies_with, self.handle_anomalies_with_display = anomaly_handler_from_input_to_anomaly_handler_type(self.handle_anomalies_with)
         self.is_anomaly_handler_custom = "Custom" in self.handle_anomalies_with_display

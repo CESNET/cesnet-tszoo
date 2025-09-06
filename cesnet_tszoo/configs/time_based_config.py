@@ -115,7 +115,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         all_batch_size: Batch size for the all dataloader. Affects number of returned times in one batch. `Default: 128`   
         fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.Filler] base class. `Default: None`
         transform_with: Defines the transformer used to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s). `Default: None`
-        handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler. `Default: None`
+        handle_anomalies_with: Defines the anomaly handler for handling anomalies in the train set. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler. `Default: None`
         create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Default: True`
         partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Default: False`
         include_time: If `True`, time data is included in the returned values. `Default: True`
@@ -411,7 +411,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             self.logger.error("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
             raise ValueError("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
 
-        self.logger.info("Anomaly handler will be used for all sets and trained on train set, because of nature of disjoint-time-based.")
+        self.logger.info("Anomaly handler will only be used for train set.")
 
         self.handle_anomalies_with, self.handle_anomalies_with_display = anomaly_handler_from_input_to_anomaly_handler_type(self.handle_anomalies_with)
         self.is_anomaly_handler_custom = "Custom" in self.handle_anomalies_with_display

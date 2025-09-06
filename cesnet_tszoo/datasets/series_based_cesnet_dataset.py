@@ -14,6 +14,7 @@ from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.pytables_data.series_based_initializer_dataset import SeriesBasedInitializerDataset
+from cesnet_tszoo.datasets.loaders import create_numpy_from_dataloader
 from cesnet_tszoo.utils.transformer import Transformer
 
 
@@ -522,3 +523,50 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         kwargs = {**default_kwargs, **kwargs}
 
         return self._get_series_based_dataloader(dataset, workers, take_all, batch_size, kwargs["order"])
+
+    def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
+        """Dataset type specific retrieval of data. """
+
+        train_id_result, val_id_result, test_id_result = None, None, None
+
+        if (self.dataset_config.has_train()):
+            train_id_result = np.argwhere(np.isin(self.dataset_config.train_ts, ts_id)).ravel()
+        if (self.dataset_config.has_val()):
+            val_id_result = np.argwhere(np.isin(self.dataset_config.val_ts, ts_id)).ravel()
+        if (self.dataset_config.has_test()):
+            test_id_result = np.argwhere(np.isin(self.dataset_config.test_ts, ts_id)).ravel()
+
+        data = None
+        time_period = None
+
+        if self.dataset_config.has_train() and len(train_id_result) > 0:
+            data = self.__get_ts_data_for_plot(self.train_dataset, ts_id, feature_indices)
+            time_period = self.get_data_about_set(SplitType.TRAIN)[time_format]
+            self.logger.debug("Valid ts_id found: %d", train_id_result[0])
+
+        elif self.dataset_config.has_val() and len(val_id_result) > 0:
+            data = self.__get_ts_data_for_plot(self.val_dataset, ts_id, feature_indices)
+            time_period = self.get_data_about_set(SplitType.VAL)[time_format]
+            self.logger.debug("Valid ts_id found: %d", val_id_result[0])
+
+        elif self.dataset_config.has_test() and len(test_id_result) > 0:
+            data = self.__get_ts_data_for_plot(self.test_dataset, ts_id, feature_indices)
+            time_period = self.get_data_about_set(SplitType.TEST)[time_format]
+            self.logger.debug("Valid ts_id found: %d", test_id_result[0])
+        else:
+            raise ValueError(f"Invalid ts_id '{ts_id}'. The provided ts_id is not found in the available time series IDs.", self.dataset_config.train_ts, self.dataset_config.val_ts, self.dataset_config.test_ts)
+
+        return data, time_period
+
+    def __get_ts_data_for_plot(self, dataset: SeriesBasedDataset, ts_id: int, feature_indices: list[int]):
+        dataset = self._get_singular_time_series_dataset(dataset, ts_id)
+        dataloader = self._get_series_based_dataloader(dataset, 0, True, None)
+
+        temp_data = create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.SERIES_BASED, True)
+
+        if (dataset.time_format == TimeFormat.DATETIME and dataset.include_time):
+            temp_data = temp_data[0]
+
+        temp_data = temp_data[0][:, feature_indices]
+
+        return temp_data
