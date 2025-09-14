@@ -210,7 +210,7 @@ class NoFiller(Filler):
     """
     Does nothing. 
 
-    Corresponds to enum [`FillerType.NO_FILLER`][cesnet_tszoo.utils.enums.FillerType] or `None`.
+    Corresponds to enum [`FillerType.NO_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `no_filler`.
     """
 
     IDENTIFIER = FillerType.NO_FILLER.value
@@ -279,9 +279,6 @@ class NoFillerFactory(FillerFactory):
     def create_filler(self, features) -> NoFiller:
         return NoFiller(features)
 
-    def can_be_used(self, filler_from_input: FillerType | type | None) -> bool:
-        return filler_from_input is None or super().can_be_used(filler_from_input)
-
 
 class CustomFillerFactory(FillerFactory):
     """Factory class for custom fillers. """
@@ -293,12 +290,10 @@ class CustomFillerFactory(FillerFactory):
             filler_type.IDENTIFIER = f"{self.filler_type.__name__} (Custom)"
 
     def create_filler(self, features) -> Filler:
-        custom_filler = self.filler_type(features)
-
-        return custom_filler
+        return self.filler_type(features)
 
     def can_be_used(self, filler_from_input: type):
-        return filler_from_input is not None and inspect.isclass(filler_from_input) and issubclass(filler_from_input, Filler)
+        return inspect.isclass(filler_from_input) and issubclass(filler_from_input, Filler)
 
 
 def get_filler_factory(fill_missing_with: FillerType | str | type | None) -> FillerFactory:
@@ -307,6 +302,9 @@ def get_filler_factory(fill_missing_with: FillerType | str | type | None) -> Fil
     # Validate and process missing data filler type
     if isinstance(fill_missing_with, (str, FillerType)):
         fill_missing_with = FillerType(fill_missing_with)
+
+    if fill_missing_with is None:
+        fill_missing_with = FillerType.NO_FILLER
 
     filler_factories = [NoFillerFactory(), MeanFillerFactory(), ForwardFillerFactory(), LinearInterpolationFillerFactory(), CustomFillerFactory(fill_missing_with)]
     for factory in filler_factories:
