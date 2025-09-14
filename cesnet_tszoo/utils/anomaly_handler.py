@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import warnings
+import inspect
 
 import numpy as np
 
@@ -40,6 +41,8 @@ class AnomalyHandler(ABC):
 
     """
 
+    IDENTIFIER = None
+
     @abstractmethod
     def fit(self, data: np.ndarray) -> None:
         """
@@ -53,7 +56,7 @@ class AnomalyHandler(ABC):
         ...
 
     @abstractmethod
-    def transform_anomalies(self, data: np.ndarray) -> np.ndarray:
+    def transform_anomalies(self, data: np.ndarray):
         """
         Transforms anomalies the input data for a given time series part.
 
@@ -74,6 +77,8 @@ class ZScore(AnomalyHandler):
     Corresponds to enum [`AnomalyHandlerType.Z_SCORE`][cesnet_tszoo.utils.enums.AnomalyHandlerType] or literal `z-score`.
     """
 
+    IDENTIFIER = "z-score"
+
     def __init__(self):
         self.mean = None
         self.std = None
@@ -85,7 +90,7 @@ class ZScore(AnomalyHandler):
         self.std = np.nanstd(data, axis=0)
         warnings.filterwarnings("always")
 
-    def transform_anomalies(self, data: np.ndarray) -> np.ndarray:
+    def transform_anomalies(self, data: np.ndarray):
         temp = data - self.mean
         z_score = np.divide(temp, self.std, out=np.zeros_like(temp, dtype=float), where=self.std != 0)
         mask_outliers = np.abs(z_score) > self.threshold
@@ -103,6 +108,8 @@ class InterquartileRange(AnomalyHandler):
     Corresponds to enum [`AnomalyHandlerType.INTERQUARTILE_RANGE`][cesnet_tszoo.utils.enums.AnomalyHandlerType] or literal `interquartile_range`.
     """
 
+    IDENTIFIER = "interquartile_range"
+
     def __init__(self):
         self.lower_bound = None
         self.upper_bound = None
@@ -115,7 +122,7 @@ class InterquartileRange(AnomalyHandler):
         self.lower_bound = q25 - 1.5 * self.iqr
         self.upper_bound = q75 + 1.5 * self.iqr
 
-    def transform_anomalies(self, data: np.ndarray) -> np.ndarray:
+    def transform_anomalies(self, data: np.ndarray):
         mask_lower_outliers = data < self.lower_bound
         mask_upper_outliers = data > self.upper_bound
 
@@ -123,38 +130,102 @@ class InterquartileRange(AnomalyHandler):
         data[mask_upper_outliers] = np.take(self.upper_bound, np.where(mask_upper_outliers)[1])
 
 
-def input_has_fit_method(to_check) -> bool:
-    """Checks whether `to_check` has fit method. """
+class NoAnomalyHandler(AnomalyHandler):
+    """
+    Does nothing. 
 
-    fit_method = getattr(to_check, "fit", None)
-    if callable(fit_method):
-        return True
+    Corresponds to enum [`AnomalyHandlerType.NO_ANOMALY_HANDLER`][cesnet_tszoo.utils.enums.AnomalyHandlerType] or literal `no_anomaly_handler`.
+    """
 
-    return False
+    IDENTIFIER = AnomalyHandlerType.NO_ANOMALY_HANDLER.value
 
+    def fit(self, data: np.ndarray) -> None:
+        ...
 
-def input_has_transform(to_check) -> bool:
-    """Checks whether `to_check` has transform_anomalies method. """
-
-    transform_method = getattr(to_check, "transform_anomalies", None)
-    if callable(transform_method):
-        return True
-
-    return False
+    def transform_anomalies(self, data: np.ndarray):
+        ...
 
 
-def anomaly_handler_from_input_to_anomaly_handler_type(anomaly_handler_from_input: AnomalyHandlerType | type) -> tuple[type, str]:
+class AnomalyHandlerFactory(ABC):
+    """Base class for anomaly handler factories. """
 
-    if anomaly_handler_from_input is None:
-        return None, None
+    def __init__(self, anomaly_handler_type: type, creates_built_in: bool = True):
+        self.anomaly_handler_type = anomaly_handler_type
+        self.creates_built_in = creates_built_in
 
-    if anomaly_handler_from_input == ZScore or anomaly_handler_from_input == AnomalyHandlerType.Z_SCORE:
-        return ZScore, Z_SCORE
-    elif anomaly_handler_from_input == InterquartileRange or anomaly_handler_from_input == AnomalyHandlerType.INTERQUARTILE_RANGE:
-        return InterquartileRange, INTERQUARTILE_RANGE
-    else:
+    @abstractmethod
+    def create_anomaly_handler(self) -> AnomalyHandler:
+        """Creates anomaly handler instance. """
+        ...
 
-        assert input_has_transform(anomaly_handler_from_input)
-        assert input_has_fit_method(anomaly_handler_from_input)
+    def can_be_used(self, handle_anomalies_with: AnomalyHandlerType | type) -> bool:
+        """Checks whether factory can be used for passed anomaly handler. """
 
-        return anomaly_handler_from_input, f"{anomaly_handler_from_input.__name__} (Custom)"
+        if isinstance(handle_anomalies_with, AnomalyHandlerType):
+            return handle_anomalies_with.value == self.anomaly_handler_type.IDENTIFIER
+
+        return self.anomaly_handler_type == handle_anomalies_with
+
+
+class ZScoreFactory(AnomalyHandlerFactory):
+    """Factory class for ZScore anomaly handler. """
+
+    def __init__(self):
+        super().__init__(ZScore)
+
+    def create_anomaly_handler(self) -> ZScore:
+        return ZScore()
+
+
+class InterquartileRangeFactory(AnomalyHandlerFactory):
+    """Factory class for InterquartileRange anomaly handler. """
+
+    def __init__(self):
+        super().__init__(InterquartileRange)
+
+    def create_anomaly_handler(self) -> InterquartileRange:
+        return InterquartileRange()
+
+
+class NoAnomalyHandlerFactory(AnomalyHandlerFactory):
+    """Factory class for NoAnomalyHandler anomaly handler. """
+
+    def __init__(self):
+        super().__init__(NoAnomalyHandler)
+
+    def create_anomaly_handler(self) -> NoAnomalyHandler:
+        return NoAnomalyHandler()
+
+
+class CustomAnomalyHandlerFactory(AnomalyHandlerFactory):
+    """Factory class for custom anomaly handler. """
+
+    def __init__(self, anomaly_handler_type: type):
+        super().__init__(anomaly_handler_type, creates_built_in=False)
+
+        if self.can_be_used(anomaly_handler_type) and anomaly_handler_type.IDENTIFIER is None:
+            anomaly_handler_type.IDENTIFIER = f"{self.anomaly_handler_type.__name__} (Custom)"
+
+    def create_anomaly_handler(self) -> AnomalyHandler:
+        return self.anomaly_handler_type()
+
+    def can_be_used(self, handle_anomalies_with: AnomalyHandlerType | type) -> bool:
+        return inspect.isclass(handle_anomalies_with) and issubclass(handle_anomalies_with, AnomalyHandler)
+
+
+def get_anomaly_handler_factory(handle_anomalies_with: AnomalyHandlerType | str | type | None) -> AnomalyHandlerFactory:
+    """Creates anomaly handler factory for used anomaly handler. """
+
+    # Validate and process anomaly handler type
+    if isinstance(handle_anomalies_with, (str, AnomalyHandlerType)):
+        handle_anomalies_with = AnomalyHandlerType(handle_anomalies_with)
+
+    if handle_anomalies_with is None:
+        handle_anomalies_with = AnomalyHandlerType.NO_ANOMALY_HANDLER
+
+    anomaly_handler_factories = [NoAnomalyHandlerFactory(), ZScoreFactory(), InterquartileRangeFactory(), CustomAnomalyHandlerFactory(handle_anomalies_with)]
+    for factory in anomaly_handler_factories:
+        if factory.can_be_used(handle_anomalies_with):
+            return factory
+
+    raise TypeError("Passed anomaly handler type cannot be used! Either use built-in anomaly handlers or pass a custom anomaly handler that subclasses from AnomalyHandler base class.")

@@ -12,7 +12,7 @@ class DisjointTimeBasedInitializerDataset(InitializerDataset):
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, time_period: np.ndarray,
                  features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray, fillers: np.ndarray[Filler],
-                 anomaly_handlers: np.ndarray[AnomalyHandler]):
+                 anomaly_handlers: np.ndarray[AnomalyHandler] | None):
 
         self.ts_row_ranges = ts_row_ranges
         self.time_period = time_period

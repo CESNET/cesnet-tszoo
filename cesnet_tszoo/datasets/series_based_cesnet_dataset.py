@@ -360,6 +360,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             # Filter time series based on missing data threshold
             if missing_percentage <= self.dataset_config.nan_threshold:
                 if is_train:
+                    self.dataset_config.anomaly_handlers[i] = anomaly_handler
                     train_ts_ids_to_take.append(offsetted_idx)
                 elif is_val:
                     val_ts_ids_to_take.append(offsetted_idx)
@@ -372,9 +373,6 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 if self.dataset_config.transform_with is not None and is_train and (not self.dataset_config.are_transformers_premade or self.dataset_config.partial_fit_initialized_transformers):
                     self.dataset_config.transformers.partial_fit(train_data)
 
-                if anomaly_handler is not None:
-                    self.dataset_config.anomaly_handlers[i] = anomaly_handler
-
         if workers == 0:
             init_dataset.cleanup()
 
@@ -385,9 +383,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[train_ts_ids_to_take]
             self.dataset_config.train_ts = self.dataset_config.train_ts[train_ts_ids_to_take]
             self.dataset_config.train_fillers = self.dataset_config.train_fillers[train_ts_ids_to_take]
-
-            if self.dataset_config.handle_anomalies_with is not None:
-                self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[train_ts_ids_to_take]
+            self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[train_ts_ids_to_take]
 
             self.logger.debug("Train set updated: %s time series left.", len(train_ts_ids_to_take))
 
@@ -421,7 +417,6 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         self.dataset_config.used_ts_ids = self.dataset_config.all_ts
         self.dataset_config.used_ts_row_ranges = self.dataset_config.all_ts_row_ranges
         self.dataset_config.used_times = self.time_indices
-        self.dataset_config.used_anomaly_handlers = self.dataset_config.anomaly_handlers
 
         self.logger.info("Dataset initialization complete. Configuration updated.")
 

@@ -110,6 +110,9 @@ class AnomalyHandlerType(Enum):
     INTERQUARTILE_RANGE = "interquartile_range"
     """Represents anomaly handler [`InterquartileRange`][cesnet_tszoo.utils.anomaly_handler.InterquartileRange]. Equivalent to literal `interquartile_range`. """
 
+    NO_ANOMALY_HANDLER = "no_anomaly_handler"
+    """Represents anomaly handler [`NoAnomalyHandler`][cesnet_tszoo.utils.anomaly_handler.NoAnomalyHandler]. Equivalent to literal `no_anomaly_handler`. """
+
 
 class TimeFormat(Enum):
     """Different supported time formats. """

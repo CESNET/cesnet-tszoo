@@ -7,7 +7,6 @@ import numpy as np
 import numpy.typing as npt
 
 from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer_type, Transformer
-from cesnet_tszoo.utils.anomaly_handler import anomaly_handler_from_input_to_anomaly_handler_type
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
@@ -68,16 +67,13 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
         transform_with_display: Used to display the configured type of `transform_with`.
-        handle_anomalies_with_display: Used to display the configured type of `handle_anomalies_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
         is_transformer_custom: Flag indicating whether the transformer is custom.
-        is_anomaly_handler_custom: Flag indicating whether the anomaly handler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
         used_times: List of all times used in the configuration.
         used_ts_ids: List of all time series IDs used in the configuration.
         used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
-        used_anomaly_handlers: List of all anomaly handlers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.     
@@ -157,9 +153,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                  random_state: int | None = None):
 
         # to remove
-
         self.allow_ts_id_overlap = False
-
         # to remove
 
         self.logger = logging.getLogger("disjoint_time_based_config")
@@ -352,22 +346,10 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         self.logger.debug("Fillers for all set are set.")
 
     def _set_anomaly_handlers(self):
-        """Creates and/or validates anomaly handlers based on the `handle_anomalies_with` parameter. """
+        """Creates anomaly handlers with `anomaly_handler_factory`. """
 
-        if self.handle_anomalies_with is None:
-            self.logger.debug("No anomaly handler is used because handle_anomalies_with is set to None.")
-            return
-
-        if not self.has_train():
-            self.logger.error("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
-            raise ValueError("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
-
-        self.logger.info("Anomaly handler will only be used for train set.")
-
-        self.handle_anomalies_with, self.handle_anomalies_with_display = anomaly_handler_from_input_to_anomaly_handler_type(self.handle_anomalies_with)
-        self.is_anomaly_handler_custom = "Custom" in self.handle_anomalies_with_display
-
-        self.anomaly_handlers = np.array([self.handle_anomalies_with() for _ in self.train_ts])
+        if self.has_train():
+            self.anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.train_ts])
 
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos."""
@@ -418,7 +400,7 @@ Config Details
     Transformers
         {transformer_part}
     Anomaly handler
-        Anomaly handler type (train set): {str(self.handle_anomalies_with_display)}
+        Anomaly handler type (train set): {str(self.anomaly_handler_factory.anomaly_handler_type.IDENTIFIER)}
     Batch sizes
         Train batch size: {self.train_batch_size}
         Val batch size: {self.val_batch_size}

@@ -19,6 +19,7 @@ import torch
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
 from cesnet_tszoo.utils.filler import get_filler_factory
+from cesnet_tszoo.utils.anomaly_handler import get_anomaly_handler_factory
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
 from cesnet_tszoo.datasets.loaders import collate_fn_simple
@@ -1010,7 +1011,7 @@ class CesnetDataset(ABC):
             requires_init = True
 
         if handle_anomalies_with == "config":
-            handle_anomalies_with = self._export_config_copy.handle_anomalies_with
+            handle_anomalies_with = self._export_config_copy.anomaly_handler_factory.anomaly_handler_type
         else:
             requires_init = True
 
@@ -1042,7 +1043,7 @@ class CesnetDataset(ABC):
                 self._export_config_copy.all_batch_size = all_batch_size
                 self._export_config_copy.filler_factory = get_filler_factory(fill_missing_with)
                 self._export_config_copy.transform_with = transform_with
-                self._export_config_copy.handle_anomalies_with = handle_anomalies_with
+                self._export_config_copy.handle_anomalies_with = get_anomaly_handler_factory(handle_anomalies_with)
                 self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
                 self._export_config_copy.create_transformer_per_time_series = create_transformer_per_time_series
                 self._export_config_copy.train_workers = train_workers
@@ -1675,6 +1676,9 @@ Dataset details:
 
         if not self.dataset_config.filler_factory.creates_built_in:
             self.logger.warning("You are using a custom filler. Ensure the config is distributed with the source code of the filler.")
+
+        if not self.dataset_config.anomaly_handler_factory.creates_built_in:
+            self.logger.warning("You are using a custom anomaly handler. Ensure the config is distributed with the source code of the anomaly handler.")
 
         if self.dataset_config.is_transformer_custom:
             self.logger.warning("You are using a custom transformer. Ensure the config is distributed with the source code of the transformer.")

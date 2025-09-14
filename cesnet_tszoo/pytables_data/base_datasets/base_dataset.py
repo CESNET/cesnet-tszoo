@@ -94,9 +94,8 @@ class BaseDataset(Dataset, ABC):
             if start >= end:
                 result[i, :, self.offset_exclude_feature_ids:] = self.default_values
 
-                if fillers_to_use is not None:
-                    fillers_to_use[i].fill(result[i, :, self.offset_exclude_feature_ids:].view(), np.array([]), full_missing_indices, default_values=self.default_values,
-                                           first_next_existing_values=None, first_next_existing_values_distance=None)
+                fillers_to_use[i].fill(result[i, :, self.offset_exclude_feature_ids:].view(), np.array([]), full_missing_indices, default_values=self.default_values,
+                                       first_next_existing_values=None, first_next_existing_values_distance=None)
                 continue
 
             # Expected range for times in time series
@@ -150,9 +149,8 @@ class BaseDataset(Dataset, ABC):
 
             result[i, missing_indices, self.offset_exclude_feature_ids:] = self.default_values
 
-            if fillers_to_use is not None:
-                fillers_to_use[i].fill(result[i, :, self.offset_exclude_feature_ids:].view(), existing_indices, missing_indices, default_values=self.default_values,
-                                       first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
+            fillers_to_use[i].fill(result[i, :, self.offset_exclude_feature_ids:].view(), existing_indices, missing_indices, default_values=self.default_values,
+                                   first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
 
             # Update ranges
             ts_row_ranges_to_take[ROW_START][i] = start + real_offset

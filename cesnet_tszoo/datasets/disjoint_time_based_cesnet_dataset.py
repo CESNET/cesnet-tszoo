@@ -475,7 +475,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         self.dataset_config.used_ts_row_ranges = self.dataset_config.all_ts_row_ranges[mask]
         self.dataset_config.used_ts_ids = self.dataset_config.all_ts[mask]
         self.dataset_config.used_times = self.dataset_config.all_time_period
-        self.dataset_config.used_anomaly_handlers = self.dataset_config.anomaly_handlers
 
     def _update_export_config_copy(self) -> None:
         """
@@ -578,8 +577,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                         self.dataset_config.transformers.partial_fit(data)
 
                 # Sets fitted anomaly handlers
-                if self.dataset_config.handle_anomalies_with is not None and anomaly_handler is not None:
-                    self.dataset_config.anomaly_handlers[i] = anomaly_handler
+                if anomaly_handlers is not None:
+                    anomaly_handlers[i] = anomaly_handler
 
         if workers == 0:
             init_dataset.cleanup()
