@@ -9,5 +9,6 @@
         members:
         - AnomalyHandler
         - ZScore
-        - InterquartileRange        
+        - InterquartileRange       
+        - NoAnomalyHandler 
         filters: ["!^_"]
