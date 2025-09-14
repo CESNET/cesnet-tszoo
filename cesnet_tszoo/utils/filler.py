@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
+import inspect
 
 import numpy as np
 
 from cesnet_tszoo.utils.enums import FillerType
-from cesnet_tszoo.utils.constants import MEAN_FILLER, FORWARD_FILLER, LINEAR_INTERPOLATION_FILLER
 
 
 class Filler(ABC):
@@ -43,6 +43,8 @@ class Filler(ABC):
                 self.last_values = np.copy(batch_values[-1])
     """
 
+    IDENTIFIER = None
+
     def __init__(self, features):
         super().__init__()
 
@@ -69,6 +71,8 @@ class MeanFiller(Filler):
 
     Corresponds to enum [`FillerType.MEAN_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `mean_filler`.
     """
+
+    IDENTIFIER = FillerType.MEAN_FILLER.value
 
     def __init__(self, features):
         super().__init__(features)
@@ -122,6 +126,8 @@ class ForwardFiller(Filler):
     Corresponds to enum [`FillerType.FORWARD_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `forward_filler`.
     """
 
+    IDENTIFIER = FillerType.FORWARD_FILLER.value
+
     def __init__(self, features):
         super().__init__(features)
 
@@ -152,6 +158,8 @@ class LinearInterpolationFiller(Filler):
 
     Corresponds to enum [`FillerType.LINEAR_INTERPOLATION_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `linear_interpolation_filler`.
     """
+
+    IDENTIFIER = FillerType.LINEAR_INTERPOLATION_FILLER.value
 
     def __init__(self, features):
         super().__init__(features)
@@ -198,19 +206,111 @@ class LinearInterpolationFiller(Filler):
         self.last_values_x_pos = -1
 
 
-def filler_from_input_to_type(filler_from_input: FillerType | type | str) -> tuple[type, bool]:
-    """Converts from input to type value and str that represents filler's name."""
+class NoFiller(Filler):
+    """
+    Does nothing. 
 
-    if filler_from_input is None:
-        return None, None
+    Corresponds to enum [`FillerType.NO_FILLER`][cesnet_tszoo.utils.enums.FillerType] or `None`.
+    """
 
-    if filler_from_input == ForwardFiller or filler_from_input == FillerType.FORWARD_FILLER:
-        return ForwardFiller, FORWARD_FILLER
-    elif filler_from_input == LinearInterpolationFiller or filler_from_input == FillerType.LINEAR_INTERPOLATION_FILLER:
-        return LinearInterpolationFiller, LINEAR_INTERPOLATION_FILLER
-    elif filler_from_input == MeanFiller or filler_from_input == FillerType.MEAN_FILLER:
-        return MeanFiller, MEAN_FILLER
-    elif issubclass(filler_from_input, Filler):
-        return filler_from_input, f"{filler_from_input.__name__} (Custom)"
-    else:
-        raise TypeError("Custom filler must be inherited from base class Filler!")
+    IDENTIFIER = FillerType.NO_FILLER.value
+
+    def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
+        ...
+
+
+class FillerFactory(ABC):
+    """Base class for filler factories. """
+
+    def __init__(self, filler_type: type, creates_built_in: bool = True):
+        self.filler_type = filler_type
+        self.creates_built_in = creates_built_in
+
+    @abstractmethod
+    def create_filler(self, features) -> Filler:
+        """Creates filler instance. """
+        ...
+
+    def can_be_used(self, filler_from_input: FillerType | type | None) -> bool:
+        """Checks whether factory can be used for passed filler. """
+
+        if isinstance(filler_from_input, FillerType):
+            return filler_from_input.value == self.filler_type.IDENTIFIER
+
+        return self.filler_type == filler_from_input
+
+
+class MeanFillerFactory(FillerFactory):
+    """Factory class for MeanFiller. """
+
+    def __init__(self):
+        super().__init__(MeanFiller)
+
+    def create_filler(self, features) -> MeanFiller:
+        return MeanFiller(features)
+
+
+class ForwardFillerFactory(FillerFactory):
+    """Factory class for ForwardFiller. """
+
+    def __init__(self):
+        super().__init__(ForwardFiller)
+
+    def create_filler(self, features) -> ForwardFiller:
+        return ForwardFiller(features)
+
+
+class LinearInterpolationFillerFactory(FillerFactory):
+    """Factory class for LinearInterpolationFiller. """
+
+    def __init__(self):
+        super().__init__(LinearInterpolationFiller)
+
+    def create_filler(self, features) -> LinearInterpolationFiller:
+        return LinearInterpolationFiller(features)
+
+
+class NoFillerFactory(FillerFactory):
+    """Factory class for NoFiller. """
+
+    def __init__(self):
+        super().__init__(NoFiller)
+
+    def create_filler(self, features) -> NoFiller:
+        return NoFiller(features)
+
+    def can_be_used(self, filler_from_input: FillerType | type | None) -> bool:
+        return filler_from_input is None or super().can_be_used(filler_from_input)
+
+
+class CustomFillerFactory(FillerFactory):
+    """Factory class for custom fillers. """
+
+    def __init__(self, filler_type: type):
+        super().__init__(filler_type, creates_built_in=False)
+
+        if self.can_be_used(filler_type) and filler_type.IDENTIFIER is None:
+            filler_type.IDENTIFIER = f"{self.filler_type.__name__} (Custom)"
+
+    def create_filler(self, features) -> Filler:
+        custom_filler = self.filler_type(features)
+
+        return custom_filler
+
+    def can_be_used(self, filler_from_input: type):
+        return filler_from_input is not None and inspect.isclass(filler_from_input) and issubclass(filler_from_input, Filler)
+
+
+def get_filler_factory(fill_missing_with: FillerType | str | type | None) -> FillerFactory:
+    """Creates filler factory for used filler. """
+
+    # Validate and process missing data filler type
+    if isinstance(fill_missing_with, (str, FillerType)):
+        fill_missing_with = FillerType(fill_missing_with)
+
+    filler_factories = [NoFillerFactory(), MeanFillerFactory(), ForwardFillerFactory(), LinearInterpolationFillerFactory(), CustomFillerFactory(fill_missing_with)]
+    for factory in filler_factories:
+        if factory.can_be_used(fill_missing_with):
+            return factory
+
+    raise TypeError("Passed filler type cannot be used! Either use built-in fillers or pass a custom filler that subclasses from Filler base class.")

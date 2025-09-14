@@ -384,9 +384,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 raise ValueError("No time series left in training set after applying nan_threshold.")
             self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[train_ts_ids_to_take]
             self.dataset_config.train_ts = self.dataset_config.train_ts[train_ts_ids_to_take]
-
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.train_fillers = self.dataset_config.train_fillers[train_ts_ids_to_take]
+            self.dataset_config.train_fillers = self.dataset_config.train_fillers[train_ts_ids_to_take]
 
             if self.dataset_config.handle_anomalies_with is not None:
                 self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[train_ts_ids_to_take]
@@ -398,9 +396,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 raise ValueError("No time series left in validation set after applying nan_threshold.")
             self.dataset_config.val_ts_row_ranges = self.dataset_config.val_ts_row_ranges[val_ts_ids_to_take]
             self.dataset_config.val_ts = self.dataset_config.val_ts[val_ts_ids_to_take]
-
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.val_fillers = self.dataset_config.val_fillers[val_ts_ids_to_take]
+            self.dataset_config.val_fillers = self.dataset_config.val_fillers[val_ts_ids_to_take]
 
             self.logger.debug("Validation set updated: %s time series selected.", len(val_ts_ids_to_take))
 
@@ -409,9 +405,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 raise ValueError("No time series left in test set after applying nan_threshold.")
             self.dataset_config.test_ts_row_ranges = self.dataset_config.test_ts_row_ranges[test_ts_ids_to_take]
             self.dataset_config.test_ts = self.dataset_config.test_ts[test_ts_ids_to_take]
-
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.test_fillers = self.dataset_config.test_fillers[test_ts_ids_to_take]
+            self.dataset_config.test_fillers = self.dataset_config.test_fillers[test_ts_ids_to_take]
 
             self.logger.debug("Test set updated: %s time series selected.", len(test_ts_ids_to_take))
 
@@ -420,15 +414,12 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 raise ValueError("No series left in all set after applying nan_threshold.")
             self.dataset_config.all_ts = self.dataset_config.all_ts[all_ts_ids_to_take]
             self.dataset_config.all_ts_row_ranges = self.dataset_config.all_ts_row_ranges[all_ts_ids_to_take]
-
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.all_fillers = self.dataset_config.all_fillers[all_ts_ids_to_take]
+            self.dataset_config.all_fillers = self.dataset_config.all_fillers[all_ts_ids_to_take]
 
             self.logger.debug("All set updated: %s time series selected.", len(all_ts_ids_to_take))
 
         self.dataset_config.used_ts_ids = self.dataset_config.all_ts
         self.dataset_config.used_ts_row_ranges = self.dataset_config.all_ts_row_ranges
-        self.dataset_config.used_fillers = self.dataset_config.all_fillers
         self.dataset_config.used_times = self.time_indices
         self.dataset_config.used_anomaly_handlers = self.dataset_config.anomaly_handlers
 

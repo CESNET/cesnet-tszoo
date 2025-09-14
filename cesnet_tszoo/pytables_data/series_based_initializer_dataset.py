@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Optional
 
 import numpy as np
 
@@ -87,9 +86,8 @@ class SeriesBasedInitializerDataset(InitializerDataset):
         existing_indices = np.where(missing_values_mask == 0)[0]
         missing_indices = np.where(missing_values_mask == 1)[0]
 
-        if self.all_fillers is not None:
-            self.all_fillers[idx].fill(result[:, self.offset_exclude_feature_ids:].view(), existing_indices, missing_indices, default_values=self.default_values,
-                                       first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
+        self.all_fillers[idx].fill(result[:, self.offset_exclude_feature_ids:].view(), existing_indices, missing_indices, default_values=self.default_values,
+                                   first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
 
         return (len(existing_indices), len(missing_indices))
 

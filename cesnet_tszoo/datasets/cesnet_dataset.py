@@ -18,6 +18,7 @@ import torch
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
+from cesnet_tszoo.utils.filler import get_filler_factory
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
 from cesnet_tszoo.datasets.loaders import collate_fn_simple
@@ -989,7 +990,7 @@ class CesnetDataset(ABC):
             all_batch_size = self.dataset_config.all_batch_size
 
         if fill_missing_with == "config":
-            fill_missing_with = self._export_config_copy.fill_missing_with
+            fill_missing_with = self._export_config_copy.filler_factory.filler_type
         else:
             requires_init = True
 
@@ -1039,7 +1040,7 @@ class CesnetDataset(ABC):
                 self._export_config_copy.val_batch_size = val_batch_size
                 self._export_config_copy.test_batch_size = test_batch_size
                 self._export_config_copy.all_batch_size = all_batch_size
-                self._export_config_copy.fill_missing_with = fill_missing_with
+                self._export_config_copy.filler_factory = get_filler_factory(fill_missing_with)
                 self._export_config_copy.transform_with = transform_with
                 self._export_config_copy.handle_anomalies_with = handle_anomalies_with
                 self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
@@ -1672,7 +1673,7 @@ Dataset details:
                 raise ValueError(f"Config details at path {path_details} already exists. Set force_write=True to overwrite.")
             self.logger.debug("Config details path: %s", path_details)
 
-        if self.dataset_config.is_filler_custom:
+        if not self.dataset_config.filler_factory.creates_built_in:
             self.logger.warning("You are using a custom filler. Ensure the config is distributed with the source code of the filler.")
 
         if self.dataset_config.is_transformer_custom:

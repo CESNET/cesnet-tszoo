@@ -6,7 +6,6 @@ from numbers import Number
 import numpy as np
 import numpy.typing as npt
 
-from cesnet_tszoo.utils.filler import filler_from_input_to_type
 from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer_type, Transformer
 from cesnet_tszoo.utils.anomaly_handler import anomaly_handler_from_input_to_anomaly_handler_type
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
@@ -66,18 +65,15 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
         transform_with_display: Used to display the configured type of `transform_with`.
-        fill_missing_with_display: Used to display the configured type of `fill_missing_with`.
         handle_anomalies_with_display: Used to display the configured type of `handle_anomalies_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
         is_transformer_custom: Flag indicating whether the transformer is custom.
-        is_filler_custom: Flag indicating whether the filler is custom.
         is_anomaly_handler_custom: Flag indicating whether the anomaly handler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
         used_times: List of all times used in the configuration.
         used_ts_ids: List of all time series IDs used in the configuration.
         used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
-        used_fillers: List of all fillers used in the configuration.
         used_anomaly_handlers: List of all anomaly handlers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
@@ -277,36 +273,29 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
             self.logger.debug("Using uninitialized transformer of type: %s", self.transform_with_display)
 
     def _set_fillers(self) -> None:
-        """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
-
-        self.fill_missing_with, self.fill_missing_with_display = filler_from_input_to_type(self.fill_missing_with)
-        self.is_filler_custom = "Custom" in self.fill_missing_with_display if self.fill_missing_with is not None else None
-
-        if self.fill_missing_with is None:
-            self.logger.debug("No filler is used because fill_missing_with is set to None.")
-            return
+        """Creates fillers with `filler_factory`. """
 
         # Set the fillers for the training set
         if self.has_train():
-            self.train_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.train_ts])
+            self.train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.train_ts])
             self.logger.debug("Fillers for training set are set.")
 
         # Set the fillers for the validation set
         if self.has_val():
-            self.val_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.val_ts])
+            self.val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.val_ts])
             self.logger.debug("Fillers for validation set are set.")
 
         # Set the fillers for the test set
         if self.has_test():
-            self.test_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.test_ts])
+            self.test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
 
         # Set the fillers for the all set
         if self.has_all():
-            self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.all_ts])
+            self.all_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.all_ts])
             self.logger.debug("Fillers for all set are set.")
 
-        self.logger.debug("Using filler: %s.", self.fill_missing_with_display)
+        self.logger.debug("Using filler: %s.", self.filler_factory.filler_type.IDENTIFIER)
 
     def _set_anomaly_handlers(self):
         """Creates and/or validates anomaly handlers based on the `handle_anomalies_with` parameter. """
@@ -365,7 +354,7 @@ Config Details:
         Time series ID included: {str(self.include_ts_id)}
         {time_part}
     Fillers         
-        Filler type: {str(self.fill_missing_with_display)}
+        Filler type: {str(self.filler_factory.filler_type.IDENTIFIER)}
     Transformers
         {transformer_part}
     Anomaly handler

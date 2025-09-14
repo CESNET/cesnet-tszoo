@@ -355,11 +355,10 @@ class TimeBasedCesnetDataset(CesnetDataset):
                             self.dataset_config.transformers.partial_fit(train_data)
 
                 # Only update fillers for val/test because train doesnt need to know about previous data
-                if self.dataset_config.fill_missing_with is not None:
-                    if self.dataset_config.has_val():
-                        self.dataset_config.val_fillers[i] = val_filler
-                    if self.dataset_config.has_test():
-                        self.dataset_config.test_fillers[i] = test_filler
+                if self.dataset_config.has_val():
+                    self.dataset_config.val_fillers[i] = val_filler
+                if self.dataset_config.has_test():
+                    self.dataset_config.test_fillers[i] = test_filler
 
                 # Sets fitted anomaly handlers
                 if self.dataset_config.handle_anomalies_with is not None:
@@ -379,15 +378,14 @@ class TimeBasedCesnetDataset(CesnetDataset):
             if self.dataset_config.create_transformer_per_time_series:
                 self.dataset_config.transformers = self.dataset_config.transformers[ts_ids_to_take]
 
-        if self.dataset_config.fill_missing_with is not None:
-            if self.dataset_config.has_train():
-                self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
-            if self.dataset_config.has_val():
-                self.dataset_config.val_fillers = self.dataset_config.val_fillers[ts_ids_to_take]
-            if self.dataset_config.has_test():
-                self.dataset_config.test_fillers = self.dataset_config.test_fillers[ts_ids_to_take]
-            if self.dataset_config.has_all():
-                self.dataset_config.all_fillers = self.dataset_config.all_fillers[ts_ids_to_take]
+        if self.dataset_config.has_train():
+            self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
+        if self.dataset_config.has_val():
+            self.dataset_config.val_fillers = self.dataset_config.val_fillers[ts_ids_to_take]
+        if self.dataset_config.has_test():
+            self.dataset_config.test_fillers = self.dataset_config.test_fillers[ts_ids_to_take]
+        if self.dataset_config.has_all():
+            self.dataset_config.all_fillers = self.dataset_config.all_fillers[ts_ids_to_take]
 
         if self.dataset_config.handle_anomalies_with is not None:
             self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[ts_ids_to_take]
@@ -395,7 +393,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
         self.dataset_config.used_ts_row_ranges = self.dataset_config.ts_row_ranges
         self.dataset_config.used_ts_ids = self.dataset_config.ts_ids
         self.dataset_config.used_times = self.dataset_config.all_time_period
-        self.dataset_config.used_fillers = self.dataset_config.all_fillers
         self.dataset_config.used_anomaly_handlers = self.dataset_config.anomaly_handlers
 
         self.logger.debug("ts_ids updated: %s time series left.", len(ts_ids_to_take))

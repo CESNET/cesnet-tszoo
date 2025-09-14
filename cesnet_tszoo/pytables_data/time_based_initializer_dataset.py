@@ -50,8 +50,8 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
         train_count_values, val_count_values, test_count_values, all_count_values = count_values
 
-        this_val_filler = self.val_fillers[idx] if self.val_time_period is not None and self.val_fillers is not None else None
-        this_test_filler = self.test_fillers[idx] if self.test_time_period is not None and self.test_fillers is not None else None
+        this_val_filler = self.val_fillers[idx] if self.val_time_period is not None else None
+        this_test_filler = self.test_fillers[idx] if self.test_time_period is not None else None
         this_anomaly_handler = self.anomaly_handlers[idx] if self.anomaly_handlers is not None else None
 
         # Prepare train data from current time series, if train set is used
@@ -102,11 +102,10 @@ class TimeBasedInitializerDataset(InitializerDataset):
                 previous_existing_indices = np.where(missing_values_mask[:current_start_index - first_start_index] == 0)[0]
                 previous_missing_indices = np.where(missing_values_mask[:current_start_index - first_start_index] == 1)[0]
 
-                if self.val_fillers is not None:
-                    train_should_fill = False
-                    self.val_fillers[idx].fill(result[:current_start_index - first_start_index, self.offset_exclude_feature_ids:].view(), previous_existing_indices, previous_missing_indices,
-                                               default_values=self.default_values,
-                                               first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
+                train_should_fill = False
+                self.val_fillers[idx].fill(result[:current_start_index - first_start_index, self.offset_exclude_feature_ids:].view(), previous_existing_indices, previous_missing_indices,
+                                           default_values=self.default_values,
+                                           first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
 
             offset_start = min(offset_start, self.val_time_period[ID_TIME_COLUMN_NAME][0])
             offsetted_val_time_period = self.val_time_period[ID_TIME_COLUMN_NAME] - offset_start
@@ -126,13 +125,13 @@ class TimeBasedInitializerDataset(InitializerDataset):
                 previous_existing_indices = np.where(missing_values_mask[previous_offset:current_start_index - first_start_index] == 0)[0]
                 previous_missing_indices = np.where(missing_values_mask[previous_offset:current_start_index - first_start_index] == 1)[0]
 
-                if self.test_fillers is not None:
-                    if self.val_fillers is not None:
-                        self.test_fillers[idx] = deepcopy(self.val_fillers[idx])
-                    train_should_fill = False
-                    self.test_fillers[idx].fill(result[previous_offset:current_start_index - first_start_index, self.offset_exclude_feature_ids:].view(), previous_existing_indices, previous_missing_indices,
-                                                default_values=self.default_values,
-                                                first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
+                if self.val_time_period is not None:
+                    self.test_fillers[idx] = deepcopy(self.val_fillers[idx])
+
+                train_should_fill = False
+                self.test_fillers[idx].fill(result[previous_offset:current_start_index - first_start_index, self.offset_exclude_feature_ids:].view(), previous_existing_indices, previous_missing_indices,
+                                            default_values=self.default_values,
+                                            first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
 
             offset_start = min(offset_start, self.test_time_period[ID_TIME_COLUMN_NAME][0])
             offsetted_test_time_period = self.test_time_period[ID_TIME_COLUMN_NAME] - offset_start
@@ -140,7 +139,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
             test_existing_indices = np.where(missing_values_mask[offsetted_test_time_period] == 0)[0]
             test_missing_indices = np.where(missing_values_mask[offsetted_test_time_period] == 1)[0]
 
-        if self.train_time_period is not None and self.train_fillers is not None and train_should_fill:  # for transformer...
+        if self.train_time_period is not None and train_should_fill:  # for transformer...
             self.train_fillers[idx].fill(result[:, self.offset_exclude_feature_ids:].view(), train_existing_indices, train_missing_indices,
                                          default_values=self.default_values,
                                          first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)

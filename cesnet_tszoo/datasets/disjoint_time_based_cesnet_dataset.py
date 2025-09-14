@@ -475,7 +475,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         self.dataset_config.used_ts_row_ranges = self.dataset_config.all_ts_row_ranges[mask]
         self.dataset_config.used_ts_ids = self.dataset_config.all_ts[mask]
         self.dataset_config.used_times = self.dataset_config.all_time_period
-        self.dataset_config.used_fillers = None if self.dataset_config.all_fillers is None else self.dataset_config.all_fillers[mask]
         self.dataset_config.used_anomaly_handlers = self.dataset_config.anomaly_handlers
 
     def _update_export_config_copy(self) -> None:
@@ -507,7 +506,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         time_series_position = temp[0]
 
-        filler = None if parent_dataset.fillers is None else parent_dataset.fillers[time_series_position:time_series_position + 1]
+        filler = parent_dataset.fillers[time_series_position:time_series_position + 1]
         anomaly_handler = None if parent_dataset.anomaly_handlers is None else parent_dataset.anomaly_handlers[time_series_position:time_series_position + 1]
 
         transformer = None
@@ -591,7 +590,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         # Update config based on filtered time series
         updated_ts_row_ranges = ts_row_ranges[ts_ids_to_take]
         updated_ts_ids = ts_ids[ts_ids_to_take]
-        updated_fillers = None if self.dataset_config.fill_missing_with is None else fillers[ts_ids_to_take]
+        updated_fillers = fillers[ts_ids_to_take]
         updated_anomaly_handlers = None if anomaly_handlers is None else anomaly_handlers[ts_ids_to_take]
 
         return updated_ts_row_ranges, updated_ts_ids, updated_fillers, updated_anomaly_handlers

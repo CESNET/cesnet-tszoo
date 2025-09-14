@@ -17,12 +17,6 @@ ROW_END = "end"
 LOADING_WARNING_THRESHOLD = 20_000_000
 ANNOTATIONS_DOWNLOAD_BUCKET = "https://liberouter.org/datazoo/download?bucket=annotations"
 
-# Fillers
-
-MEAN_FILLER = "mean_filler"
-FORWARD_FILLER = "forward_filler"
-LINEAR_INTERPOLATION_FILLER = "linear_interpolation_filler"
-
 # Transformers
 
 MIN_MAX_SCALER = "min_max_scaler"

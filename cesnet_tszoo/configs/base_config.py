@@ -11,6 +11,7 @@ import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
 from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.utils.filler import get_filler_factory
 
 
 class DatasetConfig(ABC):
@@ -34,7 +35,6 @@ class DatasetConfig(ABC):
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
         transform_with_display: Used to display the configured type of `transform_with`.
-        fill_missing_with_display: Used to display the configured type of `fill_missing_with`.
         handle_anomalies_with_display: Used to display the configured type of `handle_anomalies_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
@@ -45,7 +45,6 @@ class DatasetConfig(ABC):
         used_times: List of all times used in the configuration.
         used_ts_ids: List of all time series IDs used in the configuration.
         used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
-        used_fillers: List of all fillers used in the configuration.
         used_anomaly_handlers: List of all anomaly handlers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
@@ -127,18 +126,15 @@ class DatasetConfig(ABC):
         self.source_type = None
         self.database_name = None
         self.transform_with_display = None
-        self.fill_missing_with_display = None
         self.handle_anomalies_with_display = None
         self.features_to_take_without_ids = None
         self.indices_of_features_to_take_no_ids = None
         self.is_transformer_custom = False
-        self.is_filler_custom = False
         self.is_anomaly_handler_custom = False
         self.ts_id_name = None
         self.used_times = None
         self.used_ts_ids = None
         self.used_ts_row_ranges = None
-        self.used_fillers = None
         self.used_anomaly_handlers = None
         self.used_singular_train_time_series = None
         self.used_singular_val_time_series = None
@@ -161,7 +157,6 @@ class DatasetConfig(ABC):
         self.val_batch_size = val_batch_size
         self.test_batch_size = test_batch_size
         self.all_batch_size = all_batch_size
-        self.fill_missing_with = fill_missing_with
         self.transform_with = transform_with
         self.handle_anomalies_with = handle_anomalies_with
         self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
@@ -178,6 +173,13 @@ class DatasetConfig(ABC):
         self.dataset_type = dataset_type
         self.train_dataloader_order = train_dataloader_order
         self.random_state = random_state
+
+        # new
+        self.filler_factory = get_filler_factory(fill_missing_with)
+        # new
+
+        # to remove
+        # to remove
 
         self._validate_construction()
 
@@ -218,10 +220,6 @@ class DatasetConfig(ABC):
             self.transform_with = TransformerType(self.transform_with)
             if self.transform_with in [TransformerType.POWER_TRANSFORMER, TransformerType.QUANTILE_TRANSFORMER, TransformerType.ROBUST_SCALER] and not self.create_transformer_per_time_series:
                 raise NotImplementedError("The selected transformer requires a working partial_fit method, which is not implemented for this configuration.")
-
-        # Validate and process missing data filler type
-        if isinstance(self.fill_missing_with, (str, FillerType)):
-            self.fill_missing_with = FillerType(self.fill_missing_with)
 
         # Validate and process anomaly handler type
         if isinstance(self.handle_anomalies_with, (str, AnomalyHandlerType)):
@@ -436,7 +434,7 @@ class DatasetConfig(ABC):
 
     @abstractmethod
     def _set_fillers(self) -> None:
-        """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
+        """Creates fillers with `filler_factory`. """
         ...
 
     @abstractmethod

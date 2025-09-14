@@ -69,6 +69,9 @@ class FillerType(Enum):
     LINEAR_INTERPOLATION_FILLER = "linear_interpolation_filler"
     """Represents filler [`LinearInterpolationFiller`][cesnet_tszoo.utils.filler.LinearInterpolationFiller]. Equivalent to literal `linear_interpolation_filler`. """
 
+    NO_FILLER = "no_filler"
+    """Represents filler [`NoFiller`][cesnet_tszoo.utils.filler.LinearInterpolationFiller]. Equivalent to `None`. """
+
 
 class TransformerType(Enum):
     """Built-in transformer types. """
