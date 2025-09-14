@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.utils.filler import get_filler_factory
+from cesnet_tszoo.utils.anomaly_handler import get_anomaly_handler_factory
 from cesnet_tszoo.utils.enums import DatasetType, TransformerType, ScalerType
 import cesnet_tszoo.version as version
 
@@ -47,6 +48,7 @@ class ConfigUpdater:
             self.logger.warning("Config version is lower than '%s', updating config to match it.", version.VERSION_2_0_1)
 
             self.__filler_refactoring()
+            self.__anomaly_handler_refactoring()
 
             self.config_to_update.export_update_needed = True
             self.config_to_update.version = version.VERSION_2_0_1
@@ -68,6 +70,16 @@ class ConfigUpdater:
         delattr(self.config_to_update, "is_filler_custom")
         delattr(self.config_to_update, "fill_missing_with_display")
         delattr(self.config_to_update, "used_fillers")
+
+    def __anomaly_handler_refactoring(self):
+        self.logger.debug("Updating attributes for anomaly handler refactoring.")
+
+        self.config_to_update.anomaly_handler_factory = get_anomaly_handler_factory(getattr(self.config_to_update, "handle_anomalies_with"))
+
+        delattr(self.config_to_update, "handle_anomalies_with")
+        delattr(self.config_to_update, "is_anomaly_handler_custom")
+        delattr(self.config_to_update, "handle_anomalies_with_display")
+        delattr(self.config_to_update, "used_anomaly_handlers")
 
     def __default_version_update(self, update_version: str):
         if Version(self.config_to_update.version) < Version(update_version):
