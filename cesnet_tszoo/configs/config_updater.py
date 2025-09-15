@@ -1,11 +1,12 @@
 import logging
+from copy import deepcopy
 
 from packaging.version import Version
-from copy import deepcopy
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.utils.filler import get_filler_factory
 from cesnet_tszoo.utils.anomaly_handler import get_anomaly_handler_factory
+from cesnet_tszoo.utils.transformer import get_transformer_factory
 from cesnet_tszoo.utils.enums import DatasetType, TransformerType, ScalerType
 import cesnet_tszoo.version as version
 
@@ -49,6 +50,7 @@ class ConfigUpdater:
 
             self.__filler_refactoring()
             self.__anomaly_handler_refactoring()
+            self.__transformer_refactoring()
 
             self.config_to_update.export_update_needed = True
             self.config_to_update.version = version.VERSION_2_0_1
@@ -80,6 +82,16 @@ class ConfigUpdater:
         delattr(self.config_to_update, "is_anomaly_handler_custom")
         delattr(self.config_to_update, "handle_anomalies_with_display")
         delattr(self.config_to_update, "used_anomaly_handlers")
+
+    def __transformer_refactoring(self):
+        self.logger.debug("Updating attributes for transformer refactoring.")
+
+        self.config_to_update.transformer_factory = get_transformer_factory(getattr(self.config_to_update, "transform_with"), self.config_to_update.create_transformer_per_time_series, self.config_to_update.partial_fit_initialized_transformers)
+
+        delattr(self.config_to_update, "transform_with")
+        delattr(self.config_to_update, "is_transformer_custom")
+        delattr(self.config_to_update, "transform_with_display")
+        delattr(self.config_to_update, "are_transformers_premade")
 
     def __default_version_update(self, update_version: str):
         if Version(self.config_to_update.version) < Version(update_version):
