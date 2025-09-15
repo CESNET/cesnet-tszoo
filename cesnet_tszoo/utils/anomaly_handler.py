@@ -5,7 +5,6 @@ import inspect
 import numpy as np
 
 from cesnet_tszoo.utils.enums import AnomalyHandlerType
-from cesnet_tszoo.utils.constants import Z_SCORE, INTERQUARTILE_RANGE
 
 
 class AnomalyHandler(ABC):

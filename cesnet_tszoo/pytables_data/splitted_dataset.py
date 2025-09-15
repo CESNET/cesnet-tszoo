@@ -20,7 +20,7 @@ class SplittedDataset(Dataset):
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int],
                  default_values: np.ndarray, fillers: np.ndarray[Filler], is_transformer_per_time_series: bool,
-                 include_time: bool, include_ts_id: bool, time_format: TimeFormat, workers: int, feature_transformers: np.ndarray[Transformer] | Transformer | None,
+                 include_time: bool, include_ts_id: bool, time_format: TimeFormat, workers: int, feature_transformers: np.ndarray[Transformer] | Transformer,
                  anomaly_handlers: np.ndarray[AnomalyHandler]):
         super().__init__()
 
@@ -121,11 +121,7 @@ class SplittedDataset(Dataset):
         offset = 0
         for size in sizes:
 
-            transformers = None
-            if self.feature_transformers is not None:
-                transformers = self.feature_transformers[offset:offset + size] if self.is_transformer_per_time_series else self.feature_transformers
-
-            fillers = None
+            transformers = self.feature_transformers[offset:offset + size] if self.is_transformer_per_time_series else self.feature_transformers
             fillers = self.fillers[offset:offset + size]
 
             anomaly_handlers = None

@@ -20,7 +20,7 @@ class BaseDataset(Dataset, ABC):
     """Base class for PyTable wrappers. Used for main data loading... train, val, test etc."""
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int],
-                 default_values: np.ndarray, fillers: np.ndarray[Filler], include_time: bool, include_ts_id: bool, time_format: TimeFormat, transformers: np.ndarray[Transformer] | Transformer | None,
+                 default_values: np.ndarray, fillers: np.ndarray[Filler], include_time: bool, include_ts_id: bool, time_format: TimeFormat, transformers: np.ndarray[Transformer] | Transformer,
                  anomaly_handlers: np.ndarray[AnomalyHandler]):
 
         self.database_path = database_path

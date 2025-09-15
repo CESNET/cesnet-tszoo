@@ -10,7 +10,7 @@ import numpy.typing as npt
 import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
 from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
-from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.utils.transformer import get_transformer_factory, Transformer
 from cesnet_tszoo.utils.filler import get_filler_factory
 from cesnet_tszoo.utils.anomaly_handler import get_anomaly_handler_factory
 
@@ -35,11 +35,8 @@ class DatasetConfig(ABC):
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
-        transform_with_display: Used to display the configured type of `transform_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
-        is_transformer_custom: Flag indicating whether the transformer is custom.
-        is_filler_custom: Flag indicating whether the filler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
         used_times: List of all times used in the configuration.
         used_ts_ids: List of all time series IDs used in the configuration.
@@ -49,7 +46,6 @@ class DatasetConfig(ABC):
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
         used_singular_all_time_series: Currently used singular all set time series for dataloader.        
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
-        are_transformers_premade: Indicates whether the transformers are premade.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
@@ -123,10 +119,8 @@ class DatasetConfig(ABC):
         self.aggregation = None
         self.source_type = None
         self.database_name = None
-        self.transform_with_display = None
         self.features_to_take_without_ids = None
         self.indices_of_features_to_take_no_ids = None
-        self.is_transformer_custom = False
         self.ts_id_name = None
         self.used_times = None
         self.used_ts_ids = None
@@ -136,7 +130,6 @@ class DatasetConfig(ABC):
         self.used_singular_test_time_series = None
         self.used_singular_all_time_series = None
         self.transformers = None
-        self.are_transformers_premade = False
         self.train_fillers = None
         self.val_fillers = None
         self.test_fillers = None
@@ -152,7 +145,6 @@ class DatasetConfig(ABC):
         self.val_batch_size = val_batch_size
         self.test_batch_size = test_batch_size
         self.all_batch_size = all_batch_size
-        self.transform_with = transform_with
         self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
         self.include_time = include_time
         self.include_ts_id = include_ts_id
@@ -171,6 +163,7 @@ class DatasetConfig(ABC):
         # new
         self.filler_factory = get_filler_factory(fill_missing_with)
         self.anomaly_handler_factory = get_anomaly_handler_factory(handle_anomalies_with)
+        self.transformer_factory = get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
         # new
 
         # to remove
@@ -209,12 +202,6 @@ class DatasetConfig(ABC):
         # Convert time_format and train_dataloader_order to their respective enum types
         self.time_format = TimeFormat(self.time_format)
         self.train_dataloader_order = DataloaderOrder(self.train_dataloader_order)
-
-        # Validate and process transformer type
-        if isinstance(self.transform_with, (str, TransformerType)):
-            self.transform_with = TransformerType(self.transform_with)
-            if self.transform_with in [TransformerType.POWER_TRANSFORMER, TransformerType.QUANTILE_TRANSFORMER, TransformerType.ROBUST_SCALER] and not self.create_transformer_per_time_series:
-                raise NotImplementedError("The selected transformer requires a working partial_fit method, which is not implemented for this configuration.")
 
     def _update_batch_sizes(self, train_batch_size: int, val_batch_size: int, test_batch_size: int, all_batch_size: int) -> None:
 
@@ -420,7 +407,7 @@ class DatasetConfig(ABC):
 
     @abstractmethod
     def _set_feature_transformers(self) -> None:
-        """Creates and/or validates transformers based on the `transform_with` parameter. """
+        """Creates transformers with `transformer_factory`. """
         ...
 
     @abstractmethod

@@ -341,9 +341,9 @@ class TimeBasedCesnetDataset(CesnetDataset):
                 ts_ids_to_take.append(i)
 
                 # Fit transformers if required
-                if self.dataset_config.transform_with is not None and train_data is not None and (not self.dataset_config.are_transformers_premade or self.dataset_config.partial_fit_initialized_transformers):
+                if train_data is not None and (not self.dataset_config.transformer_factory.has_already_initialized or self.dataset_config.partial_fit_initialized_transformers):
 
-                    if self.dataset_config.are_transformers_premade and self.dataset_config.partial_fit_initialized_transformers:
+                    if self.dataset_config.transformer_factory.has_already_initialized and self.dataset_config.partial_fit_initialized_transformers:
                         if self.dataset_config.create_transformer_per_time_series:
                             self.dataset_config.transformers[i].partial_fit(train_data)
                         else:
@@ -374,9 +374,8 @@ class TimeBasedCesnetDataset(CesnetDataset):
         self.dataset_config.ts_row_ranges = self.dataset_config.ts_row_ranges[ts_ids_to_take]
         self.dataset_config.ts_ids = self.dataset_config.ts_ids[ts_ids_to_take]
 
-        if self.dataset_config.transform_with is not None:
-            if self.dataset_config.create_transformer_per_time_series:
-                self.dataset_config.transformers = self.dataset_config.transformers[ts_ids_to_take]
+        if self.dataset_config.create_transformer_per_time_series:
+            self.dataset_config.transformers = self.dataset_config.transformers[ts_ids_to_take]
 
         if self.dataset_config.has_train():
             self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
@@ -428,10 +427,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
         filler = None if parent_dataset.fillers is None else parent_dataset.fillers[time_series_position:time_series_position + 1]
         anomaly_handler = None if parent_dataset.anomaly_handlers is None else parent_dataset.anomaly_handlers[time_series_position:time_series_position + 1]
-
-        transformer = None
-        if parent_dataset.feature_transformers is not None:
-            transformer = parent_dataset.feature_transformers[time_series_position:time_series_position + 1] if parent_dataset.is_transformer_per_time_series else parent_dataset.feature_transformers
+        transformer = parent_dataset.feature_transformers[time_series_position:time_series_position + 1] if parent_dataset.is_transformer_per_time_series else parent_dataset.feature_transformers
 
         dataset = SplittedDataset(self.dataset_path,
                                   self.dataset_config._get_table_data_path(),

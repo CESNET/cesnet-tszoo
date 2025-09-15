@@ -32,18 +32,17 @@ class TimeBasedDataset(BaseDataset):
         if self.include_ts_id:
             data[:, :, self.ts_id_col_index] = self.ts_id_fill
 
-        # Transform data if applicable
-        if self.transformers is not None:
-            for i, _ in enumerate(self.ts_row_ranges):
+        # Transform data
+        for i, _ in enumerate(self.ts_row_ranges):
 
-                transformer = self.transformers[i] if self.is_transformer_per_time_series else self.transformers
+            transformer = self.transformers[i] if self.is_transformer_per_time_series else self.transformers
 
-                if len(self.indices_of_features_to_take_no_ids) == 1:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(-1, 1))
-                elif len(batch_idx) == 1:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(1, -1))
-                else:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids])
+            if len(self.indices_of_features_to_take_no_ids) == 1:
+                data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(-1, 1))
+            elif len(batch_idx) == 1:
+                data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(1, -1))
+            else:
+                data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids])
 
         if self.include_time and self.time_format == TimeFormat.DATETIME:
             return data, self.time_period[batch_idx][TIME_COLUMN_NAME].copy()

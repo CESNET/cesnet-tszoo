@@ -370,7 +370,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 all_ts_ids_to_take.append(i)
 
                 # Partial fit transformer on train data if applicable
-                if self.dataset_config.transform_with is not None and is_train and (not self.dataset_config.are_transformers_premade or self.dataset_config.partial_fit_initialized_transformers):
+                if is_train and (not self.dataset_config.transformer_factory.has_already_initialized or self.dataset_config.partial_fit_initialized_transformers):
                     self.dataset_config.transformers.partial_fit(train_data)
 
         if workers == 0:
@@ -479,8 +479,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         time_series_position = temp[0]
 
-        filler = None if parent_dataset.fillers is None else parent_dataset.fillers[time_series_position:time_series_position + 1]
-        transformer = None if parent_dataset.transformers is None else parent_dataset.transformers
+        filler = parent_dataset.fillers[time_series_position:time_series_position + 1]
+        transformer = parent_dataset.transformers
         anomaly_handler = None if parent_dataset.anomaly_handlers is None else parent_dataset.anomaly_handlers[time_series_position:time_series_position + 1]
 
         dataset = SeriesBasedDataset(self.dataset_path,

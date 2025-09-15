@@ -434,8 +434,9 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         all_ts_ids_to_take = np.array([])
 
         if self.dataset_config.has_train():
+            can_fit_transformers = not self.dataset_config.transformer_factory.has_already_initialized or self.dataset_config.partial_fit_initialized_transformers
             updated_ts_row_ranges, updated_ts_ids, updated_fillers, updated_anomaly_handlers = self.__initialize_transformers_and_details_for_set(self.dataset_config.train_ts, self.dataset_config.train_ts_row_ranges, self.dataset_config.train_time_period,
-                                                                                                                                                  self.dataset_config.train_fillers, self.dataset_config.anomaly_handlers, workers, "train")
+                                                                                                                                                  self.dataset_config.train_fillers, self.dataset_config.anomaly_handlers, workers, "train", can_fit_transformers)
             self.dataset_config.train_ts = updated_ts_ids
             self.dataset_config.train_ts_row_ranges = updated_ts_row_ranges
             self.dataset_config.train_fillers = updated_fillers
@@ -447,7 +448,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         if self.dataset_config.has_val():
             updated_ts_row_ranges, updated_ts_ids, updated_fillers, _ = self.__initialize_transformers_and_details_for_set(self.dataset_config.val_ts, self.dataset_config.val_ts_row_ranges, self.dataset_config.val_time_period,
-                                                                                                                           self.dataset_config.val_fillers, None, workers, "val")
+                                                                                                                           self.dataset_config.val_fillers, None, workers, "val", False)
             self.dataset_config.val_ts = updated_ts_ids
             self.dataset_config.val_ts_row_ranges = updated_ts_row_ranges
             self.dataset_config.val_fillers = updated_fillers
@@ -458,7 +459,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         if self.dataset_config.has_test():
             updated_ts_row_ranges, updated_ts_ids, updated_fillers, _ = self.__initialize_transformers_and_details_for_set(self.dataset_config.test_ts, self.dataset_config.test_ts_row_ranges, self.dataset_config.test_time_period,
-                                                                                                                           self.dataset_config.test_fillers, None, workers, "test")
+                                                                                                                           self.dataset_config.test_fillers, None, workers, "test", False)
             self.dataset_config.test_ts = updated_ts_ids
             self.dataset_config.test_ts_row_ranges = updated_ts_row_ranges
             self.dataset_config.test_fillers = updated_fillers
@@ -507,10 +508,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         filler = parent_dataset.fillers[time_series_position:time_series_position + 1]
         anomaly_handler = None if parent_dataset.anomaly_handlers is None else parent_dataset.anomaly_handlers[time_series_position:time_series_position + 1]
-
-        transformer = None
-        if parent_dataset.feature_transformers is not None:
-            transformer = parent_dataset.feature_transformers[time_series_position:time_series_position + 1] if parent_dataset.is_transformer_per_time_series else parent_dataset.feature_transformers
+        transformer = parent_dataset.feature_transformers
 
         dataset = SplittedDataset(self.dataset_path,
                                   self.dataset_config._get_table_data_path(),
@@ -537,7 +535,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         return self._get_time_based_dataloader(dataset, workers, take_all, batch_size)
 
-    def __initialize_transformers_and_details_for_set(self, ts_ids, ts_row_ranges, time_period, fillers, anomaly_handlers, workers, set_name):
+    def __initialize_transformers_and_details_for_set(self, ts_ids, ts_row_ranges, time_period, fillers, anomaly_handlers, workers, set_name, can_fit_transformer):
         """Initializes transformers and details for provided time series. """
         init_dataset = DisjointTimeBasedInitializerDataset(self.dataset_path,
                                                            self.dataset_config._get_table_data_path(),
@@ -569,12 +567,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                 ts_ids_to_take.append(i)
 
                 # Fit transformers if required
-                if self.dataset_config.transform_with is not None and data is not None and (not self.dataset_config.are_transformers_premade or self.dataset_config.partial_fit_initialized_transformers):
-
-                    if self.dataset_config.are_transformers_premade and self.dataset_config.partial_fit_initialized_transformers:
-                        self.dataset_config.transformers.partial_fit(data)
-                    else:
-                        self.dataset_config.transformers.partial_fit(data)
+                if can_fit_transformer:
+                    self.dataset_config.transformers.partial_fit(data)
 
                 # Sets fitted anomaly handlers
                 if anomaly_handlers is not None:

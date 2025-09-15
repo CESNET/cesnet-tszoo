@@ -29,7 +29,7 @@ from cesnet_tszoo.pytables_data.utils.utils import get_time_indices, get_table_t
 from cesnet_tszoo.datasets.loaders import create_multiple_df_from_dataloader, create_single_df_from_dataloader, create_numpy_from_dataloader
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
-from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.utils.transformer import get_transformer_factory, Transformer
 from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
@@ -1006,7 +1006,10 @@ class CesnetDataset(ABC):
             requires_init = True
 
         if transform_with == "config":
-            transform_with = self._export_config_copy.transform_with
+            if self._export_config_copy.transformer_factory.has_already_initialized:
+                transform_with = self._export_config_copy.transformer_factory.initialized_transformers
+            else:
+                transform_with = self._export_config_copy.transformer_factory.transformer_type
         else:
             requires_init = True
 
@@ -1042,8 +1045,8 @@ class CesnetDataset(ABC):
                 self._export_config_copy.test_batch_size = test_batch_size
                 self._export_config_copy.all_batch_size = all_batch_size
                 self._export_config_copy.filler_factory = get_filler_factory(fill_missing_with)
-                self._export_config_copy.transform_with = transform_with
-                self._export_config_copy.handle_anomalies_with = get_anomaly_handler_factory(handle_anomalies_with)
+                self._export_config_copy.transformer_factory = get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
+                self._export_config_copy.anomaly_handler_factory = get_anomaly_handler_factory(handle_anomalies_with)
                 self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
                 self._export_config_copy.create_transformer_per_time_series = create_transformer_per_time_series
                 self._export_config_copy.train_workers = train_workers
@@ -1680,7 +1683,7 @@ Dataset details:
         if not self.dataset_config.anomaly_handler_factory.creates_built_in:
             self.logger.warning("You are using a custom anomaly handler. Ensure the config is distributed with the source code of the anomaly handler.")
 
-        if self.dataset_config.is_transformer_custom:
+        if not self.dataset_config.transformer_factory.creates_built_in:
             self.logger.warning("You are using a custom transformer. Ensure the config is distributed with the source code of the transformer.")
 
         pickle_dump(self._export_config_copy, path_pickle)

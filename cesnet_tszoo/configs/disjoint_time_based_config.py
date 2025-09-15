@@ -6,7 +6,7 @@ from numbers import Number
 import numpy as np
 import numpy.typing as npt
 
-from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer_type, Transformer
+from cesnet_tszoo.utils.transformer import get_transformer_factory, Transformer
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
@@ -66,10 +66,8 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
-        transform_with_display: Used to display the configured type of `transform_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
-        is_transformer_custom: Flag indicating whether the transformer is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
         used_times: List of all times used in the configuration.
         used_ts_ids: List of all time series IDs used in the configuration.
@@ -78,7 +76,6 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.     
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
-        are_transformers_premade: Indicates whether the transformers are premade.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
@@ -273,55 +270,23 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state)
 
     def _set_feature_transformers(self) -> None:
-        """Creates and/or validates transformers based on the `transform_with` parameter. """
+        """Creates transformer with `transformer_factory`. """
 
-        self.create_transformer_per_time_series = False
-
-        if self.transform_with is None:
-            self.transform_with_display = None
-            self.are_transformers_premade = False
-            self.transformers = None
-            self.is_transformer_custom = None
-
-            self.logger.debug("No transformer will be used because transform_with is not set.")
-            return
-
-        if not self.has_train():
-            if self.partial_fit_initialized_transformers:
+        if self.transformer_factory.has_already_initialized:
+            if not self.has_train() and self.partial_fit_initialized_transformers:
+                self.partial_fit_initialized_transformers = False
                 self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
-            self.partial_fit_initialized_transformers = False
 
-        # Treat transform_with as already initialized transformer
-        if not isinstance(self.transform_with, (type, TransformerType)):
+            self.transformers = self.transformer_factory.get_already_initialized_transformers()
+            self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.transformer_type.IDENTIFIER)
 
-            self.transformers = self.transform_with
-
-            self.transform_with, self.transform_with_display = transformer_from_input_to_transformer_type(type(self.transform_with), check_for_fit=False, check_for_partial_fit=self.partial_fit_initialized_transformers)
-
-            self.are_transformers_premade = True
-
-            self.is_transformer_custom = "Custom" in self.transform_with_display
-            self.logger.debug("Using initialized transformer of type: %s", self.transform_with_display)
-
-        # Treat transform_with as uninitialized transformer
         else:
-            if not self.has_train():
-                self.transform_with = None
-                self.transform_with_display = None
-                self.are_transformers_premade = False
-                self.transformers = None
-                self.is_transformer_custom = None
-
+            if not self.has_train() and not self.transformer_factory.is_empty_factory:
+                self.transformer_factory = get_transformer_factory(None, self.create_transformer_per_time_series, self.partial_fit_initialized_transformers)
                 self.logger.warning("No transformer will be used because train set is not used.")
-                return
 
-            self.transform_with, self.transform_with_display = transformer_from_input_to_transformer_type(self.transform_with, check_for_fit=self.create_transformer_per_time_series, check_for_partial_fit=not self.create_transformer_per_time_series)
-
-            self.are_transformers_premade = False
-
-            self.is_transformer_custom = "Custom" in self.transform_with_display
-            self.transformers = self.transform_with()
-            self.logger.debug("Using uninitialized transformer of type: %s", self.transform_with_display)
+            self.transformers = self.transformer_factory.create_transformer()
+            self.logger.debug("Using transformer %s.", self.transformer_factory.transformer_type.IDENTIFIER)
 
     def _set_fillers(self) -> None:
         """Creates fillers with `filler_factory`. """
@@ -359,11 +324,11 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
 
     def __str__(self) -> str:
 
-        if self.transform_with is None:
-            transformer_part = f"Transformer type: {str(self.transform_with_display)}"
+        if self.transformer_factory.is_empty_factory:
+            transformer_part = f"Transformer type: {str(self.transformer_factory.transformer_type.IDENTIFIER)}"
         else:
-            transformer_part = f'''Transformer type: {str(self.transform_with_display)}
-        Are transformers premade: {self.are_transformers_premade}
+            transformer_part = f'''Transformer type: {str(self.transformer_factory.transformer_type.IDENTIFIER)}
+        Are transformers premade: {self.transformer_factory.has_already_initialized}
         Are premade transformers partial_fitted: {self.partial_fit_initialized_transformers}'''
 
         if self.include_time:

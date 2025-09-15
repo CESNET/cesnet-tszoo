@@ -70,7 +70,7 @@ class FillerType(Enum):
     """Represents filler [`LinearInterpolationFiller`][cesnet_tszoo.utils.filler.LinearInterpolationFiller]. Equivalent to literal `linear_interpolation_filler`. """
 
     NO_FILLER = "no_filler"
-    """Represents filler [`NoFiller`][cesnet_tszoo.utils.filler.LinearInterpolationFiller]. Equivalent to `None`. """
+    """Represents filler [`NoFiller`][cesnet_tszoo.utils.filler.LinearInterpolationFiller]. Equivalent to literal `no_filler`. """
 
 
 class TransformerType(Enum):
@@ -99,6 +99,9 @@ class TransformerType(Enum):
 
     QUANTILE_TRANSFORMER = "quantile_transformer"
     """Represents transformer [`QuantileTransformer`][cesnet_tszoo.utils.transformer.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """
+
+    NO_TRANSFORMER = "no_transformer"
+    """Represents transformer [`NoTransformer`][cesnet_tszoo.utils.transformer.NoTransformer]. Equivalent to literal `no_transformer`. """
 
 
 class AnomalyHandlerType(Enum):
