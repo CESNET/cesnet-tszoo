@@ -72,7 +72,7 @@ test_dataframe = dataset.get_test_df()
 
 Time-based datasets are configured with [`TimeBasedConfig`](https://cesnet.github.io/cesnet-tszoo/reference_time_based_config/).
 
-#### Using [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] dataset
+#### Using [`DisjointTimeBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_disjoint_time_based_cesnet_dataset/) dataset
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType
@@ -94,7 +94,7 @@ val_dataframe = dataset.get_val_df()
 test_dataframe = dataset.get_test_df()
 ```
 
-Disjoint-time-based datasets are configured with [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig].
+Disjoint-time-based datasets are configured with [`DisjointTimeBasedConfig`](https://cesnet.github.io/cesnet-tszoo/reference_disjoint_time_based_config/).
 
 #### Using [`SeriesBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_series_based_cesnet_dataset/) dataset
 
