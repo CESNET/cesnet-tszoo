@@ -12,7 +12,7 @@ The goal of `cesnet-tszoo` project is to provide time series datasets with usefu
 - API for downloading, configuring and loading CESNET-TimeSeries24, CESNET-AGG23 datasets. Each with various sources and aggregations.
 - Example of configuration options:
   - Data can be split into train/val/test sets. Split can be done by time series or by time periods.
-  - Transforming of data with built-in scalers or with custom scalers.
+  - Transforming of data with built-in transformers or with custom transformers.
   - Handling missing values built-in fillers or with custom fillers.
 - Creation and import of benchmarks, for easy reproducibility of experiments.
 - Creation and import of annotations. Can create annotations for specific time series, specific time or specific time in specific time series.
@@ -56,7 +56,7 @@ from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType
 from cesnet_tszoo.configs import TimeBasedConfig
 
-dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, is_series_based=False)
+dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED)
 config = TimeBasedConfig(
     ts_ids=50, # number of randomly selected time series from dataset
     train_time_period=range(0, 100), 
@@ -72,6 +72,30 @@ test_dataframe = dataset.get_test_df()
 
 Time-based datasets are configured with [`TimeBasedConfig`](https://cesnet.github.io/cesnet-tszoo/reference_time_based_config/).
 
+#### Using [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] dataset
+```python
+from cesnet_tszoo.datasets import CESNET_TimeSeries24
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.configs import DisjointTimeBasedConfig
+
+dataset = CESNET_TimeSeries24.get_dataset("/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.DISJOINT_TIME_BASED)
+config = DisjointTimeBasedConfig(
+    train_ts=50, # number of randomly selected time series from dataset that are not in val_ts and test_ts
+    val_ts=20, # number of randomly selected time series from dataset that are not in train_ts and test_ts
+    test_ts=10, # number of randomly selected time series from dataset that are not in train_ts and val_ts
+    train_time_period=range(0, 100), 
+    val_time_period=range(100, 150), 
+    test_time_period=range(150, 250), 
+    features_to_take=["n_flows", "n_packets"])
+dataset.set_dataset_config_and_initialize(config)
+
+train_dataframe = dataset.get_train_df()
+val_dataframe = dataset.get_val_df()
+test_dataframe = dataset.get_test_df()
+```
+
+Disjoint-time-based datasets are configured with [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig].
+
 #### Using [`SeriesBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_series_based_cesnet_dataset/) dataset
 
 ```python
@@ -79,12 +103,12 @@ from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType
 from cesnet_tszoo.configs import SeriesBasedConfig
 
-dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, is_series_based=True)
+dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.SERIES_BASED)
 config = SeriesBasedConfig(
     time_period=range(0, 250), 
-    train_ts=100, # number of randomly selected time series from dataset
-    val_ts=30, # number of randomly selected time series from dataset
-    test_ts=20, # number of randomly selected time series from dataset
+    train_ts=50, # number of randomly selected time series from dataset that are not in val_ts and test_ts
+    val_ts=20, # number of randomly selected time series from dataset that are not in train_ts and test_ts
+    test_ts=10, # number of randomly selected time series from dataset that are not in train_ts and val_ts
     features_to_take=["n_flows", "n_packets"])
 dataset.set_dataset_config_and_initialize(config)
 

@@ -1,6 +1,6 @@
 # Comparative Analysis of Deep Learning Models for Real-World ISP Network Traffic Forecasting { #arxiv.org/abs/2503.17410 }
 
-These configs were used in the paper ["Koumar, J., Smoleň, T., Jeřábek, K. and Čejka, T., 2025. Comparative Analysis of Deep Learning Models for Real-World ISP Network Traffic Forecasting. arXiv preprint arXiv:2503.17410."](https://arxiv.org/abs/2503.17410).
+These benchmarks were used in the paper ["Koumar, J., Smoleň, T., Jeřábek, K. and Čejka, T., 2025. Comparative Analysis of Deep Learning Models for Real-World ISP Network Traffic Forecasting. arXiv preprint arXiv:2503.17410."](https://arxiv.org/abs/2503.17410).
 
 | Benchmark hash | Dataset | Aggregation | Source |
 |:-----------------|:-----------------:|:-----------------:|:-----------------:|
@@ -20,11 +20,11 @@ These configs were used in the paper ["Koumar, J., Smoleň, T., Jeřábek, K. an
 [420d4303f949][420d4303f949] | CESNET-TimeSeries24 | 1 HOUR| IP_ADDRESSES_SAMPLE |
 [e2c2148a178c][e2c2148a178c] | CESNET-TimeSeries24 | 1 HOUR| IP_ADDRESSES_SAMPLE |
 
-Example of usage of this related works configs:
+Example of usage of this related works benchmarks:
 
 ```python
 from cesnet_tszoo.benchmarks import load_benchmark
-from cesnet_tszoo.utils.enums import FillerType, ScalerType
+from cesnet_tszoo.utils.enums import FillerType, TransformerType
 
 benchmark = load_benchmark("2439d12c2292", "../")
 dataset = benchmark.get_initialized_dataset()

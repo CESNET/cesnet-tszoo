@@ -3,7 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 
-from cesnet_tszoo.utils.enums import TimeFormat
+from cesnet_tszoo.utils.enums import TimeFormat, DatasetType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, DATETIME_TIME_FORMAT
 
 
@@ -11,13 +11,13 @@ def collate_fn_simple(batch):
     return batch
 
 
-def load_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], time_seperated: bool, silent: bool = False, is_series_based: bool = False) -> list[np.ndarray]:
+def load_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], time_seperated: bool, dataset_type: DatasetType, silent: bool = False) -> list[np.ndarray]:
     """ Returns all data from dataloader. """
 
     if not silent:
         print("Loading data from dataloader")
 
-    if is_series_based:
+    if dataset_type == DatasetType.SERIES_BASED:
         data = [None for _ in ids]
         times = None
 
@@ -54,10 +54,10 @@ def load_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], tim
     return {"data": data, "time": times}
 
 
-def create_single_df_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], feature_names: list[str], time_format: TimeFormat, include_element_id: bool, include_time: bool, silent: bool = False, is_series_based: bool = False) -> pd.DataFrame:
+def create_single_df_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], feature_names: list[str], time_format: TimeFormat, include_element_id: bool, include_time: bool, dataset_type: DatasetType, silent: bool = False) -> pd.DataFrame:
     """ Returns data from dataloader as one Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html). """
 
-    loaded_data = load_from_dataloader(dataloader, ids, time_seperated=time_format == TimeFormat.DATETIME and include_time, silent=silent, is_series_based=is_series_based)
+    loaded_data = load_from_dataloader(dataloader, ids, time_seperated=time_format == TimeFormat.DATETIME and include_time, silent=silent, dataset_type=dataset_type)
     merged_data = np.concatenate(loaded_data['data'])
     df = pd.DataFrame(merged_data[:], columns=feature_names)
     if time_format == TimeFormat.DATETIME and include_time:
@@ -77,10 +77,10 @@ def create_single_df_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.
     return df
 
 
-def create_multiple_df_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], feature_names: list[str], time_format: TimeFormat, include_element_id: bool, include_time: bool, silent: bool = False, is_per_series: bool = False) -> list[pd.DataFrame]:
+def create_multiple_df_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], feature_names: list[str], time_format: TimeFormat, include_element_id: bool, include_time: bool, dataset_type: DatasetType, silent: bool = False) -> list[pd.DataFrame]:
     """ Returns data from dataloader as one Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html) per time series."""
 
-    loaded_data = load_from_dataloader(dataloader, ids, time_seperated=time_format == TimeFormat.DATETIME and include_time, silent=silent, is_series_based=is_per_series)
+    loaded_data = load_from_dataloader(dataloader, ids, time_seperated=time_format == TimeFormat.DATETIME and include_time, silent=silent, dataset_type=dataset_type)
     dataframes = []
     for _, element in enumerate(loaded_data["data"]):
         df = pd.DataFrame(element[:], columns=feature_names)
@@ -103,10 +103,10 @@ def create_multiple_df_from_dataloader(dataloader: DataLoader, ids: np.ndarray[n
     return dataframes
 
 
-def create_numpy_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], time_format: TimeFormat, include_time: bool, silent: bool = False, is_per_series: bool = False) -> np.ndarray:
+def create_numpy_from_dataloader(dataloader: DataLoader, ids: np.ndarray[np.uint32], time_format: TimeFormat, include_time: bool, dataset_type: DatasetType, silent: bool = False) -> np.ndarray:
     """ Returns data from dataloader as `np.ndarray`."""
 
-    loaded_data = load_from_dataloader(dataloader, ids, time_seperated=time_format == TimeFormat.DATETIME and include_time, silent=silent, is_series_based=is_per_series)
+    loaded_data = load_from_dataloader(dataloader, ids, time_seperated=time_format == TimeFormat.DATETIME and include_time, silent=silent, dataset_type=dataset_type)
     arrays = np.ndarray((len(loaded_data["data"]), len(loaded_data["data"][0]), len(loaded_data["data"][0][0])), dtype=loaded_data["data"][0].dtype)
 
     for i, element in enumerate(loaded_data["data"]):

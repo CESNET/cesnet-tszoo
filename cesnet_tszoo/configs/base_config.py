@@ -1,17 +1,16 @@
 from typing import Literal
 from numbers import Number
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
 import math
 import logging
 
 import numpy as np
 import numpy.typing as npt
-from sklearn.model_selection import train_test_split
 
-from cesnet_tszoo.utils.constants import ROW_END, ROW_START, ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
-from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, ScalerType, DataloaderOrder
-from cesnet_tszoo.utils.scaler import Scaler
+import cesnet_tszoo.version as version
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
+from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.transformer import Transformer
 
 
 class DatasetConfig(ABC):
@@ -34,49 +33,48 @@ class DatasetConfig(ABC):
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
-        scale_with_display: Used to display the configured type of `scale_with`.
+        transform_with_display: Used to display the configured type of `transform_with`.
         fill_missing_with_display: Used to display the configured type of `fill_missing_with`.
+        handle_anomalies_with_display: Used to display the configured type of `handle_anomalies_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
-        is_scaler_custom: Flag indicating whether the scaler is custom.
+        is_transformer_custom: Flag indicating whether the transformer is custom.
         is_filler_custom: Flag indicating whether the filler is custom.
+        is_anomaly_handler_custom: Flag indicating whether the anomaly handler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
         used_times: List of all times used in the configuration.
         used_ts_ids: List of all time series IDs used in the configuration.
         used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
         used_fillers: List of all fillers used in the configuration.
+        used_anomaly_handlers: List of all anomaly handlers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
         used_singular_all_time_series: Currently used singular all set time series for dataloader.        
-        scalers: Prepared scalers for fitting/transforming. Can be one scaler, array of scalers or `None`.
-        are_scalers_premade: Indicates whether the scalers are premade.
-        has_train: Flag indicating whether the training set is in use.
-        has_val: Flag indicating whether the validation set is in use.
-        has_test: Flag indicating whether the test set is in use.
-        has_all: Flag indicating whether the all set is in use.
+        transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
+        are_transformers_premade: Indicates whether the transformers are premade.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
         all_fillers: Fillers used for the all set. `None` if no filler is used or all set is not used.
+        anomaly_handlers: Prepared anomaly handlers for fitting/handling anomalies. Can be array of anomaly handlers or `None`.
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
+        version: Version of cesnet-tszoo this config was made in.
+        export_update_needed: Whether config was updated to newer version and should be exported.
 
     # Configuration options
 
     Attributes:
         features_to_take: Defines which features are used.
         default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
-        sliding_window_size: Number of values in one window. Impacts dataloader behavior.
-        sliding_window_prediction_size: Number of times to predict from sliding_window_size. Impacts dataloader behavior.
-        sliding_window_step: Number of times to move by after each window.
-        set_shared_size: How much times should time periods share.
         train_batch_size: Batch size for the train dataloader, when window size is None.
         val_batch_size: Batch size for the validation dataloader, when window size is None.
         test_batch_size: Batch size for the test dataloader, when window size is None.
         all_batch_size: Batch size for the all dataloader, when window size is None.
         fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.Filler] base class.
-        scale_with: Defines the scaler to transform the dataset. Can pass enum [`ScalerType`][cesnet_tszoo.utils.enums.ScalerType] for built-in scaler, pass a type of custom scaler or instance of already fitted scaler(s).
-        partial_fit_initialized_scalers: If `True`, partial fitting on train set is performed when using initiliazed scalers.
+        transform_with: Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
+        handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler.
+        partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
         include_time: If `True`, time data is included in the returned values.
         include_ts_id: If `True`, time series IDs are included in the returned values.
         time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values.
@@ -86,8 +84,8 @@ class DatasetConfig(ABC):
         all_workers: Number of workers for loading all data. `0` means that the data will be loaded in the main process.
         init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process.
         nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately.
-        create_scaler_per_time_series: If `True`, a separate scaler is created for each time series. Not used when using already initialized scalers. 
-        is_series_based: Flag indicating if the config applies to a series-based dataset.
+        create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
+        dataset_type: Type of a dataset this config is used for.
         train_dataloader_order: Defines the order of data returned by the training dataloader.
         random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
     """
@@ -95,17 +93,14 @@ class DatasetConfig(ABC):
     def __init__(self,
                  features_to_take: list[str] | Literal["all"],
                  default_values: list[Number] | npt.NDArray[np.number] | dict[str, Number] | Number | Literal["default"] | None,
-                 sliding_window_size: int | None,
-                 sliding_window_prediction_size: int | None,
-                 sliding_window_step: int,
-                 set_shared_size: float | int,
                  train_batch_size: int,
                  val_batch_size: int,
                  test_batch_size: int,
                  all_batch_size: int,
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None,
-                 scale_with: type | ScalerType | list[Scaler] | np.ndarray[Scaler] | Scaler | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_scaler", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None,
-                 partial_fit_initialized_scalers: bool,
+                 transform_with: type | TransformerType | list[Transformer] | np.ndarray[Transformer] | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None,
+                 handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None,
+                 partial_fit_initialized_transformers: bool,
                  include_time: bool,
                  include_ts_id: bool,
                  time_format: TimeFormat | Literal["id_time", "datetime", "unix_time", "shifted_unix_time"],
@@ -115,24 +110,61 @@ class DatasetConfig(ABC):
                  all_workers: int,
                  init_workers: int,
                  nan_threshold: float,
-                 create_scaler_per_time_series: bool,
-                 is_series_based: bool,
+                 create_transformer_per_time_series: bool,
+                 dataset_type: DatasetType,
                  train_dataloader_order: DataloaderOrder | Literal["random", "sequential"],
-                 random_state: int | None):
+                 random_state: int | None,
+                 logger: logging.Logger):
+
+        self.used_train_workers = None
+        self.used_val_workers = None
+        self.used_test_workers = None
+        self.used_all_workers = None
+        self.import_identifier = None
+        self.logger = logger
+
+        self.aggregation = None
+        self.source_type = None
+        self.database_name = None
+        self.transform_with_display = None
+        self.fill_missing_with_display = None
+        self.handle_anomalies_with_display = None
+        self.features_to_take_without_ids = None
+        self.indices_of_features_to_take_no_ids = None
+        self.is_transformer_custom = False
+        self.is_filler_custom = False
+        self.is_anomaly_handler_custom = False
+        self.ts_id_name = None
+        self.used_times = None
+        self.used_ts_ids = None
+        self.used_ts_row_ranges = None
+        self.used_fillers = None
+        self.used_anomaly_handlers = None
+        self.used_singular_train_time_series = None
+        self.used_singular_val_time_series = None
+        self.used_singular_test_time_series = None
+        self.used_singular_all_time_series = None
+        self.transformers = None
+        self.are_transformers_premade = False
+        self.train_fillers = None
+        self.val_fillers = None
+        self.test_fillers = None
+        self.all_fillers = None
+        self.anomaly_handlers = None
+        self.is_initialized = False
+        self.version = version.current_version
+        self.export_update_needed = False
 
         self.features_to_take = features_to_take
         self.default_values = default_values
-        self.sliding_window_size = sliding_window_size
-        self.sliding_window_prediction_size = sliding_window_prediction_size
-        self.sliding_window_step = sliding_window_step
-        self.set_shared_size = set_shared_size
         self.train_batch_size = train_batch_size
         self.val_batch_size = val_batch_size
         self.test_batch_size = test_batch_size
         self.all_batch_size = all_batch_size
         self.fill_missing_with = fill_missing_with
-        self.scale_with = scale_with
-        self.partial_fit_initialized_scalers = partial_fit_initialized_scalers
+        self.transform_with = transform_with
+        self.handle_anomalies_with = handle_anomalies_with
+        self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
         self.include_time = include_time
         self.include_ts_id = include_ts_id
         self.time_format = time_format
@@ -142,48 +174,10 @@ class DatasetConfig(ABC):
         self.all_workers = all_workers
         self.init_workers = init_workers
         self.nan_threshold = nan_threshold
-        self.create_scaler_per_time_series = create_scaler_per_time_series
-        self.is_series_based = is_series_based
+        self.create_transformer_per_time_series = create_transformer_per_time_series
+        self.dataset_type = dataset_type
         self.train_dataloader_order = train_dataloader_order
         self.random_state = random_state
-
-        self.used_train_workers = None
-        self.used_val_workers = None
-        self.used_test_workers = None
-        self.used_all_workers = None
-        self.import_identifier = None
-
-        self.logger = logging.getLogger("config")
-
-        self.aggregation = None
-        self.source_type = None
-        self.database_name = None
-        self.scale_with_display = None
-        self.fill_missing_with_display = None
-        self.features_to_take_without_ids = None
-        self.indices_of_features_to_take_no_ids = None
-        self.is_scaler_custom = False
-        self.is_filler_custom = False
-        self.ts_id_name = None
-        self.used_times = None
-        self.used_ts_ids = None
-        self.used_ts_row_ranges = None
-        self.used_fillers = None
-        self.used_singular_train_time_series = None
-        self.used_singular_val_time_series = None
-        self.used_singular_test_time_series = None
-        self.used_singular_all_time_series = None
-        self.scalers = None
-        self.are_scalers_premade = False
-        self.has_train = False
-        self.has_val = False
-        self.has_test = False
-        self.has_all = False
-        self.train_fillers = None
-        self.val_fillers = None
-        self.test_fillers = None
-        self.all_fillers = None
-        self.is_initialized = False
 
         self._validate_construction()
 
@@ -193,10 +187,10 @@ class DatasetConfig(ABC):
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.base_config.DatasetConfig._dataset_init]. """
 
         # Ensuring boolean flags are correctly set
-        assert isinstance(self.partial_fit_initialized_scalers, bool), "partial_fit_initialized_scalers must be a boolean value."
+        assert isinstance(self.partial_fit_initialized_transformers, bool), "partial_fit_initialized_transformers must be a boolean value."
         assert isinstance(self.include_time, bool), "include_time must be a boolean value."
         assert isinstance(self.include_ts_id, bool), "include_ts_id must be a boolean value."
-        assert isinstance(self.create_scaler_per_time_series, bool), "create_scaler_per_time_series must be a boolean value."
+        assert isinstance(self.create_transformer_per_time_series, bool), "create_transformer_per_time_series must be a boolean value."
 
         # Ensuring worker count values are non-negative integers
         assert isinstance(self.train_workers, int) and self.train_workers >= 0, "train_workers must be a non-negative integer."
@@ -211,41 +205,6 @@ class DatasetConfig(ABC):
         assert isinstance(self.test_batch_size, int) and self.test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(self.all_batch_size, int) and self.all_batch_size > 0, "all_batch_size must be a positive integer."
 
-        if isinstance(self.set_shared_size, float):
-            assert self.set_shared_size >= 0 and self.set_shared_size <= 1, "set_shared_size float value must be between or equal to 0 and 1."
-
-        assert self.set_shared_size >= 0, "set_shared_size must be of positive value."
-
-        # Ensure sliding_window_size is either None or a valid integer greater than 1
-        assert self.sliding_window_size is None or (isinstance(self.sliding_window_size, int) and self.sliding_window_size > 1), "sliding_window_size must be an integer greater than 1, or None."
-
-        # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 1
-        assert self.sliding_window_prediction_size is None or (isinstance(self.sliding_window_prediction_size, int) and self.sliding_window_prediction_size >= 1), "sliding_window_prediction_size must be an integer greater than 1, or None."
-
-        # Both sliding_window_size and sliding_window_prediction_size must be set or None
-        assert (self.sliding_window_size is None and self.sliding_window_prediction_size is None) or (self.sliding_window_size is not None and self.sliding_window_prediction_size is not None), "Both sliding_window_size and sliding_window_prediction_size must be set or None."
-
-        # Adjust batch sizes based on sliding_window_size
-        if self.sliding_window_size is not None:
-
-            if self.sliding_window_step <= 0:
-                raise ValueError("sliding_window_step must be greater or equal to 1.")
-
-            total_window_size = self.sliding_window_size + self.sliding_window_prediction_size
-
-            if total_window_size > self.train_batch_size:
-                self.train_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("train_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > self.val_batch_size:
-                self.val_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("val_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > self.test_batch_size:
-                self.test_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("test_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > self.all_batch_size:
-                self.all_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("all_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-
         # Validate nan_threshold value
         assert isinstance(self.nan_threshold, Number) and 0 <= self.nan_threshold <= 1, "nan_threshold must be a number between 0 and 1."
         self.nan_threshold = float(self.nan_threshold)
@@ -254,18 +213,19 @@ class DatasetConfig(ABC):
         self.time_format = TimeFormat(self.time_format)
         self.train_dataloader_order = DataloaderOrder(self.train_dataloader_order)
 
-        # Validate and process scaler type
-        if isinstance(self.scale_with, (str, ScalerType)):
-            self.scale_with = ScalerType(self.scale_with)
-            if self.scale_with in [ScalerType.POWER_TRANSFORMER, ScalerType.QUANTILE_TRANSFORMER, ScalerType.ROBUST_SCALER] and not self.create_scaler_per_time_series:
-                raise NotImplementedError("The selected scaler requires a working partial_fit method, which is not implemented for this configuration.")
+        # Validate and process transformer type
+        if isinstance(self.transform_with, (str, TransformerType)):
+            self.transform_with = TransformerType(self.transform_with)
+            if self.transform_with in [TransformerType.POWER_TRANSFORMER, TransformerType.QUANTILE_TRANSFORMER, TransformerType.ROBUST_SCALER] and not self.create_transformer_per_time_series:
+                raise NotImplementedError("The selected transformer requires a working partial_fit method, which is not implemented for this configuration.")
 
         # Validate and process missing data filler type
         if isinstance(self.fill_missing_with, (str, FillerType)):
             self.fill_missing_with = FillerType(self.fill_missing_with)
 
-    def _update_sliding_window(self, sliding_window_size: int | None, sliding_window_prediction_size: int | None, sliding_window_step: int | None, set_shared_size: float | int, all_time_ids: np.ndarray):
-        return
+        # Validate and process anomaly handler type
+        if isinstance(self.handle_anomalies_with, (str, AnomalyHandlerType)):
+            self.handle_anomalies_with = AnomalyHandlerType(self.handle_anomalies_with)
 
     def _update_batch_sizes(self, train_batch_size: int, val_batch_size: int, test_batch_size: int, all_batch_size: int) -> None:
 
@@ -274,32 +234,6 @@ class DatasetConfig(ABC):
         assert isinstance(val_batch_size, int) and val_batch_size > 0, "val_batch_size must be a positive integer."
         assert isinstance(test_batch_size, int) and test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(all_batch_size, int) and all_batch_size > 0, "all_batch_size must be a positive integer."
-
-        # Adjust batch sizes based on sliding_window_size
-        if self.sliding_window_size is not None:
-
-            if self.sliding_window_step <= 0:
-                raise ValueError("sliding_window_step must be greater or equal to 1.")
-
-            total_window_size = self.sliding_window_size + self.sliding_window_prediction_size
-
-            if total_window_size > train_batch_size:
-                train_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("train_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > val_batch_size:
-                val_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("val_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > test_batch_size:
-                test_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("test_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-            if total_window_size > all_batch_size:
-                all_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
-                self.logger.info("all_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
-
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
-        self.test_batch_size = test_batch_size
-        self.all_batch_size = all_batch_size
 
         self.logger.debug("Updated batch sizes.")
 
@@ -340,6 +274,26 @@ class DatasetConfig(ABC):
         """Returns the indices corresponding to the all set. """
         ...
 
+    @abstractmethod
+    def has_train(self) -> bool:
+        """Returns whether training set is used. """
+        ...
+
+    @abstractmethod
+    def has_val(self) -> bool:
+        """Returns whether validation set is used. """
+        ...
+
+    @abstractmethod
+    def has_test(self) -> bool:
+        """Returns whether test set is used. """
+        ...
+
+    @abstractmethod
+    def has_all(self) -> bool:
+        """Returns whether all set is used. """
+        ...
+
     def _get_table_data_path(self) -> str:
         """Returns the path to the data table corresponding to the `source_type` and `aggregation`."""
         return f"/{self.source_type.value}/{AgreggationType._to_str_with_agg(self.aggregation)}"
@@ -369,13 +323,17 @@ class DatasetConfig(ABC):
         self._set_default_values(default_values)
         self.logger.debug("Default values have been successfully set.")
 
-        # Set feature scalers
-        self._set_feature_scalers()
-        self.logger.debug("Feature scalers have been successfully set.")
+        # Set feature transformers
+        self._set_feature_transformers()
+        self.logger.debug("Feature transformers have been successfully set.")
 
         # Set fillers
         self._set_fillers()
         self.logger.debug("Fillers have been successfully set.")
+
+        # Set anomaly handlers
+        self._set_anomaly_handlers()
+        self.logger.debug("Anomaly handlers have been successfully set.")
 
         # Final validation and finalization
         self._validate_finalization()
@@ -466,151 +424,24 @@ class DatasetConfig(ABC):
         """Validates and filters the input time periods based on the dataset and aggregation. This typically calls [`_process_time_period`][cesnet_tszoo.configs.base_config.DatasetConfig._process_time_period] for each time period. """
         ...
 
-    def _process_time_period(self, time_period: np.ndarray, all_time_ids: np.ndarray, times_to_share: np.ndarray | None = None) -> np.ndarray | range:
-        """Validates and filters the input `time_period` based on the `dataset` and `aggregation`. """
-
-        if time_period is None:
-            self.logger.debug("No time period provided, returning None for both time period and display time period.")
-            return None, None
-
-        elif isinstance(time_period, tuple):
-            # Handle time period as a tuple of two datetime objects
-            start_time = time_period[0].replace(tzinfo=timezone.utc).timestamp()
-            end_time = time_period[1].replace(tzinfo=timezone.utc).timestamp()
-
-            selected_time_mask = (all_time_ids[:][TIME_COLUMN_NAME] >= start_time) & (all_time_ids[:][TIME_COLUMN_NAME] < end_time)
-
-            time_period = all_time_ids[selected_time_mask].copy()
-            self.logger.debug("Selected time period based on start time %s and end time %s.", time_period[0], time_period[1])
-
-        elif isinstance(time_period, range):
-            # Handle time period as a range of indices
-            indices, _ = zip(*all_time_ids)
-            time_period = all_time_ids[np.where(np.isin(indices, [index for index in time_period]))].copy()
-            self.logger.debug("Selected time period using indices from the provided range: %s", list(time_period))
-
-        if times_to_share is not None:
-            shareable_time_indices = np.where(np.isin(times_to_share[ID_TIME_COLUMN_NAME], time_period[ID_TIME_COLUMN_NAME], invert=True))[0]
-            if len(shareable_time_indices) > 0:
-                time_period = np.concatenate((times_to_share[shareable_time_indices], time_period))
-
-        # Adjust time period to fit chosen time_format
-        time_period = self._set_time_period_form(time_period, all_time_ids)
-
-        # Check if the time period ended up being empty after processing
-        if len(time_period) == 0:
-            self.logger.error("After processing, the time period ended up empty. Check the inputted time_periods for correctness.")
-            raise ValueError("After processing time_period ended up empty. Check inputted time_periods.")
-
-        # Display the selected time period range
-        display_time_period = range(time_period[ID_TIME_COLUMN_NAME][0], time_period[ID_TIME_COLUMN_NAME][-1] + 1)
-        self.logger.debug("Final time period selected: %s", display_time_period)
-
-        return time_period, display_time_period
-
-    def _set_time_period_form(self, time_period: np.ndarray, all_time_ids: np.ndarray) -> np.ndarray:
-        """Sets the time period based on the selected `time_format`. """
-
-        # Check the time format and process the time_period accordingly
-        if self.time_format == TimeFormat.ID_TIME:
-            temp = np.ndarray(time_period.shape, np.dtype([(ID_TIME_COLUMN_NAME, np.int32), (TIME_COLUMN_NAME, np.int32)]))
-            temp[ID_TIME_COLUMN_NAME] = time_period[ID_TIME_COLUMN_NAME]
-            temp[TIME_COLUMN_NAME] = time_period[TIME_COLUMN_NAME]
-            self.logger.debug("Processed time_period using ID_TIME format.")
-
-        elif self.time_format == TimeFormat.UNIX_TIME:
-            temp = np.ndarray(time_period.shape, np.dtype([(ID_TIME_COLUMN_NAME, np.int32), (TIME_COLUMN_NAME, np.int32)]))
-            temp[ID_TIME_COLUMN_NAME] = time_period[ID_TIME_COLUMN_NAME]
-            temp[TIME_COLUMN_NAME] = time_period[TIME_COLUMN_NAME]
-            self.logger.debug("Processed time_period using UNIX_TIME format.")
-
-        elif self.time_format == TimeFormat.SHIFTED_UNIX_TIME:
-            temp = np.ndarray(time_period.shape, np.dtype([(ID_TIME_COLUMN_NAME, np.int32), (TIME_COLUMN_NAME, np.int32)]))
-            temp[ID_TIME_COLUMN_NAME] = time_period[ID_TIME_COLUMN_NAME]
-            temp[TIME_COLUMN_NAME] = time_period[TIME_COLUMN_NAME] - all_time_ids[TIME_COLUMN_NAME][0]
-            self.logger.debug("Processed time_period using SHIFTED_UNIX_TIME format with time shift applied.")
-
-        elif self.time_format == TimeFormat.DATETIME:
-            temp = np.ndarray(time_period.shape, np.dtype([(ID_TIME_COLUMN_NAME, np.int32), (TIME_COLUMN_NAME, datetime)]))
-            temp[ID_TIME_COLUMN_NAME] = time_period[ID_TIME_COLUMN_NAME]
-
-            for i in range(temp.shape[0]):
-                temp[TIME_COLUMN_NAME][i] = datetime.fromtimestamp(time_period[TIME_COLUMN_NAME][i], tz=timezone.utc)
-            self.logger.debug("Processed time_period using DATETIME format.")
-
-        else:
-            # This should not happen, raise an exception if an unsupported time_format is encountered
-            self.logger.error("Unsupported time_format encountered: %s", self.time_format)
-            raise ValueError("Invalid time_format specified. Should not happen.")
-
-        self.logger.debug("Using '%s' time_format to set time_period.", self.time_format)
-
-        return temp
-
     @abstractmethod
     def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
         """Validates and filters the input time series IDs based on the `dataset` and `source_type`. This typically calls [`_process_ts_ids`][cesnet_tszoo.configs.base_config.DatasetConfig._process_ts_ids] for each time series ID filter. """
         ...
 
-    def _process_ts_ids(self, ts_ids: np.ndarray, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, split_size: float | int | None, random_indices: np.ndarray) -> None:
-        """Validates and filters the input `ts_ids` based on the `dataset` and `source_type`. """
-
-        if ts_ids is None and split_size is None:
-            self.logger.debug("Both ts_ids and split_size are None, returning None for ts_ids and ts_row_ranges.")
-            return None, None, random_indices
-
-        if split_size is not None:
-            if split_size > len(random_indices):
-                raise ValueError(f"Trying to use more time series than there are in the dataset. There are {len(all_ts_ids)} time series available.")
-
-            if split_size == len(random_indices):
-                np.random.shuffle(random_indices)
-                ts_indices = random_indices
-                ts_ids = all_ts_ids[self.ts_id_name][ts_indices]
-                random_indices = np.array([])  # No remaining indices
-                self.logger.debug("Using all random indices. Shuffling complete, no remaining indices.")
-            else:
-                ts_indices, random_indices = train_test_split(random_indices, train_size=split_size, random_state=self.random_state)
-                ts_ids = all_ts_ids[self.ts_id_name][ts_indices]
-                self.logger.debug("Split random indices into train (size=%s) and remaining.", split_size)
-        else:
-            # Handling for the case where split_size is None, using provided ts_ids directly
-            ts_ids = np.array(ts_ids)
-            temp = ts_ids
-
-            _, idx = np.unique(ts_ids, True, False, False)
-            idx = np.sort(idx)
-            ts_ids = ts_ids[idx]
-
-            ts_indices = [np.where(all_ts_ids[self.ts_id_name] == x)[0][0] for x in ts_ids]
-            ts_ids = all_ts_ids[self.ts_id_name][ts_indices]
-
-            if len(ts_ids) == 0:
-                self.logger.error("After processing, ts_ids ended up empty. Check the inputted ts_ids for correctness.")
-                raise ValueError("After processing, ts_ids ended up empty. Check the inputted ts_ids.")
-
-            if len(temp) != len(ts_ids):
-                self.logger.warning("Some invalid Time Series IDs were removed from ts_ids. Adjusting to only valid ts_ids.")
-
-        # Process the row ranges for the selected time series indices
-        temp = all_ts_row_ranges[ts_indices]
-        ts_row_ranges = np.ndarray(len(temp), dtype=[(self.ts_id_name, np.uint32), (ROW_START, np.uint64), (ROW_END, np.uint64)])
-        ts_row_ranges[self.ts_id_name] = temp[self.ts_id_name]
-        ts_row_ranges[ROW_START] = temp[ROW_START]
-        ts_row_ranges[ROW_END] = temp[ROW_END]
-
-        self.logger.debug("Returning ts_ids and ts_row_ranges for selected time series.")
-
-        return ts_ids, ts_row_ranges, random_indices
-
     @abstractmethod
-    def _set_feature_scalers(self) -> None:
-        """Creates and/or validates scalers based on the `scale_with` parameter. """
+    def _set_feature_transformers(self) -> None:
+        """Creates and/or validates transformers based on the `transform_with` parameter. """
         ...
 
     @abstractmethod
     def _set_fillers(self) -> None:
         """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
+        ...
+
+    @abstractmethod
+    def _set_anomaly_handlers(self) -> None:
+        """Creates and/or validates anomaly handlers based on the `handle_anomalies_with` parameter. """
         ...
 
     @abstractmethod

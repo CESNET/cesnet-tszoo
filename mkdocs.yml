@@ -26,8 +26,10 @@ nav:
   - Introduction: index.md
   - Installation: installation.md
   - Overview of datasets: datasets_overview.md
-  - Scalers: scalers.md
+  - Approaches to datasets: dataset_approaches.md
+  - Transformers: transformers.md
   - Fillers: fillers.md
+  - Anomaly handlers: anomaly_handlers.md
   - Benchmarks: benchmarks.md
   - Datasets:
     - CESNET-TimeSeries24: cesnet_timeseries24.md
@@ -38,7 +40,8 @@ nav:
     - Choosing data: choosing_data.md
     - Loading data: loading_data.md
     - Handling missing data: handling_missing_data.md
-    - Using scalers: using_scalers.md
+    - Using transformers: using_transformers.md
+    - Using anomaly handlers: using_anomaly_handlers.md
     - Benchmarks: benchmarks_tutorial.md
     - Annotations: annotations.md
     - Utilities: utilities.md
@@ -48,10 +51,14 @@ nav:
     - Time-based:
       - TimeBasedCesnetDataset: reference_time_based_cesnet_dataset.md
       - TimeBasedConfig: reference_time_based_config.md
+    - Disjoint-time-based:
+      - DisjointTimeBasedCesnetDataset: reference_disjoint_time_based_cesnet_dataset.md
+      - DisjointTimeBasedConfig: reference_disjoint_time_based_config.md      
     - Series-based:
       - SeriesBasedCesnetDataset: reference_series_based_cesnet_dataset.md    
       - SeriesBasedConfig: reference_series_based_config.md
     - Utils:
-      - Scalers: reference_scalers.md
+      - Transformers: reference_transformers.md
       - Fillers: reference_fillers.md
+      - Anomaly handlers: reference_anomaly_handlers.md
       - Enums: reference_enums.md

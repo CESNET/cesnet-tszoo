@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from cesnet_tszoo.utils.enums import AgreggationType, SourceType
+from cesnet_tszoo.utils.enums import AgreggationType, SourceType, DatasetType
+import cesnet_tszoo.version as version
+from packaging.version import Version
 
 
 def get_abbreviated_list_string(to_abbreviate, max_length: int = 5):
@@ -37,23 +39,43 @@ class ExportBenchmark:
     """Used for exporting benchmark. """
 
     database_name: str
-    is_series_based: bool
     source_type: SourceType
     aggregation: AgreggationType
+    dataset_type: str
     config_identifier: str
     annotations_ts_identifier: str
     annotations_time_identifier: str
     annotations_both_identifier: str
     related_results_identifier: Optional[str] = None
+    version: str = None
+    is_series_based: Optional[bool] = None
     description: Optional[str] = None
 
     def to_dict(self):
         """Converts class to dict. For export support. """
 
-        return {key: value for key, value in self.__dict__.items()}
+        deprecated = ["is_series_based"]
+
+        return {key: value for key, value in self.__dict__.items() if key not in deprecated}
 
     @classmethod
     def from_dict(cls, data):
         """Converts to class from dict. For import support. """
 
+        data = cls._update_for_backward_compatibility(data)
+
         return cls(**data)
+
+    @classmethod
+    def _update_for_backward_compatibility(cls, data):
+
+        if "version" not in data:
+            data["version"] = version.DEFAULT_VERSION
+
+        if Version(data["version"]) < Version(version.VERSION_0_1_3):
+            del data["is_series_based"]
+            data["dataset_type"] = None
+
+        data["version"] = version.current_version
+
+        return data

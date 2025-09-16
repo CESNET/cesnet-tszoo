@@ -4,7 +4,8 @@ annotations_time_identifier: null
 annotations_ts_identifier: null
 config_identifier: 3687fb52c433
 database_name: CESNET-TimeSeries24
+dataset_type: time_based
 description: null
-is_series_based: false
 related_results_identifier: null
 source_type: ip_addresses_full
+version: 2.0.0

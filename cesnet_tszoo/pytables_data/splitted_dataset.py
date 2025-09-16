@@ -6,7 +6,8 @@ import numpy as np
 
 from cesnet_tszoo.pytables_data.time_based_dataset import TimeBasedDataset
 from cesnet_tszoo.utils.filler import Filler
-from cesnet_tszoo.utils.scaler import Scaler
+from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
 from cesnet_tszoo.utils.enums import TimeFormat
 
 
@@ -18,8 +19,9 @@ class SplittedDataset(Dataset):
     """
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int],
-                 default_values: np.ndarray, fillers: np.ndarray[Filler] | None, is_scaler_per_time_series: bool,
-                 include_time: bool, include_ts_id: bool, time_format: TimeFormat, workers: int, feature_scalers: np.ndarray[Scaler] | Scaler | None):
+                 default_values: np.ndarray, fillers: np.ndarray[Filler] | None, is_transformer_per_time_series: bool,
+                 include_time: bool, include_ts_id: bool, time_format: TimeFormat, workers: int, feature_transformers: np.ndarray[Transformer] | Transformer | None,
+                 anomaly_handlers: np.ndarray[AnomalyHandler]):
         super().__init__()
 
         self.database_path = database_path
@@ -41,9 +43,11 @@ class SplittedDataset(Dataset):
         self.workers_without_clip = workers
         self.time_period = time_period
         self.time_format = time_format
-        self.feature_scalers = feature_scalers
+        self.feature_transformers = feature_transformers
         self.indices_of_features_to_take_no_ids = indices_of_features_to_take_no_ids
-        self.is_scaler_per_time_series = is_scaler_per_time_series
+        self.is_transformer_per_time_series = is_transformer_per_time_series
+
+        self.anomaly_handlers = anomaly_handlers
 
         self.datasets = []
         self.dataloaders = []
@@ -117,13 +121,17 @@ class SplittedDataset(Dataset):
         offset = 0
         for size in sizes:
 
-            scalers = None
-            if self.feature_scalers is not None:
-                scalers = self.feature_scalers[offset:offset + size] if self.is_scaler_per_time_series else self.feature_scalers
+            transformers = None
+            if self.feature_transformers is not None:
+                transformers = self.feature_transformers[offset:offset + size] if self.is_transformer_per_time_series else self.feature_transformers
 
             fillers = None
             if self.fillers is not None:
                 fillers = self.fillers[offset:offset + size]
+
+            anomaly_handlers = None
+            if self.anomaly_handlers is not None:
+                anomaly_handlers = self.anomaly_handlers[offset:offset + size]
 
             dataset = TimeBasedDataset(self.database_path,
                                        self.table_data_path,
@@ -134,11 +142,12 @@ class SplittedDataset(Dataset):
                                        self.indices_of_features_to_take_no_ids,
                                        self.default_values,
                                        fillers,
-                                       self.is_scaler_per_time_series,
+                                       self.is_transformer_per_time_series,
                                        self.include_time,
                                        self.include_ts_id,
                                        self.time_format,
-                                       scalers)
+                                       transformers,
+                                       anomaly_handlers)
             self.datasets.append(dataset)
             offset += size
 

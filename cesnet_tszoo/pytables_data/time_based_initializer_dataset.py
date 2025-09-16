@@ -4,14 +4,16 @@ import numpy as np
 
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
 from cesnet_tszoo.utils.filler import Filler
+from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
 from cesnet_tszoo.pytables_data.base_datasets.initializer_dataset import InitializerDataset
 
 
 class TimeBasedInitializerDataset(InitializerDataset):
-    """Used for time based datasets. Used for going through data to fit scalers, prepare fillers and validate thresholds."""
+    """Used for time based datasets. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, all_time_period: np.ndarray, train_time_period: np.ndarray, val_time_period: np.ndarray, test_time_period: np.ndarray,
-                 features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray, train_fillers: np.ndarray[Filler], val_fillers: np.ndarray[Filler], test_fillers: np.ndarray[Filler]):
+                 features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray, anomaly_handlers: np.ndarray[AnomalyHandler],
+                 train_fillers: np.ndarray[Filler], val_fillers: np.ndarray[Filler], test_fillers: np.ndarray[Filler]):
         self.ts_row_ranges = ts_row_ranges
 
         self.train_time_period = train_time_period
@@ -22,6 +24,8 @@ class TimeBasedInitializerDataset(InitializerDataset):
         self.train_fillers = deepcopy(train_fillers)
         self.val_fillers = val_fillers
         self.test_fillers = test_fillers
+
+        self.anomaly_handlers = anomaly_handlers
 
         time_period = None
 
@@ -48,6 +52,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
         this_val_filler = self.val_fillers[idx] if self.val_time_period is not None and self.val_fillers is not None else None
         this_test_filler = self.test_fillers[idx] if self.test_time_period is not None and self.test_fillers is not None else None
+        this_anomaly_handler = self.anomaly_handlers[idx] if self.anomaly_handlers is not None else None
 
         # Prepare train data from current time series, if train set is used
         train_data = None
@@ -59,7 +64,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
             else:
                 train_data = data[: len(self.train_time_period), self.offset_exclude_feature_ids:]
 
-        return train_data, train_count_values, val_count_values, test_count_values, all_count_values, this_val_filler, this_test_filler
+        return train_data, train_count_values, val_count_values, test_count_values, all_count_values, this_val_filler, this_test_filler, this_anomaly_handler
 
     def __len__(self) -> int:
         return len(self.ts_row_ranges)
@@ -135,9 +140,18 @@ class TimeBasedInitializerDataset(InitializerDataset):
             test_existing_indices = np.where(missing_values_mask[offsetted_test_time_period] == 0)[0]
             test_missing_indices = np.where(missing_values_mask[offsetted_test_time_period] == 1)[0]
 
-        if self.train_time_period is not None and self.train_fillers is not None and train_should_fill:  # for scaler...
+        if self.train_time_period is not None and self.train_fillers is not None and train_should_fill:  # for transformer...
             self.train_fillers[idx].fill(result[:, self.offset_exclude_feature_ids:].view(), train_existing_indices, train_missing_indices,
                                          default_values=self.default_values,
                                          first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
 
         return (len(train_existing_indices), len(train_missing_indices)), (len(val_existing_indices), len(val_missing_indices)), (len(test_existing_indices), (len(test_missing_indices))), (len(all_existing_indices), (len(all_missing_indices)))
+
+    def handle_anomalies(self, data: np.ndarray, idx: int):
+        """Fits and uses anomaly handlers. """
+
+        if self.anomaly_handlers is None:
+            return
+
+        self.anomaly_handlers[idx].fit(data[:len(self.train_time_period), self.offset_exclude_feature_ids:])
+        self.anomaly_handlers[idx].transform_anomalies(data[:len(self.train_time_period), self.offset_exclude_feature_ids:])

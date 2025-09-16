@@ -10,11 +10,11 @@ Available benchmarks for training unique model per each time series are here:
 [941261e8c367][941261e8c367] | CESNET-TimeSeries24 | 1 HOUR | IP_ADDRESSES_FULL | None |
 [bf0aec939afe][bf0aec939afe] | CESNET-TimeSeries24 | 1 DAY | IP_ADDRESSES_FULL | None |
 
-We encourage users to change default value for missing values, filler, scaler, sliding window step,  and batch sizes. However, users may not change the rest of the arguments. Usage of these benchmarks are following:
+We encourage users to change default value for missing values, filler, transformer, sliding window step,  and batch sizes. However, users may not change the rest of the arguments. Usage of these benchmarks are following:
 
 ```python
 from cesnet_tszoo.benchmarks import load_benchmark
-from cesnet_tszoo.utils.enums import AnnotationType, FillerType, ScalerType, SplitType
+from cesnet_tszoo.utils.enums import AnnotationType, FillerType, TransformerType, SplitType
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 
@@ -31,7 +31,7 @@ annotations['group_encoded'] = encoder.fit_transform(annotations['group'])
 train_annotations = annotations[annotations['id_ip'].isin(dataset.get_data_about_set(about=SplitType.TRAIN)['ts_ids'])]
 train_target = train_annotations['group_encoded'].to_numpy()
 
-test_annotations = annotations[annotations['id_ip'].isin(dataset.get_data_about_set(about=SplitType.TEST)['test_ts_ids'])]
+test_annotations = annotations[annotations['id_ip'].isin(dataset.get_data_about_set(about=SplitType.TEST)['ts_ids'])]
 test_target = test_annotations['group_encoded'].to_numpy()
 
 # (optional) Set default value for missing data 
@@ -40,14 +40,15 @@ dataset.set_default_values(0)
 # (optional) Set filler for filling missing data 
 dataset.apply_filler(FillerType.MEAN_FILLER)
 
-# (optional) Set scaler for data
-dataset.apply_scaler(ScalerType.MIN_MAX_SCALER, create_scaler_per_time_series=False)
+# (optional) Set transformer for data
+dataset.apply_transformer(TransformerType.MIN_MAX_SCALER)
 
 # (optional) Change sliding window setting
-dataset.set_sliding_window(sliding_window_size=744, sliding_window_prediction_size=24, sliding_window_step=1, set_shared_size=744)
+dataset.set_sliding_window(sliding_window_size=80, sliding_window_prediction_size=24, sliding_window_step=1, set_shared_size=80)
 
-# (optional) Change batch sizes
-dataset.set_batch_sizes(all_batch_size=32)
+# or to update all at once which is usually faster
+# dataset.update_dataset_config_and_initialize(default_values=0, sliding_window_size=80, sliding_window_prediction_size=24, sliding_window_step=1, set_shared_size=80, 
+#                                              fill_missing_with=FillerType.MEAN_FILLER, transform_with=TransformerType.MIN_MAX_SCALER)
 
 # Process with your own defined model
 model = Model()
@@ -59,7 +60,7 @@ model.fit(
 
 # Predict for time series which data are not in training
 y_pred = model.predict(
-    dataset.get_test_other_dataloader()
+    dataset.get_test_dataloader()
 )
 
 # Evaluate predictions, for example, with RMSE

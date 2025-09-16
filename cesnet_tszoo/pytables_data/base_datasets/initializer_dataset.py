@@ -11,7 +11,7 @@ from cesnet_tszoo.pytables_data.utils.utils import load_database
 
 
 class InitializerDataset(Dataset, ABC):
-    """Base class for initializer PyTable wrappers. Used for going through data to fit scalers, prepare fillers and validate thresholds."""
+    """Base class for initializer PyTable wrappers. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray):
         self.database_path = database_path
@@ -55,7 +55,7 @@ class InitializerDataset(Dataset, ABC):
         """Returns data from table. Missing values are filled fillers and `default_values`. Prepares fillers."""
 
         result = np.full((len(self.time_period), len(self.features_to_take)), fill_value=np.nan, dtype=np.float64)
-        result[:, self.offset_exclude_feature_ids:] = self.default_values
+        result[:, self.offset_exclude_feature_ids:] = np.nan
 
         expected_offset = np.uint32(len(self.time_period))
         start = int(identifier_row_range_to_take[ROW_START])
@@ -67,6 +67,7 @@ class InitializerDataset(Dataset, ABC):
         if start >= end:
             missing_values_mask = np.ones(len(self.time_period), dtype=bool)
 
+            result[:, self.offset_exclude_feature_ids:] = self.default_values
             count_values = self.fill_values(missing_values_mask, idx, result, None, None)
 
             return result, count_values
@@ -100,9 +101,14 @@ class InitializerDataset(Dataset, ABC):
 
         missing_values_mask = np.ones(len(self.time_period), dtype=bool)
         missing_values_mask[existing_indices] = 0
+        missing_indices = np.nonzero(missing_values_mask)[0]
 
         if len(filtered_rows) > 0:
             result[existing_indices, :] = rf.structured_to_unstructured(filtered_rows[:][self.features_to_take], dtype=np.float64, copy=False)
+
+        self.handle_anomalies(result, idx)
+
+        result[missing_indices, self.offset_exclude_feature_ids:] = self.default_values
 
         count_values = self.fill_values(missing_values_mask, idx, result, None, None)
 
@@ -111,7 +117,11 @@ class InitializerDataset(Dataset, ABC):
     @abstractmethod
     def fill_values(self, missing_values_mask: np.ndarray, idx, result, first_next_existing_values, first_next_existing_values_distance):
         """Fills data. """
+        ...
 
+    @abstractmethod
+    def handle_anomalies(self, data: np.ndarray, idx: int):
+        """Fits and uses anomaly handlers. """
         ...
 
     @staticmethod

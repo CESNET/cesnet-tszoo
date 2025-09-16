@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cesnet_tszoo"
-version = "0.1.2"
+version = "2.0.0"
 authors = [
     { name = "Milan Kureš", email = "kuresmil@fit.cvut.cz" },
     { name = "Josef Koumar", email = "josef.koumar@fit.cvut.cz" },
@@ -33,7 +33,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "numpy>= 2.0, ==2.*",
+    "numpy",
     "pandas",
     "scikit-learn",
     "tables >= 3.10.0",
@@ -44,6 +44,8 @@ dependencies = [
     "PyYAML",
     "requests",
     "matplotlib",
+    "packaging",
+    "importlib",
 ]
 
 [project.optional-dependencies]

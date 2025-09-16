@@ -18,12 +18,15 @@ The `cesnet-tszoo` package requires Python >=3.10.
 | Name         | Version         |
 |--------------|-----------------|
 | matplotlib   |                 |
-| numpy        | <2.0            |
+| numpy        |                 |
 | pandas       |                 |
 | scikit-learn |                 |
-| tables       | >=3.8.0,<=3.9.2 |
+| tables       | >=3.10.0        |
 | torch        | >=1.10          |
 | tqdm         |                 |
 | plotly       |                 |
 | PyYAML       |                 |
 | requests     |                 |
+| packaging    |                 |
+| importlib    |                 |
+| nbformat     | >=4.2.0         |
