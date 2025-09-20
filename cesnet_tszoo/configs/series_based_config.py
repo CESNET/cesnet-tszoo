@@ -257,7 +257,7 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
             self.all_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.all_ts])
             self.logger.debug("Fillers for all set are set.")
 
-        self.logger.debug("Using filler: %s.", self.filler_factory.filler_type.IDENTIFIER)
+        self.logger.debug("Using filler %s", self.filler_factory.name)
 
     def _set_anomaly_handlers(self):
         """Creates anomaly handlers with `anomaly_handler_factory`. """
@@ -308,7 +308,7 @@ Config Details:
         Time series ID included: {str(self.include_ts_id)}
         {time_part}
     Fillers         
-        Filler type: {self.filler_factory.filler_type.__name__}
+        Filler type: {self.filler_factory.name}
     Transformers
         {transformer_part}
     Anomaly handler

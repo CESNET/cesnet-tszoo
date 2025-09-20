@@ -72,8 +72,6 @@ class MeanFiller(Filler):
     Corresponds to enum [`FillerType.MEAN_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `mean_filler`.
     """
 
-    IDENTIFIER = FillerType.MEAN_FILLER.value
-
     def __init__(self, features):
         super().__init__(features)
 
@@ -126,8 +124,6 @@ class ForwardFiller(Filler):
     Corresponds to enum [`FillerType.FORWARD_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `forward_filler`.
     """
 
-    IDENTIFIER = FillerType.FORWARD_FILLER.value
-
     def __init__(self, features):
         super().__init__(features)
 
@@ -158,8 +154,6 @@ class LinearInterpolationFiller(Filler):
 
     Corresponds to enum [`FillerType.LINEAR_INTERPOLATION_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `linear_interpolation_filler`.
     """
-
-    IDENTIFIER = FillerType.LINEAR_INTERPOLATION_FILLER.value
 
     def __init__(self, features):
         super().__init__(features)
@@ -213,8 +207,6 @@ class NoFiller(Filler):
     Corresponds to enum [`FillerType.NO_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `no_filler`.
     """
 
-    IDENTIFIER = FillerType.NO_FILLER.value
-
     def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
         ...
 
@@ -222,29 +214,33 @@ class NoFiller(Filler):
 class FillerFactory(ABC):
     """Base class for filler factories. """
 
-    def __init__(self, filler_type: type, creates_built_in: bool = True):
+    def __init__(self, filler_type: type, identifier: FillerType | None, creates_built_in: bool = True):
         self.filler_type = filler_type
         self.creates_built_in = creates_built_in
+        self.identifier = identifier
+
+        if isinstance(filler_type, type):
+            self.name = filler_type.__name__
 
     @abstractmethod
     def create_filler(self, features) -> Filler:
         """Creates filler instance. """
         ...
 
-    def can_be_used(self, filler_from_input: FillerType | type | None) -> bool:
+    def can_be_used(self, fill_missing_with: FillerType | type | None) -> bool:
         """Checks whether factory can be used for passed filler. """
 
-        if isinstance(filler_from_input, FillerType):
-            return filler_from_input.value == self.filler_type.IDENTIFIER
+        if isinstance(fill_missing_with, FillerType):
+            return fill_missing_with == self.identifier
 
-        return self.filler_type == filler_from_input
+        return self.filler_type == fill_missing_with
 
 
 class MeanFillerFactory(FillerFactory):
     """Factory class for MeanFiller. """
 
     def __init__(self):
-        super().__init__(MeanFiller)
+        super().__init__(MeanFiller, FillerType.MEAN_FILLER)
 
     def create_filler(self, features) -> MeanFiller:
         return MeanFiller(features)
@@ -254,7 +250,7 @@ class ForwardFillerFactory(FillerFactory):
     """Factory class for ForwardFiller. """
 
     def __init__(self):
-        super().__init__(ForwardFiller)
+        super().__init__(ForwardFiller, FillerType.FORWARD_FILLER)
 
     def create_filler(self, features) -> ForwardFiller:
         return ForwardFiller(features)
@@ -264,7 +260,7 @@ class LinearInterpolationFillerFactory(FillerFactory):
     """Factory class for LinearInterpolationFiller. """
 
     def __init__(self):
-        super().__init__(LinearInterpolationFiller)
+        super().__init__(LinearInterpolationFiller, FillerType.LINEAR_INTERPOLATION_FILLER)
 
     def create_filler(self, features) -> LinearInterpolationFiller:
         return LinearInterpolationFiller(features)
@@ -274,7 +270,7 @@ class NoFillerFactory(FillerFactory):
     """Factory class for NoFiller. """
 
     def __init__(self):
-        super().__init__(NoFiller)
+        super().__init__(NoFiller, FillerType.NO_FILLER)
 
     def create_filler(self, features) -> NoFiller:
         return NoFiller(features)
@@ -284,16 +280,16 @@ class CustomFillerFactory(FillerFactory):
     """Factory class for custom fillers. """
 
     def __init__(self, filler_type: type):
-        super().__init__(filler_type, creates_built_in=False)
+        super().__init__(filler_type, None, creates_built_in=False)
 
-        if self.can_be_used(filler_type) and filler_type.IDENTIFIER is None:
-            filler_type.IDENTIFIER = f"{self.filler_type.__name__} (Custom)"
+        if self.can_be_used(filler_type):
+            self.name = f"{self.filler_type.__name__} (Custom)"
 
     def create_filler(self, features) -> Filler:
         return self.filler_type(features)
 
-    def can_be_used(self, filler_from_input: type):
-        return inspect.isclass(filler_from_input) and issubclass(filler_from_input, Filler)
+    def can_be_used(self, fill_missing_with: type):
+        return isinstance(fill_missing_with, type) and inspect.isclass(fill_missing_with) and issubclass(fill_missing_with, Filler)
 
 
 def get_filler_factory(fill_missing_with: FillerType | str | type | None) -> FillerFactory:

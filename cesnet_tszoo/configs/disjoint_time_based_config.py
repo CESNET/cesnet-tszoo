@@ -307,9 +307,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
             self.test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
 
-        # Set the fillers for the all set
-        self.all_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.all_ts])
-        self.logger.debug("Fillers for all set are set.")
+        self.logger.debug("Using filler %s", self.filler_factory.name)
 
     def _set_anomaly_handlers(self):
         """Creates anomaly handlers with `anomaly_handler_factory`. """
@@ -366,7 +364,7 @@ Config Details
         Sliding window prediction size: {self.sliding_window_prediction_size}
         Sliding window step size: {self.sliding_window_step}
     Fillers
-        Filler type: {self.filler_factory.filler_type.__name__}
+        Filler type: {self.filler_factory.name}
     Transformers
         {transformer_part}
     Anomaly handler
