@@ -11,7 +11,8 @@ from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-from cesnet_tszoo.datasets.databases import CESNET_TimeSeries24, CESNET_AGG23, CesnetDatabase
+import cesnet_tszoo.datasets.databases.database_factory as database_factory
+from cesnet_tszoo.datasets.databases import CesnetDatabase
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
 from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
@@ -176,14 +177,9 @@ def load_benchmark(identifier: str, data_root: str) -> Benchmark:
 def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
     """Returns `dataset` based on `export_benchmark`. """
 
-    if export_benchmark.database_name == CESNET_TimeSeries24.name:
-        dataset = CESNET_TimeSeries24.get_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
-    elif export_benchmark.database_name == CESNET_AGG23:
-        dataset = CESNET_AGG23.get_dataset(data_root, False, False)
-    else:
-        raise ValueError("Invalid database name.")
+    factory = database_factory.get_database_factory(export_benchmark.database_name)
 
-    return dataset
+    return factory.create_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
 
 
 def _get_built_in_benchmark(identifier: str, data_root: str) -> Benchmark:
