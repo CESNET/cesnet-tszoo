@@ -316,7 +316,9 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
             self.anomaly_handler_factory = get_anomaly_handler_factory(None)
             self.logger.warning("No anomaly handler will be used because train set is not used.")
 
-        self.anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.train_ts])
+        if self.has_train():
+            self.anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.train_ts])
+
         self.logger.debug("Using anomaly handler %s", self.anomaly_handler_factory.name)
 
     def _validate_finalization(self) -> None:
