@@ -509,8 +509,8 @@ class CustomTransformerFactory(TransformerFactory):
     def create_transformer(self) -> Transformer:
         return self.transformer_type()
 
-    def can_be_used(self, trasformer_type: type) -> bool:
-        return isinstance(trasformer_type, type) and inspect.isclass(trasformer_type)
+    def can_be_used(self, transform_with: type) -> bool:
+        return isinstance(transform_with, type) and inspect.isclass(transform_with)
 
 
 def get_transformer_type_or_enum_and_validate(transform_with: TransformerType | str | type | None) -> TransformerType | type:
