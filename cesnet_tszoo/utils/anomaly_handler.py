@@ -40,8 +40,6 @@ class AnomalyHandler(ABC):
 
     """
 
-    IDENTIFIER = None
-
     @abstractmethod
     def fit(self, data: np.ndarray) -> None:
         """
@@ -76,8 +74,6 @@ class ZScore(AnomalyHandler):
     Corresponds to enum [`AnomalyHandlerType.Z_SCORE`][cesnet_tszoo.utils.enums.AnomalyHandlerType] or literal `z-score`.
     """
 
-    IDENTIFIER = "z-score"
-
     def __init__(self):
         self.mean = None
         self.std = None
@@ -107,8 +103,6 @@ class InterquartileRange(AnomalyHandler):
     Corresponds to enum [`AnomalyHandlerType.INTERQUARTILE_RANGE`][cesnet_tszoo.utils.enums.AnomalyHandlerType] or literal `interquartile_range`.
     """
 
-    IDENTIFIER = "interquartile_range"
-
     def __init__(self):
         self.lower_bound = None
         self.upper_bound = None
@@ -136,8 +130,6 @@ class NoAnomalyHandler(AnomalyHandler):
     Corresponds to enum [`AnomalyHandlerType.NO_ANOMALY_HANDLER`][cesnet_tszoo.utils.enums.AnomalyHandlerType] or literal `no_anomaly_handler`.
     """
 
-    IDENTIFIER = AnomalyHandlerType.NO_ANOMALY_HANDLER.value
-
     def fit(self, data: np.ndarray) -> None:
         ...
 
@@ -148,9 +140,14 @@ class NoAnomalyHandler(AnomalyHandler):
 class AnomalyHandlerFactory(ABC):
     """Base class for anomaly handler factories. """
 
-    def __init__(self, anomaly_handler_type: type, creates_built_in: bool = True):
+    def __init__(self, anomaly_handler_type: type, identifier: AnomalyHandlerType | None, creates_built_in: bool = True, is_empty_factory: bool = False):
         self.anomaly_handler_type = anomaly_handler_type
         self.creates_built_in = creates_built_in
+        self.identifier = identifier
+        self.is_empty_factory = is_empty_factory
+
+        if isinstance(anomaly_handler_type, type):
+            self.name = anomaly_handler_type.__name__
 
     @abstractmethod
     def create_anomaly_handler(self) -> AnomalyHandler:
@@ -161,7 +158,7 @@ class AnomalyHandlerFactory(ABC):
         """Checks whether factory can be used for passed anomaly handler. """
 
         if isinstance(handle_anomalies_with, AnomalyHandlerType):
-            return handle_anomalies_with.value == self.anomaly_handler_type.IDENTIFIER
+            return handle_anomalies_with == self.identifier
 
         return self.anomaly_handler_type == handle_anomalies_with
 
@@ -170,7 +167,7 @@ class ZScoreFactory(AnomalyHandlerFactory):
     """Factory class for ZScore anomaly handler. """
 
     def __init__(self):
-        super().__init__(ZScore)
+        super().__init__(ZScore, AnomalyHandlerType.Z_SCORE)
 
     def create_anomaly_handler(self) -> ZScore:
         return ZScore()
@@ -180,7 +177,7 @@ class InterquartileRangeFactory(AnomalyHandlerFactory):
     """Factory class for InterquartileRange anomaly handler. """
 
     def __init__(self):
-        super().__init__(InterquartileRange)
+        super().__init__(InterquartileRange, AnomalyHandlerType.INTERQUARTILE_RANGE)
 
     def create_anomaly_handler(self) -> InterquartileRange:
         return InterquartileRange()
@@ -190,7 +187,7 @@ class NoAnomalyHandlerFactory(AnomalyHandlerFactory):
     """Factory class for NoAnomalyHandler anomaly handler. """
 
     def __init__(self):
-        super().__init__(NoAnomalyHandler)
+        super().__init__(NoAnomalyHandler, AnomalyHandlerType.NO_ANOMALY_HANDLER, is_empty_factory=True)
 
     def create_anomaly_handler(self) -> NoAnomalyHandler:
         return NoAnomalyHandler()
@@ -200,16 +197,16 @@ class CustomAnomalyHandlerFactory(AnomalyHandlerFactory):
     """Factory class for custom anomaly handler. """
 
     def __init__(self, anomaly_handler_type: type):
-        super().__init__(anomaly_handler_type, creates_built_in=False)
+        super().__init__(anomaly_handler_type, None, creates_built_in=False)
 
-        if self.can_be_used(anomaly_handler_type) and anomaly_handler_type.IDENTIFIER is None:
-            anomaly_handler_type.IDENTIFIER = f"{self.anomaly_handler_type.__name__} (Custom)"
+        if self.can_be_used(anomaly_handler_type):
+            self.name = f"{self.anomaly_handler_type.__name__} (Custom)"
 
     def create_anomaly_handler(self) -> AnomalyHandler:
         return self.anomaly_handler_type()
 
-    def can_be_used(self, handle_anomalies_with: AnomalyHandlerType | type) -> bool:
-        return inspect.isclass(handle_anomalies_with) and issubclass(handle_anomalies_with, AnomalyHandler)
+    def can_be_used(self, handle_anomalies_with: type) -> bool:
+        return isinstance(handle_anomalies_with, type) and inspect.isclass(handle_anomalies_with) and issubclass(handle_anomalies_with, AnomalyHandler)
 
 
 def get_anomaly_handler_factory(handle_anomalies_with: AnomalyHandlerType | str | type | None) -> AnomalyHandlerFactory:
