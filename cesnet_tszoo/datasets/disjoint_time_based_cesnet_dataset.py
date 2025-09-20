@@ -262,9 +262,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                 raise ValueError("Test split is not used.")
             time_period = self.dataset_config.test_time_period
             time_series = self.dataset_config.test_ts
-        elif about == SplitType.ALL:
-            time_period = self.dataset_config.all_time_period
-            time_series = self.dataset_config.all_ts
+        else:
+            raise ValueError("Specified about parameter is not supported.")
 
         datetime_temp = np.array([datetime.fromtimestamp(time, timezone.utc) for time in self.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]]])
 
