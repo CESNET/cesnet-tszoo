@@ -14,7 +14,7 @@ from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.pytables_data.disjoint_time_based_initializer_dataset import DisjointTimeBasedInitializerDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
-from cesnet_tszoo.datasets.loaders import create_numpy_from_dataloader
+import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 
 
@@ -608,7 +608,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
         dataloader = self._get_time_based_dataloader(dataset, 0, True, None)
 
-        temp_data = create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.TIME_BASED, True)
+        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.TIME_BASED, True)
 
         if (dataset.time_format == TimeFormat.DATETIME and dataset.include_time):
             temp_data = temp_data[0]

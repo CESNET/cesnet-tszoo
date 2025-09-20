@@ -21,11 +21,11 @@ from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_buil
 import cesnet_tszoo.utils.factories as factory
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
-from cesnet_tszoo.datasets.loaders import collate_fn_simple
+import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
 from cesnet_tszoo.pytables_data.utils.utils import get_time_indices, get_table_time_indices_path, get_ts_indices, get_table_identifiers_path, get_ts_row_ranges, get_column_types, get_column_names, get_additional_data, load_database
-from cesnet_tszoo.datasets.loaders import create_multiple_df_from_dataloader, create_single_df_from_dataloader, create_numpy_from_dataloader
+
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
 from cesnet_tszoo.utils.transformer import Transformer
@@ -135,7 +135,7 @@ class CesnetDataset(ABC):
     def __post_init__(self):
         self.logger = logging.getLogger("cesnet_dataset")
 
-        self._collate_fn = collate_fn_simple
+        self._collate_fn = dataset_loaders.collate_fn_simple
         self.annotations = Annotations()
 
         # Initialize annotation states
@@ -2009,7 +2009,7 @@ Dataset details:
 
         if as_single_dataframe:
             self.logger.debug("Returning a single DataFrame with all features for all time series.")
-            return create_single_df_from_dataloader(
+            return dataset_loaders.create_single_df_from_dataloader(
                 dataloader,
                 ts_ids,
                 self.dataset_config.features_to_take,
@@ -2021,7 +2021,7 @@ Dataset details:
             )
         else:
             self.logger.debug("Returning multiple DataFrames, one per time series.")
-            return create_multiple_df_from_dataloader(
+            return dataset_loaders.create_multiple_df_from_dataloader(
                 dataloader,
                 ts_ids,
                 self.dataset_config.features_to_take,
@@ -2043,7 +2043,7 @@ Dataset details:
             self.logger.warning("The dataset contains %d samples (%d time series × %d times). Consider using get_*_dataloader() for batch loading.", total_samples, len(ts_ids), len(time_period))
 
         self.logger.debug("Creating numpy array from dataloader.")
-        return create_numpy_from_dataloader(
+        return dataset_loaders.create_numpy_from_dataloader(
             dataloader,
             ts_ids,
             self.dataset_config.time_format,
