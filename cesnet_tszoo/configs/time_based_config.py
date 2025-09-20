@@ -290,10 +290,10 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             self.transformers = self.transformer_factory.get_already_initialized_transformers()
 
             if self.transformer_factory.has_single_initialized:
-                self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.transformer_type.IDENTIFIER)
+                self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.name)
             else:
                 assert len(self.transformers) == len(self.ts_ids), "Number of time series in ts_ids does not match with number of provided transformers."
-                self.logger.debug("Using list of initialized transformers of %s", self.transformer_factory.transformer_type.IDENTIFIER)
+                self.logger.debug("Using list of initialized transformers of %s", self.transformer_factory.name)
         else:
             if not self.has_train() and not self.transformer_factory.is_empty_factory:
                 self.transformer_factory = get_transformer_factory(None, self.create_transformer_per_time_series, self.partial_fit_initialized_transformers)
@@ -301,10 +301,10 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
             if self.create_transformer_per_time_series:
                 self.transformers = np.array([self.transformer_factory.create_transformer() for _ in self.ts_ids])
-                self.logger.debug("Using list of transformers of %s", self.transformer_factory.transformer_type.IDENTIFIER)
+                self.logger.debug("Using list of transformers of %s", self.transformer_factory.name)
             else:
                 self.transformers = self.transformer_factory.create_transformer()
-                self.logger.debug("Using transformer %s", self.transformer_factory.transformer_type.IDENTIFIER)
+                self.logger.debug("Using transformer %s", self.transformer_factory.name)
 
     def _set_fillers(self) -> None:
         """Creates fillers with `filler_factory`. """
@@ -343,9 +343,9 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
     def __str__(self) -> str:
 
         if self.transformer_factory.is_empty_factory:
-            transformer_part = f"Transformer type: {str(self.transformer_factory.transformer_type.IDENTIFIER)}"
+            transformer_part = f"Transformer type: {self.transformer_factory.name}"
         else:
-            transformer_part = f'''Transformer type: {str(self.transformer_factory.transformer_type.IDENTIFIER)}
+            transformer_part = f'''Transformer type: {self.transformer_factory.name}
         Is transformer per Time series: {self.create_transformer_per_time_series}
         Are transformers premade: {self.transformer_factory.has_already_initialized}
         Are premade transformers partial_fitted: {self.partial_fit_initialized_transformers}'''
@@ -380,11 +380,11 @@ Config Details
         Sliding window step size: {self.sliding_window_step}
         Set shared size: {self.set_shared_size}
     Fillers
-        Filler type: {str(self.filler_factory.filler_type.IDENTIFIER)}
+        Filler type: {self.filler_factory.filler_type.__name__}
     Transformers
         {transformer_part}
     Anomaly handler
-        Anomaly handler type: {str(self.anomaly_handler_factory.anomaly_handler_type.IDENTIFIER)}        
+        Anomaly handler type: {self.anomaly_handler_factory.anomaly_handler_type.__name__}        
     Batch sizes
         Train batch size: {self.train_batch_size}
         Val batch size: {self.val_batch_size}

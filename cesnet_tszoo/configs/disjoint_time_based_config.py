@@ -278,7 +278,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                 self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
 
             self.transformers = self.transformer_factory.get_already_initialized_transformers()
-            self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.transformer_type.IDENTIFIER)
+            self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.name)
 
         else:
             if not self.has_train() and not self.transformer_factory.is_empty_factory:
@@ -286,7 +286,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                 self.logger.warning("No transformer will be used because train set is not used.")
 
             self.transformers = self.transformer_factory.create_transformer()
-            self.logger.debug("Using transformer %s.", self.transformer_factory.transformer_type.IDENTIFIER)
+            self.logger.debug("Using transformer %s.", self.transformer_factory.name)
 
     def _set_fillers(self) -> None:
         """Creates fillers with `filler_factory`. """
@@ -325,9 +325,9 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
     def __str__(self) -> str:
 
         if self.transformer_factory.is_empty_factory:
-            transformer_part = f"Transformer type: {str(self.transformer_factory.transformer_type.IDENTIFIER)}"
+            transformer_part = f"Transformer type: {self.transformer_factory.name}"
         else:
-            transformer_part = f'''Transformer type: {str(self.transformer_factory.transformer_type.IDENTIFIER)}
+            transformer_part = f'''Transformer type: {self.transformer_factory.name}
         Are transformers premade: {self.transformer_factory.has_already_initialized}
         Are premade transformers partial_fitted: {self.partial_fit_initialized_transformers}'''
 
@@ -361,11 +361,11 @@ Config Details
         Sliding window prediction size: {self.sliding_window_prediction_size}
         Sliding window step size: {self.sliding_window_step}
     Fillers
-        Filler type: {str(self.filler_factory.filler_type.IDENTIFIER)}
+        Filler type: {self.filler_factory.filler_type.__name__}
     Transformers
         {transformer_part}
     Anomaly handler
-        Anomaly handler type (train set): {str(self.anomaly_handler_factory.anomaly_handler_type.IDENTIFIER)}
+        Anomaly handler type (train set): {self.anomaly_handler_factory.anomaly_handler_type.__name__}
     Batch sizes
         Train batch size: {self.train_batch_size}
         Val batch size: {self.val_batch_size}

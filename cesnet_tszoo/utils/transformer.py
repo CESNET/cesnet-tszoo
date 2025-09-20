@@ -34,8 +34,6 @@ class Transformer(ABC):
                 return np.exp(transformed_data)                
     """
 
-    IDENTIFIER = None
-
     @abstractmethod
     def fit(self, data: np.ndarray) -> None:
         """
@@ -95,8 +93,6 @@ class MinMaxScaler(Transformer):
     Corresponds to enum [`TransformerType.MIN_MAX_SCALER`][cesnet_tszoo.utils.enums.TransformerType] or literal `min_max_scaler`.
     """
 
-    IDENTIFIER = TransformerType.MIN_MAX_SCALER.value
-
     def __init__(self):
         self.transformer = sk.MinMaxScaler()
 
@@ -119,8 +115,6 @@ class StandardScaler(Transformer):
 
     Corresponds to enum [`TransformerType.STANDARD_SCALER`][cesnet_tszoo.utils.enums.TransformerType] or literal `standard_scaler`.
     """
-
-    IDENTIFIER = TransformerType.STANDARD_SCALER.value
 
     def __init__(self):
         self.transformer = sk.StandardScaler()
@@ -145,8 +139,6 @@ class MaxAbsScaler(Transformer):
     Corresponds to enum [`TransformerType.MAX_ABS_SCALER`][cesnet_tszoo.utils.enums.TransformerType] or literal `max_abs_scaler`.
     """
 
-    IDENTIFIER = TransformerType.MAX_ABS_SCALER.value
-
     def __init__(self):
         self.transformer = sk.MaxAbsScaler()
 
@@ -170,8 +162,6 @@ class LogTransformer(Transformer):
     Corresponds to enum [`TransformerType.LOG_TRANSFORMER`][cesnet_tszoo.utils.enums.TransformerType] or literal `log_transformer`.
     """
 
-    IDENTIFIER = TransformerType.LOG_TRANSFORMER.value
-
     def fit(self, data: np.ndarray):
         ...
 
@@ -193,8 +183,6 @@ class L2Normalizer(Transformer):
 
     Corresponds to enum [`TransformerType.L2_NORMALIZER`][cesnet_tszoo.utils.enums.TransformerType] or literal `l2_normalizer`.
     """
-
-    IDENTIFIER = TransformerType.L2_NORMALIZER.value
 
     def __init__(self):
         self.transformer = sk.Normalizer(norm="l2")
@@ -222,8 +210,6 @@ class RobustScaler(Transformer):
         Because this transformer does not support partial_fit it can't be used when using one transformer that needs to be fitted for multiple time series.    
     """
 
-    IDENTIFIER = TransformerType.ROBUST_SCALER.value
-
     def __init__(self):
         self.transformer = sk.RobustScaler()
 
@@ -249,8 +235,6 @@ class PowerTransformer(Transformer):
     !!! warning "partial_fit not supported"
         Because this transformer does not support partial_fit it can't be used when using one transformer that needs to be fitted for multiple time series.
     """
-
-    IDENTIFIER = TransformerType.POWER_TRANSFORMER.value
 
     def __init__(self):
         self.transformer = sk.PowerTransformer()
@@ -278,8 +262,6 @@ class QuantileTransformer(Transformer):
         Because this transformer does not support partial_fit it can't be used when using one transformer that needs to be fitted for multiple time series.    
     """
 
-    IDENTIFIER = TransformerType.QUANTILE_TRANSFORMER.value
-
     def __init__(self):
         self.transformer = sk.QuantileTransformer()
 
@@ -302,8 +284,6 @@ class NoTransformer(Transformer):
 
     Corresponds to enum [`TransformerType.NO_TRANSFORMER`][cesnet_tszoo.utils.enums.TransformerType] or literal `no_transformer`.
     """
-
-    IDENTIFIER = TransformerType.NO_TRANSFORMER.value
 
     def fit(self, data: np.ndarray):
         ...
@@ -351,7 +331,7 @@ def input_has_transform(to_check) -> bool:
 class TransformerFactory(ABC):
     """Base class for transformer factories. """
 
-    def __init__(self, transformer_type: type, can_fit: bool, can_partial_fit: bool, creates_built_in: bool = True, is_empty_factory: bool = False):
+    def __init__(self, transformer_type: type, identifier: TransformerType | None, can_fit: bool, can_partial_fit: bool, creates_built_in: bool = True, is_empty_factory: bool = False):
         self.transformer_type = transformer_type
         self.can_fit = can_fit
         self.can_partial_fit = can_partial_fit
@@ -360,6 +340,10 @@ class TransformerFactory(ABC):
         self.initialized_transformers = None
         self.is_empty_factory = is_empty_factory
         self.has_single_initialized = None
+        self.identifier = identifier
+
+        if isinstance(transformer_type, type):
+            self.name = transformer_type.__name__
 
     @abstractmethod
     def create_transformer(self) -> Transformer:
@@ -383,13 +367,13 @@ class TransformerFactory(ABC):
 
         return self.initialized_transformers
 
-    def can_be_used(self, transformer_type: TransformerType | type) -> bool:
+    def can_be_used(self, transform_with: TransformerType | type) -> bool:
         """Checks whether factory can be used for passed transformer. """
 
-        if isinstance(transformer_type, TransformerType):
-            return transformer_type.value == self.transformer_type.IDENTIFIER
+        if isinstance(transform_with, TransformerType):
+            return transform_with == self.identifier
 
-        return isinstance(transformer_type, type) and self.transformer_type == transformer_type
+        return isinstance(transform_with, type) and self.transformer_type == transform_with
 
     def raise_when_initialized_not_supported(self, create_transformer_per_time_series: bool, partial_fit_initialized_transformers: bool):
         """Validates whether initialized transformers can be used. """
@@ -425,7 +409,7 @@ class StandardScalerFactory(TransformerFactory):
     """Factory class for StandardScaler. """
 
     def __init__(self):
-        super().__init__(StandardScaler, can_fit=True, can_partial_fit=True)
+        super().__init__(StandardScaler, TransformerType.STANDARD_SCALER, can_fit=True, can_partial_fit=True)
 
     def create_transformer(self) -> StandardScaler:
         return StandardScaler()
@@ -435,7 +419,7 @@ class L2NormalizerFactory(TransformerFactory):
     """Factory class for L2Normalizer. """
 
     def __init__(self):
-        super().__init__(L2Normalizer, can_fit=True, can_partial_fit=True)
+        super().__init__(L2Normalizer, TransformerType.L2_NORMALIZER, can_fit=True, can_partial_fit=True)
 
     def create_transformer(self) -> L2Normalizer:
         return L2Normalizer()
@@ -445,7 +429,7 @@ class LogTransformerFactory(TransformerFactory):
     """Factory class for LogTransformer. """
 
     def __init__(self):
-        super().__init__(LogTransformer, can_fit=True, can_partial_fit=True)
+        super().__init__(LogTransformer, TransformerType.LOG_TRANSFORMER, can_fit=True, can_partial_fit=True)
 
     def create_transformer(self) -> LogTransformer:
         return LogTransformer()
@@ -455,7 +439,7 @@ class MaxAbsScalerFactory(TransformerFactory):
     """Factory class for MaxAbsScaler. """
 
     def __init__(self):
-        super().__init__(MaxAbsScaler, can_fit=True, can_partial_fit=True)
+        super().__init__(MaxAbsScaler, TransformerType.MAX_ABS_SCALER, can_fit=True, can_partial_fit=True)
 
     def create_transformer(self) -> MaxAbsScaler:
         return MaxAbsScaler()
@@ -465,7 +449,7 @@ class MinMaxScalerFactory(TransformerFactory):
     """Factory class for MinMaxScaler. """
 
     def __init__(self):
-        super().__init__(MinMaxScaler, can_fit=True, can_partial_fit=True)
+        super().__init__(MinMaxScaler, TransformerType.MIN_MAX_SCALER, can_fit=True, can_partial_fit=True)
 
     def create_transformer(self) -> MinMaxScaler:
         return MinMaxScaler()
@@ -475,7 +459,7 @@ class PowerTransformerFactory(TransformerFactory):
     """Factory class for PowerTransformer. """
 
     def __init__(self):
-        super().__init__(PowerTransformer, can_fit=True, can_partial_fit=False)
+        super().__init__(PowerTransformer, TransformerType.POWER_TRANSFORMER, can_fit=True, can_partial_fit=False)
 
     def create_transformer(self) -> PowerTransformer:
         return PowerTransformer()
@@ -485,7 +469,7 @@ class QuantileTransformerFactory(TransformerFactory):
     """Factory class for QuantileTransformer. """
 
     def __init__(self):
-        super().__init__(QuantileTransformer, can_fit=True, can_partial_fit=False)
+        super().__init__(QuantileTransformer, TransformerType.QUANTILE_TRANSFORMER, can_fit=True, can_partial_fit=False)
 
     def create_transformer(self) -> QuantileTransformer:
         return QuantileTransformer()
@@ -495,7 +479,7 @@ class RobustScalerFactory(TransformerFactory):
     """Factory class for RobustScaler. """
 
     def __init__(self):
-        super().__init__(RobustScaler, can_fit=True, can_partial_fit=False)
+        super().__init__(RobustScaler, TransformerType.ROBUST_SCALER, can_fit=True, can_partial_fit=False)
 
     def create_transformer(self) -> RobustScaler:
         return RobustScaler()
@@ -505,7 +489,7 @@ class NoTransformerFactory(TransformerFactory):
     """Factory class for NoTransformer. """
 
     def __init__(self):
-        super().__init__(NoTransformer, can_fit=True, can_partial_fit=True, is_empty_factory=True)
+        super().__init__(NoTransformer, TransformerType.NO_TRANSFORMER, can_fit=True, can_partial_fit=True, is_empty_factory=True)
 
     def create_transformer(self) -> NoTransformer:
         return NoTransformer()
@@ -515,12 +499,10 @@ class CustomTransformerFactory(TransformerFactory):
     """Factory class for custom transformer. """
 
     def __init__(self, transform_with: type):
-        super().__init__(transform_with, can_fit=None, can_partial_fit=None, creates_built_in=False)
+        super().__init__(transform_with, None, can_fit=None, can_partial_fit=None, creates_built_in=False)
 
         if self.can_be_used(transform_with):
-            if not hasattr(transform_with, "IDENTIFIER") or transform_with.IDENTIFIER is None:
-                transform_with.IDENTIFIER = f"{transform_with.__name__} (Custom)"
-
+            self.name = f"{transform_with.__name__} (Custom)"
             self.can_fit = input_has_fit_method(transform_with)
             self.can_partial_fit = input_has_partial_fit_method(transform_with)
 
