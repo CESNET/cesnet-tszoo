@@ -55,7 +55,7 @@ class CesnetDataset(ABC):
 
     **Intended usage:**
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`DatasetConfig`][cesnet_tszoo.configs.base_config.DatasetConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_numpy] to get training data for chosen model.
