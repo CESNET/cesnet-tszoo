@@ -414,10 +414,6 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             self.logger.debug("All set updated: %s time series selected.", len(all_ts_ids_to_take))
 
-        self.dataset_config.used_ts_ids = self.dataset_config.all_ts
-        self.dataset_config.used_ts_row_ranges = self.dataset_config.all_ts_row_ranges
-        self.dataset_config.used_times = self.time_indices
-
         self.logger.info("Dataset initialization complete. Configuration updated.")
 
     def _update_export_config_copy(self) -> None:

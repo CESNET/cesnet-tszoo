@@ -49,6 +49,7 @@ class ConfigUpdater:
             self.__filler_refactoring()
             self.__anomaly_handler_refactoring()
             self.__transformer_refactoring()
+            self.__remove_unnecessary_attributes()
 
             self.config_to_update.export_update_needed = True
             self.config_to_update.version = version.VERSION_2_0_1
@@ -90,6 +91,16 @@ class ConfigUpdater:
         delattr(self.config_to_update, "is_transformer_custom")
         delattr(self.config_to_update, "transform_with_display")
         delattr(self.config_to_update, "are_transformers_premade")
+
+    def __remove_unnecessary_attributes(self):
+        self.logger.debug("Removing unnecessary attributes for config refactoring.")
+
+        delattr(self.config_to_update, "used_times")
+        delattr(self.config_to_update, "used_ts_ids")
+        delattr(self.config_to_update, "used_ts_row_ranges")
+
+        if hasattr(self.config_to_update, "allow_ts_id_overlap"):
+            delattr(self.config_to_update, "allow_ts_id_overlap")
 
     def __default_version_update(self, update_version: str):
         if Version(self.config_to_update.version) < Version(update_version):

@@ -387,10 +387,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
         if self.dataset_config.has_all():
             self.dataset_config.all_fillers = self.dataset_config.all_fillers[ts_ids_to_take]
 
-        self.dataset_config.used_ts_row_ranges = self.dataset_config.ts_row_ranges
-        self.dataset_config.used_ts_ids = self.dataset_config.ts_ids
-        self.dataset_config.used_times = self.dataset_config.all_time_period
-
         self.logger.debug("ts_ids updated: %s time series left.", len(ts_ids_to_take))
 
     def _update_export_config_copy(self) -> None:

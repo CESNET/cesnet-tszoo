@@ -430,8 +430,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         Goes through data to validate time series against `nan_threshold`, fit/partial fit `transformers`, fit `anomaly handlers` and prepare `fillers`.
         """
 
-        all_ts_ids_to_take = np.array([])
-
         if self.dataset_config.has_train():
             can_fit_transformers = not self.dataset_config.transformer_factory.has_already_initialized or self.dataset_config.partial_fit_initialized_transformers
             updated_ts_row_ranges, updated_ts_ids, updated_fillers, updated_anomaly_handlers = self.__initialize_transformers_and_details_for_set(self.dataset_config.train_ts, self.dataset_config.train_ts_row_ranges, self.dataset_config.train_time_period,
@@ -440,8 +438,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.dataset_config.train_ts_row_ranges = updated_ts_row_ranges
             self.dataset_config.train_fillers = updated_fillers
             self.dataset_config.anomaly_handlers = updated_anomaly_handlers
-
-            all_ts_ids_to_take = np.concatenate([all_ts_ids_to_take, updated_ts_ids]).astype(np.int32)
 
             self.logger.debug("Train set updated: %s time series left.", len(updated_ts_ids))
 
@@ -452,8 +448,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.dataset_config.val_ts_row_ranges = updated_ts_row_ranges
             self.dataset_config.val_fillers = updated_fillers
 
-            all_ts_ids_to_take = np.concatenate([all_ts_ids_to_take, updated_ts_ids]).astype(np.int32)
-
             self.logger.debug("Val set updated: %s time series left.", len(updated_ts_ids))
 
         if self.dataset_config.has_test():
@@ -463,18 +457,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.dataset_config.test_ts_row_ranges = updated_ts_row_ranges
             self.dataset_config.test_fillers = updated_fillers
 
-            all_ts_ids_to_take = np.concatenate([all_ts_ids_to_take, updated_ts_ids]).astype(np.int32)
-
             self.logger.debug("Test set updated: %s time series left.", len(updated_ts_ids))
-
-        _, idx = np.unique(all_ts_ids_to_take, True, False, False)
-        idx = np.sort(idx)
-        all_ts_ids_to_take = all_ts_ids_to_take[idx]
-        mask = np.isin(self.dataset_config.all_ts, all_ts_ids_to_take)
-
-        self.dataset_config.used_ts_row_ranges = self.dataset_config.all_ts_row_ranges[mask]
-        self.dataset_config.used_ts_ids = self.dataset_config.all_ts[mask]
-        self.dataset_config.used_times = self.dataset_config.all_time_period
 
     def _update_export_config_copy(self) -> None:
         """

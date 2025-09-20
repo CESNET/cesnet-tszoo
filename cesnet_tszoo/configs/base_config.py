@@ -37,9 +37,6 @@ class DatasetConfig(ABC):
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
-        used_times: List of all times used in the configuration.
-        used_ts_ids: List of all time series IDs used in the configuration.
-        used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
@@ -121,9 +118,6 @@ class DatasetConfig(ABC):
         self.features_to_take_without_ids = None
         self.indices_of_features_to_take_no_ids = None
         self.ts_id_name = None
-        self.used_times = None
-        self.used_ts_ids = None
-        self.used_ts_row_ranges = None
         self.used_singular_train_time_series = None
         self.used_singular_val_time_series = None
         self.used_singular_test_time_series = None
