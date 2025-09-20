@@ -6,8 +6,8 @@ from numbers import Number
 import numpy as np
 import numpy.typing as npt
 
-from cesnet_tszoo.utils.transformer import get_transformer_factory, Transformer
-from cesnet_tszoo.utils.anomaly_handler import get_anomaly_handler_factory
+from cesnet_tszoo.utils.transformer import Transformer
+import cesnet_tszoo.utils.factories as factory
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
@@ -297,7 +297,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                 self.logger.debug("Using list of initialized transformers of %s", self.transformer_factory.name)
         else:
             if not self.has_train() and not self.transformer_factory.is_empty_factory:
-                self.transformer_factory = get_transformer_factory(None, self.create_transformer_per_time_series, self.partial_fit_initialized_transformers)
+                self.transformer_factory = factory.get_transformer_factory(None, self.create_transformer_per_time_series, self.partial_fit_initialized_transformers)
                 self.logger.warning("No transformer will be used because train set is not used.")
 
             if self.create_transformer_per_time_series:
@@ -336,7 +336,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         """Creates anomaly handlers with `anomaly_handler_factory`. """
 
         if not self.has_train() and not self.anomaly_handler_factory.is_empty_factory:
-            self.anomaly_handler_factory = get_anomaly_handler_factory(None)
+            self.anomaly_handler_factory = factory.get_anomaly_handler_factory(None)
             self.logger.warning("No anomaly handler will be used because train set is not used.")
 
         if self.has_train():

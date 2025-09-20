@@ -18,8 +18,7 @@ import torch
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
-from cesnet_tszoo.utils.filler import get_filler_factory
-from cesnet_tszoo.utils.anomaly_handler import get_anomaly_handler_factory
+import cesnet_tszoo.utils.factories as factory
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
 from cesnet_tszoo.datasets.loaders import collate_fn_simple
@@ -29,7 +28,7 @@ from cesnet_tszoo.pytables_data.utils.utils import get_time_indices, get_table_t
 from cesnet_tszoo.datasets.loaders import create_multiple_df_from_dataloader, create_single_df_from_dataloader, create_numpy_from_dataloader
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
-from cesnet_tszoo.utils.transformer import get_transformer_factory, Transformer
+from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
@@ -1044,9 +1043,9 @@ class CesnetDataset(ABC):
                 self._export_config_copy.val_batch_size = val_batch_size
                 self._export_config_copy.test_batch_size = test_batch_size
                 self._export_config_copy.all_batch_size = all_batch_size
-                self._export_config_copy.filler_factory = get_filler_factory(fill_missing_with)
-                self._export_config_copy.transformer_factory = get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
-                self._export_config_copy.anomaly_handler_factory = get_anomaly_handler_factory(handle_anomalies_with)
+                self._export_config_copy.filler_factory = factory.get_filler_factory(fill_missing_with)
+                self._export_config_copy.transformer_factory = factory.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
+                self._export_config_copy.anomaly_handler_factory = factory.get_anomaly_handler_factory(handle_anomalies_with)
                 self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
                 self._export_config_copy.create_transformer_per_time_series = create_transformer_per_time_series
                 self._export_config_copy.train_workers = train_workers
