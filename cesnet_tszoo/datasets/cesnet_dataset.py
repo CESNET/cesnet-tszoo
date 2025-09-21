@@ -18,7 +18,7 @@ import torch
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
-import cesnet_tszoo.utils.filler.filler_factory as filler_factories
+import cesnet_tszoo.utils.filler.factory as filler_factories
 import cesnet_tszoo.utils.transformer.transformer_factory as transformer_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.configs.base_config import DatasetConfig

@@ -12,7 +12,7 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
 from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.transformer import Transformer
 import cesnet_tszoo.utils.transformer.transformer_factory as transformer_factories
-import cesnet_tszoo.utils.filler.filler_factory as filler_factories
+import cesnet_tszoo.utils.filler.factory as filler_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 
 
