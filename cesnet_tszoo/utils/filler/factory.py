@@ -16,6 +16,10 @@ class FillerFactory(ABC):
         if isinstance(filler_type, type):
             self.name = filler_type.__name__
 
+    def post_init(self, filler_type: type):
+        """Called after has constructor passed from outside. """
+        ...
+
     @abstractmethod
     def create_filler(self, features) -> Filler:
         """Creates filler instance. """
@@ -75,17 +79,20 @@ class NoFillerFactory(FillerFactory):
 class CustomFillerFactory(FillerFactory):
     """Factory class for custom fillers. """
 
-    def __init__(self, filler_type: type):
-        super().__init__(filler_type, None, creates_built_in=False)
-
-        if self.can_be_used(filler_type):
-            self.name = f"{self.filler_type.__name__} (Custom)"
+    def __init__(self):
+        super().__init__(None, None, creates_built_in=False)
 
     def create_filler(self, features) -> Filler:
         return self.filler_type(features)
 
     def can_be_used(self, fill_missing_with: type):
         return isinstance(fill_missing_with, type) and inspect.isclass(fill_missing_with) and issubclass(fill_missing_with, Filler)
+
+    def post_init(self, filler_type: type):
+        self.filler_type = filler_type
+
+        if self.can_be_used(filler_type):
+            self.name = f"{self.filler_type.__name__} (Custom)"
 
 # Implemented factories
 
@@ -100,9 +107,11 @@ def get_filler_factory(fill_missing_with: FillerType | str | type | None) -> Fil
     if fill_missing_with is None:
         fill_missing_with = FillerType.NO_FILLER
 
-    filler_factories = [NoFillerFactory(), MeanFillerFactory(), ForwardFillerFactory(), LinearInterpolationFillerFactory(), CustomFillerFactory(fill_missing_with)]
-    for factory in filler_factories:
-        if factory.can_be_used(fill_missing_with):
-            return factory
+    for factory in FillerFactory.__subclasses__():
+        factory_instance = factory()
+        factory_instance.post_init(fill_missing_with)
+
+        if factory_instance.can_be_used(fill_missing_with):
+            return factory_instance
 
     raise TypeError("Passed filler type cannot be used! Either use built-in fillers or pass a custom filler that subclasses from Filler base class.")
