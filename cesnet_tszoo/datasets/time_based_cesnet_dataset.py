@@ -97,6 +97,11 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
     _export_config_copy: Optional[TimeBasedConfig] = field(default=None, init=False)
 
+    def __post_init__(self):
+        super().__post_init__()
+
+        self.logger.info("Dataset is time-based. Use cesnet_tszoo.configs.TimeBasedConfig")
+
     def set_dataset_config_and_initialize(self, dataset_config: TimeBasedConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
         """
         Initialize training set, validation est, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig].

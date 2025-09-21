@@ -2,9 +2,8 @@ import logging
 import os
 from abc import ABC
 
-from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
-from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
-from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
+import cesnet_tszoo.datasets.dataset_factory as dataset_factories
+from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.utils.download import resumable_download
 
@@ -81,7 +80,7 @@ class CesnetDatabase(ABC):
         raise ValueError("To create dataset instance use class method 'get_dataset' instead.")
 
     @classmethod
-    def get_dataset(cls, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
+    def get_dataset(cls, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False) -> CesnetDataset:
         """
         Create new dataset instance.
 
@@ -127,29 +126,14 @@ class CesnetDatabase(ABC):
         if not cls._is_downloaded(dataset_path):
             cls._download(dataset_name, dataset_path)
 
-        if dataset_type == DatasetType.SERIES_BASED:
-            dataset = SeriesBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
-        elif dataset_type == DatasetType.TIME_BASED:
-            dataset = TimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
-        elif dataset_type == DatasetType.DISJOINT_TIME_BASED:
-            dataset = DisjointTimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
-        else:
-            raise NotImplementedError()
+        dataset_factory = dataset_factories.get_dataset_factory(dataset_type)
+        dataset = dataset_factory.create_dataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
 
         if check_errors:
             dataset.check_errors()
 
         if display_details:
             dataset.display_dataset_details()
-
-        if dataset_type == DatasetType.SERIES_BASED:
-            logger.info("Dataset is series-based. Use cesnet_tszoo.configs.SeriesBasedConfig")
-        elif dataset_type == DatasetType.TIME_BASED:
-            logger.info("Dataset is time-based. Use cesnet_tszoo.configs.TimeBasedConfig")
-        elif dataset_type == DatasetType.DISJOINT_TIME_BASED:
-            logger.info("Dataset is disjoint_time_based. Use cesnet_tszoo.configs.DisjointTimeBasedConfig")
-        else:
-            raise NotImplementedError()
 
         return dataset
 
