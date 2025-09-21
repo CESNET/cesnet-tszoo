@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import inspect
 
 from cesnet_tszoo.utils.enums import FillerType
-from cesnet_tszoo.utils.filler import Filler, MeanFiller, ForwardFiller, LinearInterpolationFiller, NoFiller
+from cesnet_tszoo.utils.filler.filler import Filler, MeanFiller, ForwardFiller, LinearInterpolationFiller, NoFiller
 
 
 class FillerFactory(ABC):
@@ -29,6 +29,8 @@ class FillerFactory(ABC):
 
         return self.filler_type == fill_missing_with
 
+
+# Implemented factories
 
 class MeanFillerFactory(FillerFactory):
     """Factory class for MeanFiller. """
@@ -84,6 +86,8 @@ class CustomFillerFactory(FillerFactory):
 
     def can_be_used(self, fill_missing_with: type):
         return isinstance(fill_missing_with, type) and inspect.isclass(fill_missing_with) and issubclass(fill_missing_with, Filler)
+
+# Implemented factories
 
 
 def get_filler_factory(fill_missing_with: FillerType | str | type | None) -> FillerFactory:

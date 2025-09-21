@@ -11,7 +11,7 @@ import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
 from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.transformer import Transformer
-import cesnet_tszoo.utils.factories as factory
+import cesnet_tszoo.utils.filler.filler_factory as filler_factories
 
 
 class DatasetConfig(ABC):
@@ -154,7 +154,7 @@ class DatasetConfig(ABC):
         self.random_state = random_state
 
         # new
-        self.filler_factory = factory.get_filler_factory(fill_missing_with)
+        self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
         self.anomaly_handler_factory = factory.get_anomaly_handler_factory(handle_anomalies_with)
         self.transformer_factory = factory.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
         # new

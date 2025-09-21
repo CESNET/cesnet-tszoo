@@ -40,8 +40,6 @@ class Filler(ABC):
                 self.last_values = np.copy(batch_values[-1])
     """
 
-    IDENTIFIER = None
-
     def __init__(self, features):
         super().__init__()
 

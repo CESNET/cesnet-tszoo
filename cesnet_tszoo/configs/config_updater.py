@@ -4,7 +4,7 @@ from copy import deepcopy
 from packaging.version import Version
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
-import cesnet_tszoo.utils.factories as factory
+import cesnet_tszoo.utils.filler.filler_factory as filler_factories
 from cesnet_tszoo.utils.enums import DatasetType, TransformerType, ScalerType
 import cesnet_tszoo.version as version
 
@@ -65,7 +65,7 @@ class ConfigUpdater:
     def __filler_refactoring(self):
         self.logger.debug("Updating attributes for filler refactoring.")
 
-        self.config_to_update.filler_factory = factory.get_filler_factory(getattr(self.config_to_update, "fill_missing_with"))
+        self.config_to_update.filler_factory = filler_factories.get_filler_factory(getattr(self.config_to_update, "fill_missing_with"))
 
         delattr(self.config_to_update, "fill_missing_with")
         delattr(self.config_to_update, "is_filler_custom")

@@ -18,7 +18,7 @@ import torch
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
-import cesnet_tszoo.utils.factories as factory
+import cesnet_tszoo.utils.filler.filler_factory as filler_factories
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
@@ -1043,7 +1043,7 @@ class CesnetDataset(ABC):
                 self._export_config_copy.val_batch_size = val_batch_size
                 self._export_config_copy.test_batch_size = test_batch_size
                 self._export_config_copy.all_batch_size = all_batch_size
-                self._export_config_copy.filler_factory = factory.get_filler_factory(fill_missing_with)
+                self._export_config_copy.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
                 self._export_config_copy.transformer_factory = factory.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
                 self._export_config_copy.anomaly_handler_factory = factory.get_anomaly_handler_factory(handle_anomalies_with)
                 self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
