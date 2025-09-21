@@ -6,6 +6,7 @@ import cesnet_tszoo.datasets.dataset_factory as dataset_factories
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.utils.download import resumable_download
+from cesnet_tszoo.dataclasses.dataset_metadata import DatasetMetadata
 
 
 class CesnetDatabase(ABC):
@@ -126,8 +127,10 @@ class CesnetDatabase(ABC):
         if not cls._is_downloaded(dataset_path):
             cls._download(dataset_name, dataset_path)
 
+        dataset_metadata = DatasetMetadata(cls.name, dataset_type, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
+
         dataset_factory = dataset_factories.get_dataset_factory(dataset_type)
-        dataset = dataset_factory.create_dataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
+        dataset = dataset_factory.create_dataset(dataset_metadata)
 
         if check_errors:
             dataset.check_errors()

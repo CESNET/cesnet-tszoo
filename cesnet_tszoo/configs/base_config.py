@@ -11,6 +11,7 @@ import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
 from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.dataclasses.dataset_metadata import DatasetMetadata
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
 import cesnet_tszoo.utils.filler.factory as filler_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
@@ -265,33 +266,25 @@ class DatasetConfig(ABC):
         """Returns whether all set is used. """
         ...
 
-    def _get_table_data_path(self) -> str:
-        """Returns the path to the data table corresponding to the `source_type` and `aggregation`."""
-        return f"/{self.source_type.value}/{AgreggationType._to_str_with_agg(self.aggregation)}"
-
-    def _get_table_identifiers_row_ranges_path(self) -> str:
-        """Returns the path to the identifiers' row ranges table corresponding to the `source_type` and `aggregation`. """
-        return f"/{self.source_type.value}/id_ranges_{AgreggationType._to_str_with_agg(self.aggregation)}"
-
-    def _dataset_init(self, all_real_ts_ids: np.ndarray, all_time_ids: np.ndarray, all_ts_row_ranges: np.ndarray, all_dataset_features: dict[str, np.dtype], default_values: dict[str, Number], ts_id_name: str) -> None:
+    def _dataset_init(self, dataset_metadata: DatasetMetadata) -> None:
         """Performs deeper parameter validation and updates values based on data from the dataset. """
 
-        self.ts_id_name = ts_id_name
+        self.ts_id_name = dataset_metadata.ts_id_name
 
         # Set the features to take
-        self._set_features_to_take(all_dataset_features)
+        self._set_features_to_take(dataset_metadata.features)
         self.logger.debug("Features to take have been successfully set.")
 
         # Set time series IDs
-        self._set_ts(all_real_ts_ids, all_ts_row_ranges)
+        self._set_ts(dataset_metadata.ts_indices, dataset_metadata.ts_row_ranges)
         self.logger.debug("Time series IDs have been successfully set.")
 
         # Set the time periods
-        self._set_time_period(all_time_ids)
+        self._set_time_period(dataset_metadata.time_indices)
         self.logger.debug("Time period have been successfully set.")
 
         # Set default values
-        self._set_default_values(default_values)
+        self._set_default_values(dataset_metadata.default_values)
         self.logger.debug("Default values have been successfully set.")
 
         # Set feature transformers

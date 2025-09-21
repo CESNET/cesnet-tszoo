@@ -5,6 +5,7 @@ from cesnet_tszoo.utils.enums import DatasetType, SourceType, AgreggationType
 from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
+from cesnet_tszoo.dataclasses.dataset_metadata import DatasetMetadata
 
 
 class DatasetFactory(ABC):
@@ -14,8 +15,7 @@ class DatasetFactory(ABC):
         self.dataset_type = dataset_type
 
     @abstractmethod
-    def create_dataset(self, database_name: str, dataset_path: str, configs_root: str, benchmarks_root: str, annotations_root: str,
-                       source_type: SourceType, aggregation: AgreggationType, ts_id_name: str, default_values: dict, additional_data: dict[str, tuple]) -> CesnetDataset:
+    def create_dataset(self, metadata: DatasetMetadata) -> CesnetDataset:
         """Creates dataset based on dataset type. """
         ...
 
@@ -32,10 +32,9 @@ class TimeBasedDatasetFactory(DatasetFactory):
     def __init__(self):
         super().__init__(DatasetType.TIME_BASED)
 
-    def create_dataset(self, database_name: str, dataset_path: str, configs_root: str, benchmarks_root: str, annotations_root: str,
-                       source_type: SourceType, aggregation: AgreggationType, ts_id_name: str, default_values: dict, additional_data: dict[str, tuple]) -> TimeBasedCesnetDataset:
+    def create_dataset(self, metadata: DatasetMetadata) -> TimeBasedCesnetDataset:
 
-        return TimeBasedCesnetDataset(database_name, dataset_path, configs_root, benchmarks_root, annotations_root, source_type, aggregation, ts_id_name, default_values, additional_data)
+        return TimeBasedCesnetDataset(metadata)
 
 
 class DisjointTimeBasedDatasetFactory(DatasetFactory):
@@ -44,10 +43,9 @@ class DisjointTimeBasedDatasetFactory(DatasetFactory):
     def __init__(self):
         super().__init__(DatasetType.DISJOINT_TIME_BASED)
 
-    def create_dataset(self, database_name: str, dataset_path: str, configs_root: str, benchmarks_root: str, annotations_root: str,
-                       source_type: SourceType, aggregation: AgreggationType, ts_id_name: str, default_values: dict, additional_data: dict[str, tuple]) -> DisjointTimeBasedCesnetDataset:
+    def create_dataset(self, metadata: DatasetMetadata) -> DisjointTimeBasedCesnetDataset:
 
-        return DisjointTimeBasedCesnetDataset(database_name, dataset_path, configs_root, benchmarks_root, annotations_root, source_type, aggregation, ts_id_name, default_values, additional_data)
+        return DisjointTimeBasedCesnetDataset(metadata)
 
 
 class SeriesBasedDatasetFactory(DatasetFactory):
@@ -56,10 +54,9 @@ class SeriesBasedDatasetFactory(DatasetFactory):
     def __init__(self):
         super().__init__(DatasetType.SERIES_BASED)
 
-    def create_dataset(self, database_name: str, dataset_path: str, configs_root: str, benchmarks_root: str, annotations_root: str,
-                       source_type: SourceType, aggregation: AgreggationType, ts_id_name: str, default_values: dict, additional_data: dict[str, tuple]) -> SeriesBasedCesnetDataset:
+    def create_dataset(self, metadata: DatasetMetadata) -> SeriesBasedCesnetDataset:
 
-        return SeriesBasedCesnetDataset(database_name, dataset_path, configs_root, benchmarks_root, annotations_root, source_type, aggregation, ts_id_name, default_values, additional_data)
+        return SeriesBasedCesnetDataset(metadata)
 
 # Implemented factories
 

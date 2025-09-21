@@ -26,16 +26,16 @@ from cesnet_tszoo.annotation import Annotations
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
-from cesnet_tszoo.pytables_data.utils.utils import get_time_indices, get_table_time_indices_path, get_ts_indices, get_table_identifiers_path, get_ts_row_ranges, get_column_types, get_column_names, get_additional_data, load_database
-
+from cesnet_tszoo.pytables_data.utils.utils import get_additional_data, load_database
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
 from cesnet_tszoo.utils.transformer import Transformer
-from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 from cesnet_tszoo.utils.download import resumable_download
 from cesnet_tszoo.configs.config_loading import load_config
+from cesnet_tszoo.dataclasses.dataset_metadata import DatasetMetadata
 
 
 @dataclass
@@ -72,20 +72,10 @@ class CesnetDataset(ABC):
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_numpy].   
 
     Parameters:
-        database_name: Name of the database.
-        dataset_path: Path to the dataset file.     
-        configs_root: Path to the folder where configurations are saved.
-        benchmarks_root: Path to the folder where benchmarks are saved.
-        annotations_root: Path to the folder where annotations are saved.
-        source_type: The source type of the dataset.
-        aggregation: The aggregation type for the selected source type.
-        ts_id_name: Name of the id used for time series.
-        default_values: Default values for each available feature.
-        additional_data: Available small datasets. Can get them by calling [`get_additional_data`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_additional_data] with their name.
+        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
 
     Attributes:
-        time_indices: Available time IDs for the dataset.
-        ts_indices: Available time series IDs for the dataset.
+        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
         annotations: Annotations for the selected dataset.
         logger: Logger for displaying information.  
         imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
@@ -94,7 +84,6 @@ class CesnetDataset(ABC):
 
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize] is called:
     Attributes:
-        dataset_type: Type of this dataset.
         dataset_config: Configuration of the dataset.
         train_dataset: Training set as a `BaseDataset` instance wrapping the PyTables database.
         val_dataset: Validation set as a `BaseDataset` instance wrapping the PyTables database.
@@ -106,18 +95,7 @@ class CesnetDataset(ABC):
         all_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set.
     """
 
-    database_name: str
-    dataset_path: str
-    configs_root: str
-    benchmarks_root: str
-    annotations_root: str
-    source_type: SourceType
-    aggregation: AgreggationType
-    ts_id_name: str
-    default_values: dict
-    additional_data: dict[str, tuple]
-
-    dataset_type: DatasetType | None = field(default=None, init=False)
+    metadata: DatasetMetadata
 
     dataset_config: Optional[DatasetConfig] = field(default=None, init=False)
 
@@ -145,18 +123,6 @@ class CesnetDataset(ABC):
         self.imported_annotations_time_identifier = None
         self.imported_annotations_both_identifier = None
 
-        # Set time and ts indices
-        self.time_indices = get_time_indices(self.dataset_path, get_table_time_indices_path(self.aggregation))
-        self.logger.debug("Time indices have been successfully set.")
-
-        self.ts_indices = get_ts_indices(self.dataset_path, get_table_identifiers_path(self.source_type))
-        self.logger.debug("Time series indices have been successfully set.")
-
-        # Set only needed default values
-        used_features = self.get_feature_names()
-        self.default_values = {feature: self.default_values[feature] for feature in self.default_values if feature in used_features}
-        self.logger.debug("Default values for features set.")
-
     def set_dataset_config_and_initialize(self, dataset_config: DatasetConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
         """
         Initialize training set, validation set, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.base_config.DatasetConfig].
@@ -180,9 +146,9 @@ class CesnetDataset(ABC):
 
         # If the config is not initialized, set a copy of the configuration for export
         if not self.dataset_config.is_initialized:
-            self.dataset_config.aggregation = self.aggregation
-            self.dataset_config.source_type = self.source_type
-            self.dataset_config.database_name = self.database_name
+            self.dataset_config.aggregation = self.metadata.aggregation
+            self.dataset_config.source_type = self.metadata.source_type
+            self.dataset_config.database_name = self.metadata.database_name
             self._export_config_copy = deepcopy(self.dataset_config)
             self.logger.debug("New export_config_copy created.")
 
@@ -192,12 +158,7 @@ class CesnetDataset(ABC):
             workers = self.dataset_config.init_workers
 
         if not self.dataset_config.is_initialized:
-            # Retrieve row ranges and dataset features necessary for final config initialization
-            ts_row_ranges = get_ts_row_ranges(self.dataset_path, self.dataset_config._get_table_identifiers_row_ranges_path())
-            dataset_features = get_column_types(self.dataset_path, self.dataset_config.source_type, self.dataset_config.aggregation)
-            self.logger.debug("Successfully retrieved row ranges and dataset features for config finalization.")
-
-            self.dataset_config._dataset_init(self.ts_indices, self.time_indices, ts_row_ranges, dataset_features, self.default_values, self.ts_id_name)
+            self.dataset_config._dataset_init(self.metadata)
             self._initialize_transformers_and_details(workers)
             self.dataset_config.is_initialized = True
             self.logger.info("Config initialized successfully.")
@@ -1063,7 +1024,7 @@ class CesnetDataset(ABC):
                 self.dataset_config._update_workers(train_workers, val_workers, test_workers, all_workers, init_workers)
 
                 if isinstance(self.dataset_config, TimeBasedHandler):
-                    self.dataset_config._update_sliding_window(sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, self.time_indices)
+                    self.dataset_config._update_sliding_window(sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, self.metadata.time_indices)
 
                 if self.train_dataloader is not None:
                     del self.train_dataloader
@@ -1264,15 +1225,15 @@ class CesnetDataset(ABC):
         to_display = f'''
 Dataset details:
 
-    {self.aggregation}
-        Time indices: {range(self.time_indices[ID_TIME_COLUMN_NAME][0], self.time_indices[ID_TIME_COLUMN_NAME][-1])}
-        Datetime: {(datetime.fromtimestamp(self.time_indices['time'][0], tz=timezone.utc), datetime.fromtimestamp(self.time_indices['time'][-1], timezone.utc))}
+    {self.metadata.aggregation}
+        Time indices: {range(self.metadata.time_indices[ID_TIME_COLUMN_NAME][0], self.metadata.time_indices[ID_TIME_COLUMN_NAME][-1])}
+        Datetime: {(datetime.fromtimestamp(self.metadata.time_indices['time'][0], tz=timezone.utc), datetime.fromtimestamp(self.metadata.time_indices['time'][-1], timezone.utc))}
 
-    {self.source_type}
-        Time series indices: {get_abbreviated_list_string(self.ts_indices[self.ts_id_name])}; use 'get_available_ts_indices' for full list
-        Features with default values: {self.default_values}
+    {self.metadata.source_type}
+        Time series indices: {get_abbreviated_list_string(self.metadata.ts_indices[self.metadata.ts_id_name])}; use 'get_available_ts_indices' for full list
+        Features with default values: {self.metadata.default_values}
         
-        Additional data: {list(self.additional_data.keys())}
+        Additional data: {list(self.metadata.additional_data.keys())}
         '''
 
         print(to_display)
@@ -1287,7 +1248,7 @@ Dataset details:
     def get_feature_names(self) -> list[str]:
         """Returns a list of all available feature names in the dataset. """
 
-        return get_column_names(self.dataset_path, self.source_type, self.aggregation)
+        return list(self.metadata.features.keys())
 
     @abstractmethod
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test", "all"]) -> dict:
@@ -1302,9 +1263,9 @@ Dataset details:
         """
         ...
 
-    def get_available_ts_indices(self):
+    def get_available_ts_indices(self) -> np.ndarray:
         """Returns the available time series indices in this dataset. """
-        return self.ts_indices
+        return self.metadata.ts_indices
 
     def get_additional_data(self, data_name: str) -> pd.DataFrame:
         """Create a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html) of additional data of `data_name`.
@@ -1316,14 +1277,14 @@ Dataset details:
             Dataframe of additional data of `data_name`.
         """
 
-        if data_name not in self.additional_data:
+        if data_name not in self.metadata.additional_data:
             self.logger.error("%s is not available for this dataset.", data_name)
-            raise ValueError(f"{data_name} is not available for this dataset.", f"Possible options are: {self.additional_data}")
+            raise ValueError(f"{data_name} is not available for this dataset.", f"Possible options are: {self.metadata.additional_data}")
 
-        data = get_additional_data(self.dataset_path, data_name)
+        data = get_additional_data(self.metadata.dataset_path, data_name)
         data_df = pd.DataFrame(data)
 
-        for column, column_type in self.additional_data[data_name]:
+        for column, column_type in self.metadata.additional_data[data_name]:
             if column_type == datetime:
                 data_df[column] = data_df[column].apply(lambda x: datetime.fromtimestamp(x, tz=timezone.utc))
             else:
@@ -1492,7 +1453,7 @@ Dataset details:
         """
         on = AnnotationType(on)
 
-        return self.annotations.get_annotations(on, self.ts_id_name)
+        return self.annotations.get_annotations(on, self.metadata.ts_id_name)
 
     def import_annotations(self, identifier: str, enforce_ids: bool = True) -> None:
         """ 
@@ -1507,7 +1468,7 @@ Dataset details:
             enforce_ids: Flag indicating whether the `ts_id` and `id_time` must belong to this dataset. `Default: True`                
         """
 
-        annotations_file_path, is_built_in = get_annotations_path_and_whether_it_is_built_in(identifier, self.annotations_root, self.logger)
+        annotations_file_path, is_built_in = get_annotations_path_and_whether_it_is_built_in(identifier, self.metadata.annotations_root, self.logger)
 
         if is_built_in:
             self.logger.info("Built-in annotations found: %s.", identifier)
@@ -1530,18 +1491,18 @@ Dataset details:
         on = None
 
         # Check the columns of the DataFrame to identify the type of annotation
-        if self.ts_id_name in temp_df.columns and ID_TIME_COLUMN_NAME in temp_df.columns:
+        if self.metadata.ts_id_name in temp_df.columns and ID_TIME_COLUMN_NAME in temp_df.columns:
             self.annotations.clear_time_in_time_series()
             time_id_index = temp_df.columns.tolist().index(ID_TIME_COLUMN_NAME)
-            ts_id_index = temp_df.columns.tolist().index(self.ts_id_name)
+            ts_id_index = temp_df.columns.tolist().index(self.metadata.ts_id_name)
             on = AnnotationType.BOTH
-            self.logger.info("Annotations detected as %s (both %s and id_time)", AnnotationType.BOTH, self.ts_id_name)
+            self.logger.info("Annotations detected as %s (both %s and id_time)", AnnotationType.BOTH, self.metadata.ts_id_name)
 
-        elif self.ts_id_name in temp_df.columns:
+        elif self.metadata.ts_id_name in temp_df.columns:
             self.annotations.clear_time_series()
-            ts_id_index = temp_df.columns.tolist().index(self.ts_id_name)
+            ts_id_index = temp_df.columns.tolist().index(self.metadata.ts_id_name)
             on = AnnotationType.TS_ID
-            self.logger.info("Annotations detected as %s (%s only)", AnnotationType.TS_ID, self.ts_id_name)
+            self.logger.info("Annotations detected as %s (%s only)", AnnotationType.TS_ID, self.metadata.ts_id_name)
 
         elif ID_TIME_COLUMN_NAME in temp_df.columns:
             self.annotations.clear_time()
@@ -1550,7 +1511,7 @@ Dataset details:
             self.logger.info("Annotations detected as %s (%s only)", AnnotationType.ID_TIME, ID_TIME_COLUMN_NAME)
 
         else:
-            raise ValueError(f"Could not find {self.ts_id_name} and {ID_TIME_COLUMN_NAME} in the imported CSV.")
+            raise ValueError(f"Could not find {self.metadata.ts_id_name} and {ID_TIME_COLUMN_NAME} in the imported CSV.")
 
         # Process each row in the DataFrame and add annotations
         for row in temp_df.itertuples(False):
@@ -1594,7 +1555,7 @@ Dataset details:
         """
 
         # Load config
-        config = load_config(identifier, self.configs_root, self.database_name, self.source_type, self.aggregation, self.logger)
+        config = load_config(identifier, self.metadata.configs_root, self.metadata.database_name, self.metadata.source_type, self.metadata.aggregation, self.logger)
 
         self.logger.info("Initializing dataset configuration with the imported config.")
         self.set_dataset_config_and_initialize(config, display_config_details, workers)
@@ -1624,11 +1585,11 @@ Dataset details:
         temp_df = self.get_annotations(on)
 
         # Ensure the annotations root directory exists, creating it if necessary
-        if not os.path.exists(self.annotations_root):
-            os.makedirs(self.annotations_root)
-            self.logger.info("Created annotations directory at %s", self.annotations_root)
+        if not os.path.exists(self.metadata.annotations_root):
+            os.makedirs(self.metadata.annotations_root)
+            self.logger.info("Created annotations directory at %s", self.metadata.annotations_root)
 
-        path = os.path.join(self.annotations_root, f"{identifier}.csv")
+        path = os.path.join(self.metadata.annotations_root, f"{identifier}.csv")
 
         if os.path.exists(path) and not force_write:
             raise ValueError(f"Annotations already exist at {path}. Set force_write=True to overwrite.")
@@ -1662,12 +1623,12 @@ Dataset details:
             raise ValueError("Built-in config with this identifier already exists. Choose another identifier.")
 
         # Ensure the config directory exists
-        if not os.path.exists(self.configs_root):
-            os.makedirs(self.configs_root)
-            self.logger.info("Created config directory at %s", self.configs_root)
+        if not os.path.exists(self.metadata.configs_root):
+            os.makedirs(self.metadata.configs_root)
+            self.logger.info("Created config directory at %s", self.metadata.configs_root)
 
-        path_pickle = os.path.join(self.configs_root, f"{identifier}.pickle")
-        path_details = os.path.join(self.configs_root, f"{identifier}.txt")
+        path_pickle = os.path.join(self.metadata.configs_root, f"{identifier}.pickle")
+        path_details = os.path.join(self.metadata.configs_root, f"{identifier}.txt")
 
         if os.path.exists(path_pickle) and not force_write:
             raise ValueError(f"Config at path {path_pickle} already exists. Set force_write=True to overwrite.")
@@ -1742,10 +1703,10 @@ Dataset details:
         # Use the imported identifier if available and update is not necessary, otherwise default to the current identifier
         config_name = self.dataset_config.import_identifier if (self.dataset_config.import_identifier is not None and not self.dataset_config.export_update_needed) else identifier
 
-        export_benchmark = ExportBenchmark(self.database_name,
-                                           self.source_type.value,
-                                           self.aggregation.value,
-                                           self.dataset_type.value,
+        export_benchmark = ExportBenchmark(self.metadata.database_name,
+                                           self.metadata.source_type.value,
+                                           self.metadata.aggregation.value,
+                                           self.metadata.dataset_type.value,
                                            config_name,
                                            annotations_ts_name,
                                            annotations_time_name,
@@ -1777,11 +1738,11 @@ Dataset details:
             self.logger.info("Using already existing annotations with identifier: %s; type: %s", self.imported_annotations_both_identifier, AnnotationType.BOTH)
 
         # Ensure the benchmark directory exists
-        if not os.path.exists(self.benchmarks_root):
-            os.makedirs(self.benchmarks_root)
-            self.logger.info("Created benchmarks directory at %s", self.benchmarks_root)
+        if not os.path.exists(self.metadata.benchmarks_root):
+            os.makedirs(self.metadata.benchmarks_root)
+            self.logger.info("Created benchmarks directory at %s", self.metadata.benchmarks_root)
 
-        benchmark_path = os.path.join(self.benchmarks_root, f"{identifier}.yaml")
+        benchmark_path = os.path.join(self.metadata.benchmarks_root, f"{identifier}.yaml")
 
         if os.path.exists(benchmark_path) and not force_write:
             self.logger.error("Benchmark file already exists at %s", benchmark_path)
@@ -1805,7 +1766,7 @@ Dataset details:
         Raises an exception if corrupted.
         """
 
-        dataset, _ = load_database(self.dataset_path)
+        dataset, _ = load_database(self.metadata.dataset_path)
 
         try:
             node_iter = dataset.walk_nodes()
@@ -1882,19 +1843,19 @@ Dataset details:
 
         # Handle when id_time is provided
         if id_time is not None:
-            time_indices = self.time_indices
+            time_indices = self.metadata.time_indices
             if id_time < time_indices[ID_TIME_COLUMN_NAME][0] or id_time > time_indices[ID_TIME_COLUMN_NAME][-1]:
                 valid_range = range(time_indices[ID_TIME_COLUMN_NAME][0], time_indices[ID_TIME_COLUMN_NAME][-1])
-                raise ValueError(f"id_time {id_time} does not fall within the valid range for {self.aggregation}. "
+                raise ValueError(f"id_time {id_time} does not fall within the valid range for {self.metadata.aggregation}. "
                                  f"Valid id_time range: {valid_range}.")
 
         # Handle when ts_id is provided
         if ts_id is not None:
-            ts_indices = self.ts_indices[self.ts_id_name]
+            ts_indices = self.metadata.ts_indices[self.metadata.ts_id_name]
 
             if ts_id not in ts_indices:
-                valid_ts_range = self.ts_indices[self.ts_id_name]
-                raise ValueError(f"ts_id {ts_id} does not exist in the available range for {self.source_type}. "
+                valid_ts_range = self.metadata.ts_indices[self.metadata.ts_id_name]
+                raise ValueError(f"ts_id {ts_id} does not exist in the available range for {self.metadata.source_type}. "
                                  f"Valid ts_id values: {valid_ts_range}.")
 
     def _get_time_based_dataloader(self, dataset: SplittedDataset, workers: int, take_all: bool, batch_size: int) -> DataLoader:
@@ -2106,18 +2067,18 @@ Dataset details:
     def _validate_config_for_dataset(self, config: DatasetConfig) -> bool:
         """Validates whether config is supposed to be used for this dataset. """
 
-        if config.database_name != self.database_name:
+        if config.database_name != self.metadata.database_name:
             self.logger.error("This config is not compatible with the current dataset. Difference in database name between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.database_name == {config.database_name} and dataset.database_name == {self.database_name}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.database_name == {config.database_name} and dataset.database_name == {self.metadata.database_name}")
 
-        if config.dataset_type != self.dataset_type:
+        if config.dataset_type != self.metadata.dataset_type:
             self.logger.error("This config is not compatible with the current dataset. Difference in is_series_based between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.dataset_type == {config.dataset_type} and dataset.dataset_type == {self.dataset_type}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.dataset_type == {config.dataset_type} and dataset.dataset_type == {self.metadata.dataset_type}")
 
-        if config.aggregation != self.aggregation:
+        if config.aggregation != self.metadata.aggregation:
             self.logger.error("This config is not compatible with the current dataset. Difference in aggregation type between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.aggregation == {config.aggregation} and dataset.aggregation == {self.aggregation}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.aggregation == {config.aggregation} and dataset.aggregation == {self.metadata.aggregation}")
 
-        if config.source_type != self.source_type:
+        if config.source_type != self.metadata.source_type:
             self.logger.error("This config is not compatible with the current dataset. Difference in source type between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.source_type == {config.source_type} and dataset.source_type == {self.source_type}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.source_type == {config.source_type} and dataset.source_type == {self.metadata.source_type}")

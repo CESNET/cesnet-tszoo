@@ -54,20 +54,10 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_numpy].  
 
     Parameters:
-        database_name: Name of the database.
-        dataset_path: Path to the dataset file.     
-        configs_root: Path to the folder where configurations are saved.
-        benchmarks_root: Path to the folder where benchmarks are saved.
-        annotations_root: Path to the folder where annotations are saved.
-        source_type: The source type of the dataset.
-        aggregation: The aggregation type for the selected source type.
-        ts_id_name: Name of the id used for time series.
-        default_values: Default values for each available feature.
-        additional_data: Available small datasets. Can get them by calling [`get_additional_data`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_additional_data] with their name.
+        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
 
     Attributes:
-        time_indices: Available time IDs for the dataset.
-        ts_indices: Available time series IDs for the dataset.
+        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
         annotations: Annotations for the selected dataset.
         logger: Logger for displaying information.  
         imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
@@ -77,7 +67,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize] is called.
 
     Attributes:
-        dataset_type: Type of this dataset.
         dataset_config: Configuration of the dataset.
         train_dataset: Training set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
         val_dataset: Validation set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
@@ -125,7 +114,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         """
 
         assert dataset_config is not None, "Used dataset_config cannot be None."
-        assert isinstance(dataset_config, DisjointTimeBasedConfig), f"This config is used for dataset of type '{dataset_config.dataset_type}'. Meanwhile this dataset is of type '{self.dataset_type}'."
+        assert isinstance(dataset_config, DisjointTimeBasedConfig), f"This config is used for dataset of type '{dataset_config.dataset_type}'. Meanwhile this dataset is of type '{self.metadata.dataset_type}'."
 
         super(DisjointTimeBasedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
 
@@ -270,13 +259,13 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         else:
             raise ValueError("Specified about parameter is not supported.")
 
-        datetime_temp = np.array([datetime.fromtimestamp(time, timezone.utc) for time in self.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]]])
+        datetime_temp = np.array([datetime.fromtimestamp(time, timezone.utc) for time in self.metadata.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]]])
 
         result["ts_ids"] = time_series.copy()
         result[TimeFormat.ID_TIME] = time_period[ID_TIME_COLUMN_NAME].copy()
         result[TimeFormat.DATETIME] = datetime_temp.copy()
-        result[TimeFormat.UNIX_TIME] = self.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]].copy()
-        result[TimeFormat.SHIFTED_UNIX_TIME] = self.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]] - self.time_indices[TIME_COLUMN_NAME][0]
+        result[TimeFormat.UNIX_TIME] = self.metadata.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]].copy()
+        result[TimeFormat.SHIFTED_UNIX_TIME] = self.metadata.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]] - self.metadata.time_indices[TIME_COLUMN_NAME][0]
 
         return result
 
@@ -372,8 +361,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
-            self.train_dataset = SplittedDataset(self.dataset_path,
-                                                 self.dataset_config._get_table_data_path(),
+            self.train_dataset = SplittedDataset(self.metadata.dataset_path,
+                                                 self.metadata.data_table_path,
                                                  self.dataset_config.ts_id_name,
                                                  self.dataset_config.train_ts_row_ranges,
                                                  self.dataset_config.train_time_period,
@@ -391,8 +380,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
-            self.val_dataset = SplittedDataset(self.dataset_path,
-                                               self.dataset_config._get_table_data_path(),
+            self.val_dataset = SplittedDataset(self.metadata.dataset_path,
+                                               self.metadata.data_table_path,
                                                self.dataset_config.ts_id_name,
                                                self.dataset_config.val_ts_row_ranges,
                                                self.dataset_config.val_time_period,
@@ -410,8 +399,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
-            self.test_dataset = SplittedDataset(self.dataset_path,
-                                                self.dataset_config._get_table_data_path(),
+            self.test_dataset = SplittedDataset(self.metadata.dataset_path,
+                                                self.metadata.data_table_path,
                                                 self.dataset_config.ts_id_name,
                                                 self.dataset_config.test_ts_row_ranges,
                                                 self.dataset_config.test_time_period,
@@ -470,7 +459,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         Updates values of config used for saving config.
         """
-        self._export_config_copy.database_name = self.database_name
+        self._export_config_copy.database_name = self.metadata.database_name
 
         self._export_config_copy.train_ts = self.dataset_config.train_ts.copy() if self.dataset_config.has_train() else None
         self._export_config_copy.val_ts = self.dataset_config.val_ts.copy() if self.dataset_config.has_val() else None
@@ -486,10 +475,10 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     def _get_singular_time_series_dataset(self, parent_dataset: SplittedDataset, ts_id: int) -> SplittedDataset:
         """Returns dataset for single time series """
 
-        temp = np.where(np.isin(parent_dataset.ts_row_ranges[self.ts_id_name], [ts_id]))[0]
+        temp = np.where(np.isin(parent_dataset.ts_row_ranges[self.metadata.ts_id_name], [ts_id]))[0]
 
         if len(temp) == 0:
-            raise ValueError(f"ts_id {ts_id} was not found in valid time series for this set. Available time series are: {parent_dataset.ts_row_ranges[self.ts_id_name]}")
+            raise ValueError(f"ts_id {ts_id} was not found in valid time series for this set. Available time series are: {parent_dataset.ts_row_ranges[self.metadata.ts_id_name]}")
 
         time_series_position = temp[0]
 
@@ -497,8 +486,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         anomaly_handler = None if parent_dataset.anomaly_handlers is None else parent_dataset.anomaly_handlers[time_series_position:time_series_position + 1]
         transformer = parent_dataset.feature_transformers
 
-        dataset = SplittedDataset(self.dataset_path,
-                                  self.dataset_config._get_table_data_path(),
+        dataset = SplittedDataset(self.metadata.dataset_path,
+                                  self.metadata.data_table_path,
                                   self.dataset_config.ts_id_name,
                                   parent_dataset.ts_row_ranges[time_series_position: time_series_position + 1],
                                   parent_dataset.time_period,
@@ -524,8 +513,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
     def __initialize_transformers_and_details_for_set(self, ts_ids, ts_row_ranges, time_period, fillers, anomaly_handlers, workers, set_name, can_fit_transformer):
         """Initializes transformers and details for provided time series. """
-        init_dataset = DisjointTimeBasedInitializerDataset(self.dataset_path,
-                                                           self.dataset_config._get_table_data_path(),
+        init_dataset = DisjointTimeBasedInitializerDataset(self.metadata.dataset_path,
+                                                           self.metadata.data_table_path,
                                                            self.dataset_config.ts_id_name,
                                                            ts_row_ranges,
                                                            time_period,
