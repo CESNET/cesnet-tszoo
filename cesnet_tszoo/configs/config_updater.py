@@ -6,6 +6,7 @@ from packaging.version import Version
 from cesnet_tszoo.configs.base_config import DatasetConfig
 import cesnet_tszoo.utils.filler.filler_factory as filler_factories
 import cesnet_tszoo.utils.transformer.transformer_factory as transformer_factories
+import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.utils.enums import DatasetType, TransformerType, ScalerType
 import cesnet_tszoo.version as version
 
@@ -76,7 +77,7 @@ class ConfigUpdater:
     def __anomaly_handler_refactoring(self):
         self.logger.debug("Updating attributes for anomaly handler refactoring.")
 
-        self.config_to_update.anomaly_handler_factory = factory.get_anomaly_handler_factory(getattr(self.config_to_update, "handle_anomalies_with"))
+        self.config_to_update.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(getattr(self.config_to_update, "handle_anomalies_with"))
 
         delattr(self.config_to_update, "handle_anomalies_with")
         delattr(self.config_to_update, "is_anomaly_handler_custom")

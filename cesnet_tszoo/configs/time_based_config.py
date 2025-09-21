@@ -8,6 +8,7 @@ import numpy.typing as npt
 
 from cesnet_tszoo.utils.transformer import Transformer
 import cesnet_tszoo.utils.transformer.transformer_factory as transformer_factories
+import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
@@ -333,7 +334,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         """Creates anomaly handlers with `anomaly_handler_factory`. """
 
         if not self.has_train() and not self.anomaly_handler_factory.is_empty_factory:
-            self.anomaly_handler_factory = factory.get_anomaly_handler_factory(None)
+            self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(None)
             self.logger.warning("No anomaly handler will be used because train set is not used.")
 
         if self.has_train():

@@ -13,6 +13,7 @@ from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, Tr
 from cesnet_tszoo.utils.transformer import Transformer
 import cesnet_tszoo.utils.transformer.transformer_factory as transformer_factories
 import cesnet_tszoo.utils.filler.filler_factory as filler_factories
+import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 
 
 class DatasetConfig(ABC):
@@ -156,7 +157,7 @@ class DatasetConfig(ABC):
 
         # new
         self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
-        self.anomaly_handler_factory = factory.get_anomaly_handler_factory(handle_anomalies_with)
+        self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
         self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
         # new
 

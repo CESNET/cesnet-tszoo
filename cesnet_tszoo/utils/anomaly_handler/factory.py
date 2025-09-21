@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import inspect
 
 from cesnet_tszoo.utils.enums import AnomalyHandlerType
-from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler, ZScore, InterquartileRange, NoAnomalyHandler
+from cesnet_tszoo.utils.anomaly_handler.anomaly_handler import AnomalyHandler, ZScore, InterquartileRange, NoAnomalyHandler
 
 
 class AnomalyHandlerFactory(ABC):
@@ -30,6 +30,8 @@ class AnomalyHandlerFactory(ABC):
 
         return self.anomaly_handler_type == handle_anomalies_with
 
+
+# Implemented factories
 
 class ZScoreFactory(AnomalyHandlerFactory):
     """Factory class for ZScore anomaly handler. """
@@ -75,6 +77,8 @@ class CustomAnomalyHandlerFactory(AnomalyHandlerFactory):
 
     def can_be_used(self, handle_anomalies_with: type) -> bool:
         return isinstance(handle_anomalies_with, type) and inspect.isclass(handle_anomalies_with) and issubclass(handle_anomalies_with, AnomalyHandler)
+
+# Implemented factories
 
 
 def get_anomaly_handler_factory(handle_anomalies_with: AnomalyHandlerType | str | type | None) -> AnomalyHandlerFactory:
