@@ -278,38 +278,29 @@ class DatasetConfig(ABC):
 
         self.ts_id_name = dataset_metadata.ts_id_name
 
-        # Set the features to take
         self._set_features_to_take(dataset_metadata.features)
         self.logger.debug("Features to take have been successfully set.")
 
-        # Set time series IDs
         self._set_ts(dataset_metadata.ts_indices, dataset_metadata.ts_row_ranges)
         self.logger.debug("Time series IDs have been successfully set.")
 
-        # Set the time periods
         self._set_time_period(dataset_metadata.time_indices)
         self.logger.debug("Time period have been successfully set.")
 
-        # Set default values
         self._set_default_values(dataset_metadata.default_values)
         self.logger.debug("Default values have been successfully set.")
 
-        # Set feature transformers
         self._set_feature_transformers()
         self.logger.debug("Feature transformers have been successfully set.")
 
-        # Set fillers
         self._set_fillers()
         self.logger.debug("Fillers have been successfully set.")
 
-        # Set anomaly handlers
         self._set_anomaly_handlers()
         self.logger.debug("Anomaly handlers have been successfully set.")
 
-        # Final validation and finalization
         self._validate_finalization()
-
-        self.logger.info("Finalization and validation completed successfully.")
+        self.logger.debug("Finalization and validation completed successfully.")
 
     def _set_features_to_take(self, all_dataset_features: dict[str, np.dtype]) -> None:
         """Validates and filters the input `features_to_take` based on the `dataset`, `source_type`, and `aggregation`. """
