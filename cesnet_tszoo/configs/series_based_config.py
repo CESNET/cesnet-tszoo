@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from cesnet_tszoo.utils.transformer import Transformer
-import cesnet_tszoo.utils.factories as factory
+import cesnet_tszoo.utils.transformer.transformer_factory as transformer_factories
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
@@ -225,7 +225,7 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
             self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.name)
         else:
             if not self.has_train() and not self.transformer_factory.is_empty_factory:
-                self.transformer_factory = factory.get_transformer_factory(None, self.create_transformer_per_time_series, self.partial_fit_initialized_transformers)
+                self.transformer_factory = transformer_factories.get_transformer_factory(None, self.create_transformer_per_time_series, self.partial_fit_initialized_transformers)
                 self.logger.warning("No transformer will be used because train set is not used.")
 
             self.transformers = self.transformer_factory.create_transformer()

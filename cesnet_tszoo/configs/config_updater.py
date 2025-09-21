@@ -5,6 +5,7 @@ from packaging.version import Version
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
 import cesnet_tszoo.utils.filler.filler_factory as filler_factories
+import cesnet_tszoo.utils.transformer.transformer_factory as transformer_factories
 from cesnet_tszoo.utils.enums import DatasetType, TransformerType, ScalerType
 import cesnet_tszoo.version as version
 
@@ -85,7 +86,7 @@ class ConfigUpdater:
     def __transformer_refactoring(self):
         self.logger.debug("Updating attributes for transformer refactoring.")
 
-        self.config_to_update.transformer_factory = factory.get_transformer_factory(getattr(self.config_to_update, "transform_with"), self.config_to_update.create_transformer_per_time_series, self.config_to_update.partial_fit_initialized_transformers)
+        self.config_to_update.transformer_factory = transformer_factories.get_transformer_factory(getattr(self.config_to_update, "transform_with"), self.config_to_update.create_transformer_per_time_series, self.config_to_update.partial_fit_initialized_transformers)
 
         delattr(self.config_to_update, "transform_with")
         delattr(self.config_to_update, "is_transformer_custom")

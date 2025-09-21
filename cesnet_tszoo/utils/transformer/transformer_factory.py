@@ -4,8 +4,8 @@ import inspect
 import numpy as np
 
 from cesnet_tszoo.utils.enums import TransformerType
-from cesnet_tszoo.utils.transformer import Transformer, MinMaxScaler, StandardScaler, L2Normalizer, LogTransformer, MaxAbsScaler, PowerTransformer, QuantileTransformer, RobustScaler, NoTransformer
-from cesnet_tszoo.utils.transformer import transformer_has_fit_method, transformer_has_partial_fit_method, transformer_has_transform, get_transformer_type_or_enum_and_validate, is_transformer_already_initialized
+from cesnet_tszoo.utils.transformer.transformer import Transformer, MinMaxScaler, StandardScaler, L2Normalizer, LogTransformer, MaxAbsScaler, PowerTransformer, QuantileTransformer, RobustScaler, NoTransformer
+from cesnet_tszoo.utils.transformer.transformer import transformer_has_fit_method, transformer_has_partial_fit_method, transformer_has_transform, get_transformer_type_or_enum_and_validate, is_transformer_already_initialized
 
 
 class TransformerFactory(ABC):
