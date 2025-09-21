@@ -25,6 +25,10 @@ class TransformerFactory(ABC):
         if isinstance(transformer_type, type):
             self.name = transformer_type.__name__
 
+    def post_init(self, transformer_type: type):
+        """Called after has constructor passed from outside. """
+        ...
+
     @abstractmethod
     def create_transformer(self) -> Transformer:
         """Creates transformer instance. """
@@ -84,6 +88,8 @@ class TransformerFactory(ABC):
         if not create_transformer_per_time_series:
             assert self.can_partial_fit, "Partial fit must be supported if you want to use one transformer for multiple time series."
 
+
+# Implemented factories
 
 class StandardScalerFactory(TransformerFactory):
     """Factory class for StandardScaler. """
@@ -178,19 +184,24 @@ class NoTransformerFactory(TransformerFactory):
 class CustomTransformerFactory(TransformerFactory):
     """Factory class for custom transformer. """
 
-    def __init__(self, transform_with: type):
-        super().__init__(transform_with, None, can_fit=None, can_partial_fit=None, creates_built_in=False)
-
-        if self.can_be_used(transform_with):
-            self.name = f"{transform_with.__name__} (Custom)"
-            self.can_fit = transformer_has_fit_method(transform_with)
-            self.can_partial_fit = transformer_has_partial_fit_method(transform_with)
+    def __init__(self):
+        super().__init__(None, None, can_fit=None, can_partial_fit=None, creates_built_in=False)
 
     def create_transformer(self) -> Transformer:
         return self.transformer_type()
 
     def can_be_used(self, transform_with: type) -> bool:
         return isinstance(transform_with, type) and inspect.isclass(transform_with)
+
+    def post_init(self, transformer_type: type):
+        self.transformer_type = transformer_type
+
+        if self.can_be_used(transformer_type):
+            self.name = f"{transformer_type.__name__} (Custom)"
+            self.can_fit = transformer_has_fit_method(transformer_type)
+            self.can_partial_fit = transformer_has_partial_fit_method(transformer_type)
+
+# Implemented factories
 
 
 def get_transformer_factory(transform_with: TransformerType | str | type | object | None, create_transformer_per_time_series: bool, partial_fit_initialized_transformers: bool) -> TransformerFactory:
@@ -199,17 +210,17 @@ def get_transformer_factory(transform_with: TransformerType | str | type | objec
     transformer_type = get_transformer_type_or_enum_and_validate(transform_with)
     already_initalized = is_transformer_already_initialized(transform_with)
 
-    transformer_factories = [NoTransformerFactory(), StandardScalerFactory(), L2NormalizerFactory(), LogTransformerFactory(), MaxAbsScalerFactory(),
-                             MinMaxScalerFactory(), PowerTransformerFactory(), QuantileTransformerFactory(), RobustScalerFactory(), CustomTransformerFactory(transformer_type)]
+    for factory in TransformerFactory.__subclasses__():
+        factory_instance = factory()
+        factory_instance.post_init(transformer_type)
 
-    for factory in transformer_factories:
-        if factory.can_be_used(transformer_type):
-            factory.raise_when_not_supported(create_transformer_per_time_series)
+        if factory_instance.can_be_used(transformer_type):
+            factory_instance.raise_when_not_supported(create_transformer_per_time_series)
 
             if already_initalized:
-                factory.set_already_initialized_transformers(transform_with)
-                factory.raise_when_initialized_not_supported(create_transformer_per_time_series, partial_fit_initialized_transformers)
+                factory_instance.set_already_initialized_transformers(transform_with)
+                factory_instance.raise_when_initialized_not_supported(create_transformer_per_time_series, partial_fit_initialized_transformers)
 
-            return factory
+            return factory_instance
 
     raise TypeError("Passed transformer type cannot be used! Either use built-in transformer or pass a custom transformer that subclasses from Transformer base class.")
