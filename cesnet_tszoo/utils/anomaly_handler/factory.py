@@ -17,6 +17,10 @@ class AnomalyHandlerFactory(ABC):
         if isinstance(anomaly_handler_type, type):
             self.name = anomaly_handler_type.__name__
 
+    def post_init(self, anomaly_handler_type: type):
+        """Called after has constructor passed from outside. """
+        ...
+
     @abstractmethod
     def create_anomaly_handler(self) -> AnomalyHandler:
         """Creates anomaly handler instance. """
@@ -66,17 +70,20 @@ class NoAnomalyHandlerFactory(AnomalyHandlerFactory):
 class CustomAnomalyHandlerFactory(AnomalyHandlerFactory):
     """Factory class for custom anomaly handler. """
 
-    def __init__(self, anomaly_handler_type: type):
-        super().__init__(anomaly_handler_type, None, creates_built_in=False)
-
-        if self.can_be_used(anomaly_handler_type):
-            self.name = f"{self.anomaly_handler_type.__name__} (Custom)"
+    def __init__(self):
+        super().__init__(None, None, creates_built_in=False)
 
     def create_anomaly_handler(self) -> AnomalyHandler:
         return self.anomaly_handler_type()
 
     def can_be_used(self, handle_anomalies_with: type) -> bool:
         return isinstance(handle_anomalies_with, type) and inspect.isclass(handle_anomalies_with) and issubclass(handle_anomalies_with, AnomalyHandler)
+
+    def post_init(self, anomaly_handler_type: type):
+        self.anomaly_handler_type = anomaly_handler_type
+
+        if self.can_be_used(anomaly_handler_type):
+            self.name = f"{self.anomaly_handler_type.__name__} (Custom)"
 
 # Implemented factories
 
@@ -91,9 +98,11 @@ def get_anomaly_handler_factory(handle_anomalies_with: AnomalyHandlerType | str 
     if handle_anomalies_with is None:
         handle_anomalies_with = AnomalyHandlerType.NO_ANOMALY_HANDLER
 
-    anomaly_handler_factories = [NoAnomalyHandlerFactory(), ZScoreFactory(), InterquartileRangeFactory(), CustomAnomalyHandlerFactory(handle_anomalies_with)]
-    for factory in anomaly_handler_factories:
-        if factory.can_be_used(handle_anomalies_with):
-            return factory
+    for factory in AnomalyHandlerFactory.__subclasses__():
+        factory_instance = factory()
+        factory_instance.post_init(handle_anomalies_with)
+
+        if factory_instance.can_be_used(handle_anomalies_with):
+            return factory_instance
 
     raise TypeError("Passed anomaly handler type cannot be used! Either use built-in anomaly handlers or pass a custom anomaly handler that subclasses from AnomalyHandler base class.")
