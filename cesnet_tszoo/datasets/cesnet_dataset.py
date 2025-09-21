@@ -146,9 +146,7 @@ class CesnetDataset(ABC):
 
         # If the config is not initialized, set a copy of the configuration for export
         if not self.dataset_config.is_initialized:
-            self.dataset_config.aggregation = self.metadata.aggregation
-            self.dataset_config.source_type = self.metadata.source_type
-            self.dataset_config.database_name = self.metadata.database_name
+            self.dataset_config._update_identifiers_from_dataset_metadata(self.metadata)
             self._export_config_copy = deepcopy(self.dataset_config)
             self.logger.debug("New export_config_copy created.")
 

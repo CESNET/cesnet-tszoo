@@ -266,6 +266,13 @@ class DatasetConfig(ABC):
         """Returns whether all set is used. """
         ...
 
+    def _update_identifiers_from_dataset_metadata(self, dataset_metadata: DatasetMetadata) -> None:
+        """Updates identifying attributes from dataset metadata. """
+
+        self.aggregation = dataset_metadata.aggregation
+        self.source_type = dataset_metadata.source_type
+        self.database_name = dataset_metadata.database_name
+
     def _dataset_init(self, dataset_metadata: DatasetMetadata) -> None:
         """Performs deeper parameter validation and updates values based on data from the dataset. """
 
