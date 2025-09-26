@@ -13,6 +13,7 @@ import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
 import cesnet_tszoo.pytables_data.dataloaders as dataloaders
 from cesnet_tszoo.pytables_data.time_based_initializer_dataset import TimeBasedInitializerDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
+from cesnet_tszoo.data_models.init_dataset_configs.time_init_config import TimeDatasetInitConfig
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 
@@ -297,21 +298,9 @@ class TimeBasedCesnetDataset(CesnetDataset):
         Goes through data to validate time series against `nan_threshold`, fit/partial fit `transformers`, `anomaly handlers` and prepare `fillers`.
         """
 
-        init_dataset = TimeBasedInitializerDataset(self.metadata.dataset_path,
-                                                   self.metadata.data_table_path,
-                                                   self.dataset_config.ts_id_name,
-                                                   self.dataset_config.ts_row_ranges,
-                                                   self.dataset_config.all_time_period,
-                                                   self.dataset_config.train_time_period,
-                                                   self.dataset_config.val_time_period,
-                                                   self.dataset_config.test_time_period,
-                                                   self.dataset_config.features_to_take,
-                                                   self.dataset_config.indices_of_features_to_take_no_ids,
-                                                   self.dataset_config.default_values,
-                                                   self.dataset_config.anomaly_handlers,
-                                                   self.dataset_config.train_fillers,
-                                                   self.dataset_config.val_fillers,
-                                                   self.dataset_config.test_fillers)
+        init_config = TimeDatasetInitConfig(self.dataset_config)
+
+        init_dataset = TimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
         sampler = SequentialSampler(init_dataset)
         dataloader = DataLoader(init_dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=TimeBasedInitializerDataset.worker_init_fn, persistent_workers=False, sampler=sampler)
