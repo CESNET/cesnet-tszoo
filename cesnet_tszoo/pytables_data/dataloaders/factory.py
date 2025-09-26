@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from torch.utils.data import DataLoader, Dataset
 
 from cesnet_tszoo.pytables_data.dataloaders import SeriesBasedDataloader, TimeBasedDataloader, DisjointTimeBasedDataloader
-from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
+from cesnet_tszoo.pytables_data.time_based_splitted_dataset import TimeBasedSplittedDataset
+from cesnet_tszoo.pytables_data.disjoint_time_based_splitted_dataset import DisjointTimeBasedSplittedDataset
 from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs import SeriesBasedConfig, TimeBasedConfig, DisjointTimeBasedConfig
@@ -24,14 +25,14 @@ class DataloaderFactory(ABC):
 class TimeBasedDataloaderFactory(DataloaderFactory):
     """Factory class for time based dataloader. """
 
-    def create_dataloader(self, dataset: SplittedDataset, dataset_config: TimeBasedConfig, workers: int, take_all: bool, batch_size: int, order: DataloaderOrder = DataloaderOrder.SEQUENTIAL) -> TimeBasedDataloader:
+    def create_dataloader(self, dataset: TimeBasedSplittedDataset, dataset_config: TimeBasedConfig, workers: int, take_all: bool, batch_size: int, order: DataloaderOrder = DataloaderOrder.SEQUENTIAL) -> TimeBasedDataloader:
         return TimeBasedDataloader(dataset, dataset_config, workers, take_all, batch_size)
 
 
 class DisjointTimeBasedDataloaderFactory(DataloaderFactory):
     """Factory class for disjoint time based dataloader. """
 
-    def create_dataloader(self, dataset: SplittedDataset, dataset_config: DisjointTimeBasedConfig, workers: int, take_all: bool, batch_size: int, order: DataloaderOrder = DataloaderOrder.SEQUENTIAL) -> DisjointTimeBasedDataloader:
+    def create_dataloader(self, dataset: DisjointTimeBasedSplittedDataset, dataset_config: DisjointTimeBasedConfig, workers: int, take_all: bool, batch_size: int, order: DataloaderOrder = DataloaderOrder.SEQUENTIAL) -> DisjointTimeBasedDataloader:
         return DisjointTimeBasedDataloader(dataset, dataset_config, workers, take_all, batch_size)
 
 

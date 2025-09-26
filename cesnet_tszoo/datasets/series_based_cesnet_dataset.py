@@ -18,6 +18,7 @@ import cesnet_tszoo.pytables_data.dataloaders as dataloaders
 from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.pytables_data.series_based_initializer_dataset import SeriesBasedInitializerDataset
 from cesnet_tszoo.data_models.init_dataset_configs.series_init_config import SeriesDatasetInitConfig
+from cesnet_tszoo.data_models.load_dataset_configs.series_load_config import SeriesLoadConfig
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.transformer import Transformer
 
@@ -252,71 +253,27 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
-            self.train_dataset = SeriesBasedDataset(self.metadata.dataset_path,
-                                                    self.metadata.data_table_path,
-                                                    self.dataset_config.ts_id_name,
-                                                    self.dataset_config.train_ts_row_ranges,
-                                                    self.dataset_config.time_period,
-                                                    self.dataset_config.features_to_take,
-                                                    self.dataset_config.indices_of_features_to_take_no_ids,
-                                                    self.dataset_config.default_values,
-                                                    self.dataset_config.train_fillers,
-                                                    self.dataset_config.include_time,
-                                                    self.dataset_config.include_ts_id,
-                                                    self.dataset_config.time_format,
-                                                    self.dataset_config.transformers,
-                                                    self.dataset_config.anomaly_handlers)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.TRAIN)
+            self.train_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
+
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
-            self.val_dataset = SeriesBasedDataset(self.metadata.dataset_path,
-                                                  self.metadata.data_table_path,
-                                                  self.dataset_config.ts_id_name,
-                                                  self.dataset_config.val_ts_row_ranges,
-                                                  self.dataset_config.time_period,
-                                                  self.dataset_config.features_to_take,
-                                                  self.dataset_config.indices_of_features_to_take_no_ids,
-                                                  self.dataset_config.default_values,
-                                                  self.dataset_config.val_fillers,
-                                                  self.dataset_config.include_time,
-                                                  self.dataset_config.include_ts_id,
-                                                  self.dataset_config.time_format,
-                                                  self.dataset_config.transformers,
-                                                  None)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.VAL)
+            self.val_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
+
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
-            self.test_dataset = SeriesBasedDataset(self.metadata.dataset_path,
-                                                   self.metadata.data_table_path,
-                                                   self.dataset_config.ts_id_name,
-                                                   self.dataset_config.test_ts_row_ranges,
-                                                   self.dataset_config.time_period,
-                                                   self.dataset_config.features_to_take,
-                                                   self.dataset_config.indices_of_features_to_take_no_ids,
-                                                   self.dataset_config.default_values,
-                                                   self.dataset_config.test_fillers,
-                                                   self.dataset_config.include_time,
-                                                   self.dataset_config.include_ts_id,
-                                                   self.dataset_config.time_format,
-                                                   self.dataset_config.transformers,
-                                                   None)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.TEST)
+            self.test_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
+
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all():
-            self.all_dataset = SeriesBasedDataset(self.metadata.dataset_path,
-                                                  self.metadata.data_table_path,
-                                                  self.dataset_config.ts_id_name,
-                                                  self.dataset_config.all_ts_row_ranges,
-                                                  self.dataset_config.time_period,
-                                                  self.dataset_config.features_to_take,
-                                                  self.dataset_config.indices_of_features_to_take_no_ids,
-                                                  self.dataset_config.default_values,
-                                                  self.dataset_config.all_fillers,
-                                                  self.dataset_config.include_time,
-                                                  self.dataset_config.include_ts_id,
-                                                  self.dataset_config.time_format,
-                                                  self.dataset_config.transformers,
-                                                  None)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.ALL)
+            self.all_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
+
             self.logger.debug("all_dataset initiliazed.")
 
     def _initialize_transformers_and_details(self, workers: int) -> None:
@@ -472,32 +429,16 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     def _get_singular_time_series_dataset(self, parent_dataset: SeriesBasedDataset, ts_id: int) -> SeriesBasedDataset:
         """Returns dataset for single time series """
 
-        temp = np.where(np.isin(parent_dataset.ts_row_ranges[self.metadata.ts_id_name], [ts_id]))[0]
+        temp = np.where(np.isin(parent_dataset.load_config.ts_row_ranges[self.metadata.ts_id_name], [ts_id]))[0]
 
         if len(temp) == 0:
-            raise ValueError(f"ts_id {ts_id} was not found in valid time series for this set. Available time series are: {parent_dataset.ts_row_ranges[self.metadata.ts_id_name]}")
+            raise ValueError(f"ts_id {ts_id} was not found in valid time series for this set. Available time series are: {parent_dataset.load_config.ts_row_ranges[self.metadata.ts_id_name]}")
 
         time_series_position = temp[0]
 
-        filler = parent_dataset.fillers[time_series_position:time_series_position + 1]
-        transformer = parent_dataset.transformers
-        anomaly_handler = None if parent_dataset.anomaly_handlers is None else parent_dataset.anomaly_handlers[time_series_position:time_series_position + 1]
+        split_load_config = parent_dataset.load_config.create_split_copy(slice(time_series_position, time_series_position + 1))
 
-        dataset = SeriesBasedDataset(self.metadata.dataset_path,
-                                     self.metadata.data_table_path,
-                                     self.dataset_config.ts_id_name,
-                                     parent_dataset.ts_row_ranges[time_series_position: time_series_position + 1],
-                                     parent_dataset.time_period,
-                                     self.dataset_config.features_to_take,
-                                     self.dataset_config.indices_of_features_to_take_no_ids,
-                                     self.dataset_config.default_values,
-                                     filler,
-                                     self.dataset_config.include_time,
-                                     self.dataset_config.include_ts_id,
-                                     self.dataset_config.time_format,
-                                     transformer,
-                                     anomaly_handler
-                                     )
+        dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, split_load_config)
         self.logger.debug("Singular time series dataset initiliazed.")
 
         return dataset
@@ -540,9 +481,9 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
         dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
-        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.SERIES_BASED, True)
+        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.load_config.time_format, dataset.load_config.include_time, DatasetType.SERIES_BASED, True)
 
-        if (dataset.time_format == TimeFormat.DATETIME and dataset.include_time):
+        if (dataset.load_config.time_format == TimeFormat.DATETIME and dataset.load_config.include_time):
             temp_data = temp_data[0]
 
         temp_data = temp_data[0][:, feature_indices]

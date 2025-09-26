@@ -13,8 +13,7 @@ import pandas as pd
 import tables as tb
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, Dataset, RandomSampler
-import torch
+from torch.utils.data import DataLoader, Dataset
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
@@ -25,13 +24,11 @@ import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
-from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
-from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
 from cesnet_tszoo.pytables_data.utils.utils import get_additional_data, load_database
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
 from cesnet_tszoo.utils.transformer import Transformer
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 from cesnet_tszoo.utils.download import resumable_download
@@ -1862,7 +1859,7 @@ Dataset details:
                                  f"Valid ts_id values: {valid_ts_range}.")
 
     @abstractmethod
-    def _get_singular_time_series_dataset(self, parent_dataset: SeriesBasedDataset | SplittedDataset, ts_id: int) -> SeriesBasedDataset | SplittedDataset:
+    def _get_singular_time_series_dataset(self, parent_dataset: Dataset, ts_id: int) -> Dataset:
         """Returns dataset for single time series """
         ...
 

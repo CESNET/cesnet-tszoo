@@ -25,9 +25,9 @@ class SeriesBasedDataloader(DataLoader):
         else:
             self.logger.debug("Using batch size from config: %d", batch_size)
 
-        total_batch_size = batch_size * len(dataset.time_period)
+        total_batch_size = batch_size * len(dataset.load_config.time_period)
         if total_batch_size >= LOADING_WARNING_THRESHOLD:
-            self.logger.warning("The total number of samples in one batch is %d (%d time series(batch size) × %d times ). Consider lowering the batch size.", total_batch_size, batch_size, len(dataset.time_period))
+            self.logger.warning("The total number of samples in one batch is %d (%d time series(batch size) × %d times ). Consider lowering the batch size.", total_batch_size, batch_size, len(dataset.load_config.time_period))
 
         if order == DataloaderOrder.RANDOM:
             if dataset_config.random_state is not None:

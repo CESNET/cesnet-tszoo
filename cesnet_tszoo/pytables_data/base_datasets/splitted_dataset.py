@@ -1,13 +1,12 @@
 from threading import Thread
+from abc import abstractmethod
 import logging
 
 from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, Dataset
 import numpy as np
 
-from cesnet_tszoo.pytables_data.time_based_dataset import TimeBasedDataset
-from cesnet_tszoo.utils.filler import Filler
-from cesnet_tszoo.utils.transformer import Transformer
-from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
+from cesnet_tszoo.pytables_data.base_datasets.split_dataset import SplitDataset
+from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
 from cesnet_tszoo.utils.enums import TimeFormat
 
 
@@ -18,41 +17,26 @@ class SplittedDataset(Dataset):
     Splits ts_row_ranges based on workers and for each worker creates a TimeBasedDataset with subset of values from ts_row_ranges. Then each worker gets a dataloader.
     """
 
-    def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int],
-                 default_values: np.ndarray, fillers: np.ndarray[Filler], is_transformer_per_time_series: bool,
-                 include_time: bool, include_ts_id: bool, time_format: TimeFormat, workers: int, feature_transformers: np.ndarray[Transformer] | Transformer,
-                 anomaly_handlers: np.ndarray[AnomalyHandler]):
+    def __init__(self, database_path: str, table_data_path: str, load_config: LoadConfig, workers: int):
         super().__init__()
+
+        self.load_config = load_config
 
         self.database_path = database_path
         self.table_data_path = table_data_path
-        self.ts_id_name = ts_id_name
-        self.features_to_take = features_to_take
-        self.default_values = default_values
-        self.fillers = fillers
-        self.include_time = include_time
-        self.include_ts_id = include_ts_id
-        self.ts_row_ranges = ts_row_ranges
 
         self.logger = logging.getLogger("splitted_dataset")
 
-        self.workers = min(workers, len(ts_row_ranges))
+        self.workers = min(workers, len(self.load_config.ts_row_ranges))
         if self.workers != workers:
-            self.logger.debug("Using only %s workers because there is only %s datasets", self.workers, len(ts_row_ranges))
+            self.logger.debug("Using only %s workers because there is only %s datasets", self.workers, len(self.load_config.ts_row_ranges))
 
         self.workers_without_clip = workers
-        self.time_period = time_period
-        self.time_format = time_format
-        self.feature_transformers = feature_transformers
-        self.indices_of_features_to_take_no_ids = indices_of_features_to_take_no_ids
-        self.is_transformer_per_time_series = is_transformer_per_time_series
-
-        self.anomaly_handlers = anomaly_handlers
 
         self.datasets = []
         self.dataloaders = []
         self.dataloaders_iters = []
-        self.iter_size = len(self.time_period)
+        self.iter_size = len(self.load_config.time_period)
 
         self.sliding_window_size = None
         self.sliding_window_prediction_size = None
@@ -69,7 +53,7 @@ class SplittedDataset(Dataset):
         self.logger.debug("Creating dataloaders for datasets.")
 
         self.batch_size = batch_size
-        self.iter_size = len(self.time_period) if sliding_window_size is None else int((len(self.time_period) - sliding_window_size - (sliding_window_prediction_size - sliding_window_step)) * batch_size / sliding_window_step)
+        self.iter_size = len(self.load_config.time_period) if sliding_window_size is None else int((len(self.load_config.time_period) - sliding_window_size - (sliding_window_prediction_size - sliding_window_step)) * batch_size / sliding_window_step)
         self.sliding_window_size = sliding_window_size
         self.sliding_window_prediction_size = sliding_window_prediction_size
         self.sliding_window_step = sliding_window_step
@@ -78,9 +62,9 @@ class SplittedDataset(Dataset):
         self.offset = 0
         self.until_next_batch_for_window = 0
 
-        self.workers = min(workers, len(self.ts_row_ranges))
+        self.workers = min(workers, len(self.load_config.ts_row_ranges))
         if self.workers != workers:
-            self.logger.debug("Using only %s workers because there is only %s datasets", self.workers, len(self.ts_row_ranges))
+            self.logger.debug("Using only %s workers because there is only %s datasets", self.workers, len(self.load_config.ts_row_ranges))
         self.workers_without_clip = workers
 
         self._reset()
@@ -93,7 +77,7 @@ class SplittedDataset(Dataset):
             dataloader = DataLoader(
                 dataset,
                 num_workers=dataloader_workers,
-                worker_init_fn=TimeBasedDataset.worker_init_fn,
+                worker_init_fn=SplitDataset.worker_init_fn,
                 persistent_workers=False,
                 batch_size=None,
                 prefetch_factor=dataloader_prefetch_factor,
@@ -111,42 +95,26 @@ class SplittedDataset(Dataset):
 
         if self.workers > 0:
             sizes = np.zeros(self.workers, dtype=np.int32)
-            sizes[:] += len(self.ts_row_ranges) // self.workers
-            splits_with_additional = len(self.ts_row_ranges) % self.workers
+            sizes[:] += len(self.load_config.ts_row_ranges) // self.workers
+            splits_with_additional = len(self.load_config.ts_row_ranges) % self.workers
             sizes[:splits_with_additional] += 1
         else:
             sizes = np.zeros(1, dtype=np.int32)
-            sizes[0] = len(self.ts_row_ranges)
+            sizes[0] = len(self.load_config.ts_row_ranges)
 
         offset = 0
         for size in sizes:
 
-            transformers = self.feature_transformers[offset:offset + size] if self.is_transformer_per_time_series else self.feature_transformers
-            fillers = self.fillers[offset:offset + size]
+            dataset = self._create_dataset_split(slice(offset, offset + size))
 
-            anomaly_handlers = None
-            if self.anomaly_handlers is not None:
-                anomaly_handlers = self.anomaly_handlers[offset:offset + size]
-
-            dataset = TimeBasedDataset(self.database_path,
-                                       self.table_data_path,
-                                       self.ts_id_name,
-                                       self.ts_row_ranges[offset:offset + size],
-                                       self.time_period,
-                                       self.features_to_take,
-                                       self.indices_of_features_to_take_no_ids,
-                                       self.default_values,
-                                       fillers,
-                                       self.is_transformer_per_time_series,
-                                       self.include_time,
-                                       self.include_ts_id,
-                                       self.time_format,
-                                       transformers,
-                                       anomaly_handlers)
             self.datasets.append(dataset)
             offset += size
 
         self.logger.debug("Created %s datasets.", len(sizes))
+
+    @abstractmethod
+    def _create_dataset_split(self, split_range: slice) -> SplitDataset:
+        ...
 
     def __len__(self):
         return self.iter_size
@@ -172,7 +140,7 @@ class SplittedDataset(Dataset):
 
         # First window to return
         if self.data_for_window is None:
-            if self.time_format == TimeFormat.DATETIME and self.include_time:
+            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
                 self.data_for_window, self.times_for_window = self._get_data(batch_idx)
             else:
                 self.data_for_window = self._get_data(batch_idx)
@@ -186,20 +154,20 @@ class SplittedDataset(Dataset):
             new_data_batch = None
             new_time_batch = None
 
-            if self.time_format == TimeFormat.DATETIME and self.include_time:
+            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
                 new_data_batch, new_time_batch = self._get_data(batch_idx)
             else:
                 new_data_batch = self._get_data(batch_idx)
 
             self.data_for_window = np.concatenate([self.data_for_window[:, self.offset:, :], new_data_batch], axis=1)
-            if self.time_format == TimeFormat.DATETIME and self.include_time:
+            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
                 self.times_for_window = np.concatenate([self.times_for_window[self.offset:], new_time_batch], axis=0)
 
             self.offset = 0
             self.until_next_batch_for_window = self.data_for_window.shape[1] - self.sliding_window_size
 
         # Prepare data in window form
-        if self.time_format == TimeFormat.DATETIME and self.include_time:
+        if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
             result_data = (self.data_for_window[:, self.offset:self.offset + self.sliding_window_size, :], self.data_for_window[:, self.offset + self.sliding_window_size:self.offset + self.sliding_window_size + self.sliding_window_prediction_size, :].reshape((self.data_for_window.shape[0], self.sliding_window_prediction_size, self.data_for_window.shape[2])))
             result_time = (self.times_for_window[self.offset:self.offset + self.sliding_window_size], self.times_for_window[self.offset + self.sliding_window_size:self.offset + self.sliding_window_size + self.sliding_window_prediction_size])
         else:
@@ -208,7 +176,7 @@ class SplittedDataset(Dataset):
         self.offset += self.sliding_window_step
         self.until_next_batch_for_window -= self.sliding_window_step
 
-        if self.time_format == TimeFormat.DATETIME and self.include_time:
+        if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
             return *result_data, *result_time
         else:
             return result_data
@@ -240,13 +208,13 @@ class SplittedDataset(Dataset):
             worker.join()
 
         for batch_part in results:
-            if self.time_format == TimeFormat.DATETIME and self.include_time:
+            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
                 batch_parts.append(batch_part[0])
                 times = batch_part[1]
             else:
                 batch_parts.append(batch_part)
 
-        if self.time_format == TimeFormat.DATETIME and self.include_time:
+        if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
             return np.concatenate(batch_parts, axis=0), times
         else:
             return np.concatenate(batch_parts, axis=0)
