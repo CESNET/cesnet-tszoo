@@ -14,6 +14,8 @@ from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.pytables_data.disjoint_time_based_initializer_dataset import DisjointTimeBasedInitializerDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
+import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
+import cesnet_tszoo.pytables_data.dataloaders as dataloaders
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 
@@ -82,9 +84,11 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     val_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     test_dataset: Optional[SplittedDataset] = field(default=None, init=False)
 
-    train_dataloader: Optional[DataLoader] = field(default=None, init=False)
-    val_dataloader: Optional[DataLoader] = field(default=None, init=False)
-    test_dataloader: Optional[DataLoader] = field(default=None, init=False)
+    train_dataloader: Optional[dataloaders.DisjointTimeBasedDataloader] = field(default=None, init=False)
+    val_dataloader: Optional[dataloaders.DisjointTimeBasedDataloader] = field(default=None, init=False)
+    test_dataloader: Optional[dataloaders.DisjointTimeBasedDataloader] = field(default=None, init=False)
+
+    dataloader_factory: dataloader_factories.DisjointTimeBasedDataloaderFactory = field(default=dataloader_factories.DisjointTimeBasedDataloaderFactory(), init=False)
 
     dataset_type: DatasetType = field(default=DatasetType.DISJOINT_TIME_BASED, init=False)
 
@@ -506,11 +510,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         return dataset
 
-    def _get_dataloader(self, dataset: SplittedDataset, workers: int | Literal["config"], take_all: bool, batch_size: int, **kwargs) -> DataLoader:
-        """ Set time based dataloader for this dataset. """
-
-        return self._get_time_based_dataloader(dataset, workers, take_all, batch_size)
-
     def __initialize_transformers_and_details_for_set(self, ts_ids, ts_row_ranges, time_period, fillers, anomaly_handlers, workers, set_name, can_fit_transformer):
         """Initializes transformers and details for provided time series. """
         init_dataset = DisjointTimeBasedInitializerDataset(self.metadata.dataset_path,
@@ -600,7 +599,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
     def __get_ts_data_for_plot(self, dataset: SplittedDataset, ts_id: int, feature_indices: list[int]):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
-        dataloader = self._get_time_based_dataloader(dataset, 0, True, None)
+
+        dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
         temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.TIME_BASED, True)
 

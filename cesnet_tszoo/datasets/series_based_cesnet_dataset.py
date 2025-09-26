@@ -12,6 +12,8 @@ from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, Tra
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
+import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
+import cesnet_tszoo.pytables_data.dataloaders as dataloaders
 from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.pytables_data.series_based_initializer_dataset import SeriesBasedInitializerDataset
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
@@ -85,6 +87,13 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     val_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
     test_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
     all_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
+
+    train_dataloader: Optional[dataloaders.SeriesBasedDataloader] = field(default=None, init=False)
+    val_dataloader: Optional[dataloaders.SeriesBasedDataloader] = field(default=None, init=False)
+    test_dataloader: Optional[dataloaders.SeriesBasedDataloader] = field(default=None, init=False)
+    all_dataloader: Optional[dataloaders.SeriesBasedDataloader] = field(default=None, init=False)
+
+    dataloader_factory: dataloader_factories.SeriesBasedDataloaderFactory = field(default=dataloader_factories.SeriesBasedDataloaderFactory(), init=False)
 
     dataset_type: DatasetType = field(default=DatasetType.SERIES_BASED, init=False)
 
@@ -492,14 +501,6 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         return dataset
 
-    def _get_dataloader(self, dataset: SeriesBasedDataset, workers: int | Literal["config"], take_all: bool, batch_size: int, **kwargs) -> DataLoader:
-        """Set series based dataloader for this dataset. """
-
-        default_kwargs = {'order': DataloaderOrder.SEQUENTIAL}
-        kwargs = {**default_kwargs, **kwargs}
-
-        return self._get_series_based_dataloader(dataset, workers, take_all, batch_size, kwargs["order"])
-
     def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
         """Dataset type specific retrieval of data. """
 
@@ -536,7 +537,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
     def __get_ts_data_for_plot(self, dataset: SeriesBasedDataset, ts_id: int, feature_indices: list[int]):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
-        dataloader = self._get_series_based_dataloader(dataset, 0, True, None)
+        dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
         temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.SERIES_BASED, True)
 

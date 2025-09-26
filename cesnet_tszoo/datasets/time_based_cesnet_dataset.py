@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader, SequentialSampler
 from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
+import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
+import cesnet_tszoo.pytables_data.dataloaders as dataloaders
 from cesnet_tszoo.pytables_data.time_based_initializer_dataset import TimeBasedInitializerDataset
 from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
@@ -81,6 +83,13 @@ class TimeBasedCesnetDataset(CesnetDataset):
     val_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     test_dataset: Optional[SplittedDataset] = field(default=None, init=False)
     all_dataset: Optional[SplittedDataset] = field(default=None, init=False)
+
+    train_dataloader: Optional[dataloaders.TimeBasedDataloader] = field(default=None, init=False)
+    val_dataloader: Optional[dataloaders.TimeBasedDataloader] = field(default=None, init=False)
+    test_dataloader: Optional[dataloaders.TimeBasedDataloader] = field(default=None, init=False)
+    all_dataloader: Optional[dataloaders.TimeBasedDataloader] = field(default=None, init=False)
+
+    dataloader_factory: dataloader_factories.TimeBasedDataloaderFactory = field(default=dataloader_factories.TimeBasedDataloaderFactory(), init=False)
 
     dataset_type: DatasetType = field(default=DatasetType.TIME_BASED, init=False)
 
@@ -439,11 +448,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
         return dataset
 
-    def _get_dataloader(self, dataset: SplittedDataset, workers: int | Literal["config"], take_all: bool, batch_size: int, **kwargs) -> DataLoader:
-        """ Set time based dataloader for this dataset. """
-
-        return self._get_time_based_dataloader(dataset, workers, take_all, batch_size)
-
     def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
         """Dataset type specific retrieval of data. """
 
@@ -471,7 +475,8 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
     def __update_data_for_plot(self, dataset: SplittedDataset, ts_id: int, feature_indices: list[int], previous_data: Optional[np.ndarray]):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
-        dataloader = self._get_time_based_dataloader(dataset, 0, True, None)
+
+        dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
         temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.TIME_BASED, True)
 

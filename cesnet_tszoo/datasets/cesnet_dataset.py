@@ -19,6 +19,7 @@ import torch
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
 import cesnet_tszoo.utils.filler.factory as filler_factories
+import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.configs.base_config import DatasetConfig
@@ -35,7 +36,7 @@ from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmar
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 from cesnet_tszoo.utils.download import resumable_download
 from cesnet_tszoo.configs.config_loading import load_config
-from cesnet_tszoo.models.dataset_metadata import DatasetMetadata
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 @dataclass
@@ -108,6 +109,10 @@ class CesnetDataset(ABC):
     val_dataloader: Optional[DataLoader] = field(default=None, init=False)
     test_dataloader: Optional[DataLoader] = field(default=None, init=False)
     all_dataloader: Optional[DataLoader] = field(default=None, init=False)
+
+    dataloader_factory: Optional[dataloader_factories.DataloaderFactory] = field(default=None, init=False)
+
+    dataset_type: Optional[DatasetType] = field(default=None, init=False)
 
     _collate_fn: Optional[Callable] = field(default=None, init=False)
     _export_config_copy: Optional[DatasetConfig] = field(default=None, init=False)
@@ -243,7 +248,7 @@ class CesnetDataset(ABC):
                 self.logger.info("Destroyed previous cached train_dataloader.")
 
             self.dataset_config.used_train_workers = 0
-            self.train_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.train_batch_size)
+            self.train_dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, False, self.dataset_config.train_batch_size)
             self.logger.info("Created new cached train_dataloader.")
             return self.train_dataloader
         elif self.dataset_config.used_singular_train_time_series is not None and self.train_dataloader is not None:
@@ -271,13 +276,13 @@ class CesnetDataset(ABC):
 
         # If caching is enabled, create a new cached dataloader
         if kwargs["cache_loader"]:
-            self.train_dataloader = self._get_dataloader(self.train_dataset, workers, kwargs['take_all'], self.dataset_config.train_batch_size, order=self.dataset_config.train_dataloader_order)
+            self.train_dataloader = self.dataloader_factory.create_dataloader(self.train_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.train_batch_size, order=self.dataset_config.train_dataloader_order)
             self.logger.info("Created new cached train_dataloader.")
             return self.train_dataloader
 
         # If caching is disabled, create a new uncached dataloader
         self.logger.debug("Created new uncached train_dataloader.")
-        return self._get_dataloader(self.train_dataset, workers, kwargs['take_all'], self.dataset_config.train_batch_size, order=self.dataset_config.train_dataloader_order)
+        return self.dataloader_factory.create_dataloader(self.train_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.train_batch_size, order=self.dataset_config.train_dataloader_order)
 
     def get_val_dataloader(self, ts_id: int | None = None, workers: int | Literal["config"] = "config", **kwargs) -> DataLoader:
         """
@@ -347,7 +352,7 @@ class CesnetDataset(ABC):
                 self.logger.info("Destroyed previous cached val_dataloader.")
 
             self.dataset_config.used_val_workers = 0
-            self.val_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.val_batch_size)
+            self.val_dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, False, self.dataset_config.val_batch_size)
             self.logger.info("Created new cached val_dataloader.")
             return self.val_dataloader
         elif self.dataset_config.used_singular_val_time_series is not None and self.val_dataloader is not None:
@@ -375,13 +380,13 @@ class CesnetDataset(ABC):
 
         # If caching is enabled, create a new cached dataloader
         if kwargs["cache_loader"]:
-            self.val_dataloader = self._get_dataloader(self.val_dataset, workers, kwargs['take_all'], self.dataset_config.val_batch_size)
+            self.val_dataloader = self.dataloader_factory.create_dataloader(self.val_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.val_batch_size)
             self.logger.info("Created new cached val_dataloader.")
             return self.val_dataloader
 
         # If caching is disabled, create a new uncached dataloader
         self.logger.debug("Created new uncached val_dataloader.")
-        return self._get_dataloader(self.val_dataset, workers, kwargs['take_all'], self.dataset_config.val_batch_size)
+        return self.dataloader_factory.create_dataloader(self.val_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.val_batch_size)
 
     def get_test_dataloader(self, ts_id: int | None = None, workers: int | Literal["config"] = "config", **kwargs) -> DataLoader:
         """
@@ -451,7 +456,7 @@ class CesnetDataset(ABC):
                 self.logger.info("Destroyed previous cached test_dataloader.")
 
             self.dataset_config.used_test_workers = 0
-            self.test_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.test_batch_size)
+            self.test_dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, False, self.dataset_config.test_batch_size)
             self.logger.info("Created new cached test_dataloader.")
             return self.test_dataloader
         elif self.dataset_config.used_singular_test_time_series is not None and self.test_dataloader is not None:
@@ -479,13 +484,13 @@ class CesnetDataset(ABC):
 
         # If caching is enabled, create a new cached dataloader
         if kwargs["cache_loader"]:
-            self.test_dataloader = self._get_dataloader(self.test_dataset, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
+            self.test_dataloader = self.dataloader_factory.create_dataloader(self.test_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
             self.logger.info("Created new cached test_dataloader.")
             return self.test_dataloader
 
         # If caching is disabled, create a new uncached dataloader
         self.logger.debug("Created new uncached test_dataloader.")
-        return self._get_dataloader(self.test_dataset, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
+        return self.dataloader_factory.create_dataloader(self.test_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
 
     def get_all_dataloader(self, ts_id: int | None = None, workers: int | Literal["config"] = "config", **kwargs) -> DataLoader:
         """
@@ -555,7 +560,7 @@ class CesnetDataset(ABC):
                 self.logger.info("Destroyed previous cached all_dataloader.")
 
             self.dataset_config.used_all_workers = 0
-            self.all_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.all_batch_size)
+            self.all_dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, False, self.dataset_config.all_batch_size)
             self.logger.info("Created new cached all_dataloader.")
             return self.all_dataloader
         elif self.dataset_config.used_singular_all_time_series is not None and self.all_dataloader is not None:
@@ -583,13 +588,13 @@ class CesnetDataset(ABC):
 
         # If caching is enabled, create a new cached dataloader
         if kwargs["cache_loader"]:
-            self.all_dataloader = self._get_dataloader(self.all_dataset, workers, kwargs['take_all'], self.dataset_config.all_batch_size)
+            self.all_dataloader = self.dataloader_factory.create_dataloader(self.all_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.all_batch_size)
             self.logger.info("Created new cached all_dataloader.")
             return self.all_dataloader
 
         # If caching is disabled, create a new uncached dataloader
         self.logger.debug("Creating new uncached all_dataloader.")
-        return self._get_dataloader(self.all_dataset, workers, kwargs['take_all'], self.dataset_config.all_batch_size)
+        return self.dataloader_factory.create_dataloader(self.all_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.all_batch_size)
 
     def get_train_df(self, workers: int | Literal["config"] = "config", as_single_dataframe: bool = True) -> pd.DataFrame:
         """
@@ -1856,106 +1861,9 @@ Dataset details:
                 raise ValueError(f"ts_id {ts_id} does not exist in the available range for {self.metadata.source_type}. "
                                  f"Valid ts_id values: {valid_ts_range}.")
 
-    def _get_time_based_dataloader(self, dataset: SplittedDataset, workers: int, take_all: bool, batch_size: int) -> DataLoader:
-        """
-        Returns a time-based PyTorch DataLoader. 
-
-        The batch size determines the number of times for time series are included in each batch.    
-        """
-
-        if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before getting dataloader.")
-
-        if take_all:
-            batch_size = len(dataset)
-            self.logger.debug("Using full dataset as batch size (%d samples).", batch_size)
-        else:
-            self.logger.debug("Using batch size from config: %d", batch_size)
-
-            total_batch_size = batch_size * len(dataset.ts_row_ranges)
-            if total_batch_size >= LOADING_WARNING_THRESHOLD:
-                self.logger.warning("The total number of samples in one batch is %d (%d time series × %d times(batch size) ). Consider lowering the batch size.", total_batch_size, len(dataset.ts_row_ranges), batch_size)
-
-        should_drop = not take_all and self.dataset_config.sliding_window_size is not None
-
-        batch_sampler = BatchSampler(sampler=SequentialSampler(dataset), batch_size=batch_size, drop_last=should_drop)
-
-        dataloader = DataLoader(dataset, num_workers=0, collate_fn=self._collate_fn, persistent_workers=False, batch_size=None, sampler=batch_sampler)
-
-        self.logger.debug("Dataloader created with SequentialSampler and batch size %d.", batch_size)
-
-        # Prepare the dataset for loading, either with the full batch or with windowed batching
-        if take_all:
-            dataset.prepare_dataset(batch_size, None, None, None, workers)
-            self.logger.debug("Dataset prepared with full batch size (%d samples).", batch_size)
-        else:
-            dataset.prepare_dataset(batch_size, self.dataset_config.sliding_window_size, self.dataset_config.sliding_window_prediction_size, self.dataset_config.sliding_window_step, workers)
-            self.logger.debug("Dataset prepared with window size (%d).", self.dataset_config.sliding_window_size)
-
-        return dataloader
-
-    def _get_series_based_dataloader(self, dataset: SeriesBasedDataset, workers: int, take_all: bool, batch_size: int, order: DataloaderOrder = DataloaderOrder.SEQUENTIAL) -> DataLoader:
-        """ 
-        Returns a series-based PyTorch DataLoader.
-
-        The batch size determines the number of time series included in each batch.
-        """
-
-        if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before getting dataloader.")
-
-        if take_all:
-            batch_size = len(dataset)
-            self.logger.debug("Using full dataset as batch size (%d samples) to return the entire dataset.", batch_size)
-        else:
-            self.logger.debug("Using batch size from config: %d", batch_size)
-
-        total_batch_size = batch_size * len(dataset.time_period)
-        if total_batch_size >= LOADING_WARNING_THRESHOLD:
-            self.logger.warning("The total number of samples in one batch is %d (%d time series(batch size) × %d times ). Consider lowering the batch size.", total_batch_size, batch_size, len(dataset.time_period))
-
-        if order == DataloaderOrder.RANDOM:
-            if self.dataset_config.random_state is not None:
-                generator = torch.Generator()
-                generator.manual_seed(self.dataset_config.random_state)
-                self.logger.debug("Prepared RandomSampler with fixed seed %d for series dataloader.", self.dataset_config.random_state)
-            else:
-                generator = None
-                self.logger.debug("Prepared RandomSampler with dynamic seed for series dataloader.")
-
-            sampler = RandomSampler(dataset, generator=generator)
-
-        elif order == DataloaderOrder.SEQUENTIAL:
-            sampler = SequentialSampler(dataset)
-            self.logger.debug("Prepared SequentialSampler for series dataloader.")
-        else:
-            raise ValueError("Invalid order specified for the dataloader. Supported values are DataloaderOrder.RANDOM and DataloaderOrder.SEQUENTIAL.")
-
-        batch_sampler = BatchSampler(sampler=sampler, batch_size=batch_size, drop_last=False)
-        dataloader = DataLoader(dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=SeriesBasedDataset.worker_init_fn, persistent_workers=False, batch_size=None, sampler=batch_sampler)
-
-        # Must be done if dataloader runs on main process.
-        if workers == 0:
-            dataset.pytables_worker_init(0)
-
-        self.logger.debug("Series-based dataset prepared for dataloader with batch size %d and %s order.", batch_size, order.name)
-
-        return dataloader
-
     @abstractmethod
     def _get_singular_time_series_dataset(self, parent_dataset: SeriesBasedDataset | SplittedDataset, ts_id: int) -> SeriesBasedDataset | SplittedDataset:
         """Returns dataset for single time series """
-        ...
-
-    @abstractmethod
-    def _get_dataloader(self, dataset: Dataset, workers: int, take_all: bool, batch_size: int, **kwargs) -> DataLoader:
-        """
-        Sets the DataLoader based on the type of dataset. 
-
-        This method determines whether the dataset is series-based or time-based and calls the corresponding method to return the appropriate DataLoader:
-        - Calls [`_get_series_based_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset._get_series_based_dataloader] if the dataset is series-based.
-        - Calls [`_get_time_based_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset._get_time_based_dataloader] if the dataset is time-based.
-        """
         ...
 
     def _get_df(self, dataloader: DataLoader, as_single_dataframe: bool, ts_ids: np.ndarray, time_period: np.ndarray) -> pd.DataFrame:
