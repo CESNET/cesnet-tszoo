@@ -13,10 +13,7 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.utils.utils import try_concatenate
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
-import cesnet_tszoo.pytables_data.dataloaders as dataloaders
-from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
-from cesnet_tszoo.pytables_data.series_based_initializer_dataset import SeriesBasedInitializerDataset
+from cesnet_tszoo.pytables_data.datasets.series_based import SeriesBasedInitializerDataset, SeriesBasedDataloader, SeriesBasedDataloaderFactory, SeriesBasedDataset
 from cesnet_tszoo.data_models.init_dataset_configs.series_init_config import SeriesDatasetInitConfig
 from cesnet_tszoo.data_models.load_dataset_configs.series_load_config import SeriesLoadConfig
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
@@ -91,12 +88,12 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     test_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
     all_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
 
-    train_dataloader: Optional[dataloaders.SeriesBasedDataloader] = field(default=None, init=False)
-    val_dataloader: Optional[dataloaders.SeriesBasedDataloader] = field(default=None, init=False)
-    test_dataloader: Optional[dataloaders.SeriesBasedDataloader] = field(default=None, init=False)
-    all_dataloader: Optional[dataloaders.SeriesBasedDataloader] = field(default=None, init=False)
+    train_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    val_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    test_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    all_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
 
-    dataloader_factory: dataloader_factories.SeriesBasedDataloaderFactory = field(default=dataloader_factories.SeriesBasedDataloaderFactory(), init=False)
+    dataloader_factory: SeriesBasedDataloaderFactory = field(default=SeriesBasedDataloaderFactory(), init=False)
 
     dataset_type: DatasetType = field(default=DatasetType.SERIES_BASED, init=False)
 

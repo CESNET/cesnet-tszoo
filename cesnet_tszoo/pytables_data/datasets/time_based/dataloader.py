@@ -3,19 +3,19 @@ import logging
 
 from torch.utils.data import DataLoader, BatchSampler, SequentialSampler
 
-from cesnet_tszoo.pytables_data.disjoint_time_based_splitted_dataset import DisjointTimeBasedSplittedDataset
-from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
+from cesnet_tszoo.pytables_data.datasets.time_based.splitted_dataset import TimeBasedSplittedDataset
+from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.constants import LOADING_WARNING_THRESHOLD
 
 
-class DisjointTimeBasedDataloader(DataLoader):
-    """Dataloader used for DisjointTimeBasedDataset. """
+class TimeBasedDataloader(DataLoader):
+    """Dataloader used for TimeBasedDataset. """
 
-    def __init__(self, dataset: DisjointTimeBasedSplittedDataset, dataset_config: DisjointTimeBasedConfig, workers: int, take_all: bool, batch_size: int):
+    def __init__(self, dataset: TimeBasedSplittedDataset, dataset_config: TimeBasedConfig, workers: int, take_all: bool, batch_size: int):
 
         dataset = deepcopy(dataset)
-        self.logger = logging.getLogger('disjoint_time_based_dataloader')
+        self.logger = logging.getLogger('time_based_dataloader')
 
         if take_all:
             batch_size = len(dataset)

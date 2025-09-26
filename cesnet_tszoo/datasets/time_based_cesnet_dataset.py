@@ -9,10 +9,7 @@ from torch.utils.data import DataLoader, SequentialSampler
 from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
-import cesnet_tszoo.pytables_data.dataloaders as dataloaders
-from cesnet_tszoo.pytables_data.time_based_initializer_dataset import TimeBasedInitializerDataset
-from cesnet_tszoo.pytables_data.time_based_splitted_dataset import TimeBasedSplittedDataset
+from cesnet_tszoo.pytables_data.datasets.time_based import TimeBasedSplittedDataset, TimeBasedDataloader, TimeBasedDataloaderFactory, TimeBasedInitializerDataset
 from cesnet_tszoo.data_models.load_dataset_configs.time_load_config import TimeLoadConfig
 from cesnet_tszoo.data_models.init_dataset_configs.time_init_config import TimeDatasetInitConfig
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
@@ -86,12 +83,12 @@ class TimeBasedCesnetDataset(CesnetDataset):
     test_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
     all_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
 
-    train_dataloader: Optional[dataloaders.TimeBasedDataloader] = field(default=None, init=False)
-    val_dataloader: Optional[dataloaders.TimeBasedDataloader] = field(default=None, init=False)
-    test_dataloader: Optional[dataloaders.TimeBasedDataloader] = field(default=None, init=False)
-    all_dataloader: Optional[dataloaders.TimeBasedDataloader] = field(default=None, init=False)
+    train_dataloader: Optional[TimeBasedDataloader] = field(default=None, init=False)
+    val_dataloader: Optional[TimeBasedDataloader] = field(default=None, init=False)
+    test_dataloader: Optional[TimeBasedDataloader] = field(default=None, init=False)
+    all_dataloader: Optional[TimeBasedDataloader] = field(default=None, init=False)
 
-    dataloader_factory: dataloader_factories.TimeBasedDataloaderFactory = field(default=dataloader_factories.TimeBasedDataloaderFactory(), init=False)
+    dataloader_factory: TimeBasedDataloaderFactory = field(default=TimeBasedDataloaderFactory(), init=False)
 
     dataset_type: DatasetType = field(default=DatasetType.TIME_BASED, init=False)
 

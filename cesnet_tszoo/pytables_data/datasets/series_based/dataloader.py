@@ -4,7 +4,7 @@ import logging
 from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, RandomSampler
 import torch
 
-from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
+from cesnet_tszoo.pytables_data.datasets.series_based.dataset import SeriesBasedDataset
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.utils.enums import DataloaderOrder
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders

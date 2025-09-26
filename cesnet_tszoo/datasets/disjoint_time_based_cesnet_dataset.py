@@ -12,10 +12,7 @@ from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, Transfo
 from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-from cesnet_tszoo.pytables_data.disjoint_time_based_splitted_dataset import DisjointTimeBasedSplittedDataset
-from cesnet_tszoo.pytables_data.disjoint_time_based_initializer_dataset import DisjointTimeBasedInitializerDataset
-import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
-import cesnet_tszoo.pytables_data.dataloaders as dataloaders
+from cesnet_tszoo.pytables_data.datasets.disjoint_time_based import DisjointTimeBasedSplittedDataset, DisjointTimeBasedInitializerDataset, DisjointTimeBasedDataloaderFactory, DisjointTimeBasedDataloader
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.data_models.init_dataset_configs.disjoint_time_init_config import DisjointTimeDatasetInitConfig
 from cesnet_tszoo.data_models.load_dataset_configs.disjoint_time_load_config import DisjointTimeLoadConfig
@@ -86,11 +83,11 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     val_dataset: Optional[DisjointTimeBasedSplittedDataset] = field(default=None, init=False)
     test_dataset: Optional[DisjointTimeBasedSplittedDataset] = field(default=None, init=False)
 
-    train_dataloader: Optional[dataloaders.DisjointTimeBasedDataloader] = field(default=None, init=False)
-    val_dataloader: Optional[dataloaders.DisjointTimeBasedDataloader] = field(default=None, init=False)
-    test_dataloader: Optional[dataloaders.DisjointTimeBasedDataloader] = field(default=None, init=False)
+    train_dataloader: Optional[DisjointTimeBasedDataloader] = field(default=None, init=False)
+    val_dataloader: Optional[DisjointTimeBasedDataloader] = field(default=None, init=False)
+    test_dataloader: Optional[DisjointTimeBasedDataloader] = field(default=None, init=False)
 
-    dataloader_factory: dataloader_factories.DisjointTimeBasedDataloaderFactory = field(default=dataloader_factories.DisjointTimeBasedDataloaderFactory(), init=False)
+    dataloader_factory: DisjointTimeBasedDataloaderFactory = field(default=DisjointTimeBasedDataloaderFactory(), init=False)
 
     dataset_type: DatasetType = field(default=DatasetType.DISJOINT_TIME_BASED, init=False)
 

@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader, Dataset
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
 import cesnet_tszoo.utils.filler.factory as filler_factories
-import cesnet_tszoo.pytables_data.dataloaders.factory as dataloader_factories
+from cesnet_tszoo.pytables_data.dataloader_factory import DataloaderFactory
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.configs.base_config import DatasetConfig
@@ -107,7 +107,7 @@ class CesnetDataset(ABC):
     test_dataloader: Optional[DataLoader] = field(default=None, init=False)
     all_dataloader: Optional[DataLoader] = field(default=None, init=False)
 
-    dataloader_factory: Optional[dataloader_factories.DataloaderFactory] = field(default=None, init=False)
+    dataloader_factory: Optional[DataloaderFactory] = field(default=None, init=False)
 
     dataset_type: Optional[DatasetType] = field(default=None, init=False)
 
