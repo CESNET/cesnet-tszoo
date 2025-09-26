@@ -8,7 +8,7 @@ from cesnet_tszoo.pytables_data.base_datasets.initializer_dataset import Initial
 
 
 class DisjointTimeBasedInitializerDataset(InitializerDataset):
-    """Used for time based datasets. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
+    """Used for disjoint time based datasets. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
 
     def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, time_period: np.ndarray,
                  features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray, fillers: np.ndarray[Filler],
