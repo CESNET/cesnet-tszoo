@@ -5,7 +5,7 @@ from cesnet_tszoo.utils.enums import DatasetType, SourceType, AgreggationType
 from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
-from cesnet_tszoo.dataclasses.dataset_metadata import DatasetMetadata
+from cesnet_tszoo.models.dataset_metadata import DatasetMetadata
 
 
 class DatasetFactory(ABC):

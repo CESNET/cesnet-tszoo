@@ -35,7 +35,7 @@ from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmar
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 from cesnet_tszoo.utils.download import resumable_download
 from cesnet_tszoo.configs.config_loading import load_config
-from cesnet_tszoo.dataclasses.dataset_metadata import DatasetMetadata
+from cesnet_tszoo.models.dataset_metadata import DatasetMetadata
 
 
 @dataclass

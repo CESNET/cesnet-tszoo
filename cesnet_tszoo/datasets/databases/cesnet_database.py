@@ -6,7 +6,7 @@ import cesnet_tszoo.datasets.dataset_factory as dataset_factories
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.utils.download import resumable_download
-from cesnet_tszoo.dataclasses.dataset_metadata import DatasetMetadata
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 class CesnetDatabase(ABC):
