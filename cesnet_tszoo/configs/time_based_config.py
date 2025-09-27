@@ -197,16 +197,16 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             total_window_size = self.sliding_window_size + self.sliding_window_prediction_size
 
             if isinstance(self.train_batch_size, int) and total_window_size > self.train_batch_size:
-                self.train_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
+                train_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
                 self.logger.info("train_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
             if isinstance(self.val_batch_size, int) and total_window_size > self.val_batch_size:
-                self.val_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
+                val_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
                 self.logger.info("val_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
             if isinstance(self.test_batch_size, int) and total_window_size > self.test_batch_size:
-                self.test_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
+                test_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
                 self.logger.info("test_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
             if isinstance(self.all_batch_size, int) and total_window_size > self.all_batch_size:
-                self.all_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
+                all_batch_size = self.sliding_window_size + self.sliding_window_prediction_size
                 self.logger.info("all_batch_size adjusted to %s as it should be greater than or equal to sliding_window_size + sliding_window_prediction_size.", total_window_size)
 
         DatasetConfig._update_batch_sizes(self, train_batch_size, val_batch_size, test_batch_size, all_batch_size)

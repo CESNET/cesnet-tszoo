@@ -1,14 +1,18 @@
 from datetime import datetime, timezone
 from typing import Optional, Literal
+from numbers import Number
 from dataclasses import dataclass, field
 
 import numpy as np
 from tqdm import tqdm
+import numpy.typing as npt
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, FillerType, TransformerType, AnomalyHandlerType
+from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
+from cesnet_tszoo.configs.config_editors.time_based_config_editor import TimeBasedConfigEditor
 from cesnet_tszoo.pytables_data.datasets.time_based import TimeBasedSplittedDataset, TimeBasedDataloader, TimeBasedDataloaderFactory, TimeBasedInitializerDataset
 from cesnet_tszoo.data_models.load_dataset_configs.time_load_config import TimeLoadConfig
 from cesnet_tszoo.data_models.init_dataset_configs.time_init_config import TimeDatasetInitConfig
@@ -121,6 +125,106 @@ class TimeBasedCesnetDataset(CesnetDataset):
         assert isinstance(dataset_config, TimeBasedConfig), f"This config is used for dataset of type '{dataset_config.dataset_type}'. Meanwhile this dataset is of type '{self.metadata.dataset_type}'."
 
         super(TimeBasedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
+
+    def update_dataset_config_and_initialize(self,
+                                             default_values: list[Number] | npt.NDArray[np.number] | dict[str, Number] | Number | Literal["default"] | None | Literal["config"] = "config",
+                                             sliding_window_size: int | None | Literal["config"] = "config",
+                                             sliding_window_prediction_size: int | None | Literal["config"] = "config",
+                                             sliding_window_step: int | Literal["config"] = "config",
+                                             set_shared_size: float | int | Literal["config"] = "config",
+                                             train_batch_size: int | Literal["config"] = "config",
+                                             val_batch_size: int | Literal["config"] = "config",
+                                             test_batch_size: int | Literal["config"] = "config",
+                                             all_batch_size: int | Literal["config"] = "config",
+                                             fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
+                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"] = "config",
+                                             create_transformer_per_time_series: bool | Literal["config"] = "config",
+                                             partial_fit_initialized_transformers: bool | Literal["config"] = "config",
+                                             train_workers: int | Literal["config"] = "config",
+                                             val_workers: int | Literal["config"] = "config",
+                                             test_workers: int | Literal["config"] = "config",
+                                             all_workers: int | Literal["config"] = "config",
+                                             init_workers: int | Literal["config"] = "config",
+                                             workers: int | Literal["config"] = "config",
+                                             display_config_details: bool = False):
+        """Used for updating selected configurations set in config.
+
+        Set parameter to `config` to keep it as it is config.
+
+        If exception is thrown during set, no changes are made.
+
+        Can affect following configuration. 
+
+        | Dataset config                          | Description                                                                                                                                     |
+        | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+        | `default_values`                        | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |  
+        | `sliding_window_size`                   | Number of times in one window. Impacts dataloader behavior. Refer to relevant config for details.                                               |
+        | `sliding_window_prediction_size`        | Number of times to predict from sliding_window_size. Refer to relevant config for details.                                                      |
+        | `sliding_window_step`                   | Number of times to move by after each window. Refer to relevant config for details.                                                             |
+        | `set_shared_size`                       | How much times should time periods share. Order of sharing is training set < validation set < test set. Refer to relevant config for details.   |           
+        | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
+        | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
+        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
+        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
+        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |                
+        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               | 
+        | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the dataset.                                                                                 |            
+        | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers.                        |   
+        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
+        | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
+        | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
+        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |
+        | `all_workers`                           | Number of workers for loading all data.                                                                                                         |     
+        | `init_workers`                          | Number of workers for dataset configuration.                                                                                                    |                        
+
+        Parameters:
+            default_values: Default values for missing data, applied before fillers. `Defaults: config`.  
+            sliding_window_size: Number of times in one window. `Defaults: config`.
+            sliding_window_prediction_size: Number of times to predict from sliding_window_size. `Defaults: config`.
+            sliding_window_step: Number of times to move by after each window. `Defaults: config`.
+            set_shared_size: How much times should time periods share. `Defaults: config`.            
+            train_batch_size: Number of samples per batch for train set. `Defaults: config`.
+            val_batch_size: Number of samples per batch for val set. `Defaults: config`.
+            test_batch_size: Number of samples per batch for test set. `Defaults: config`.
+            all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
+            fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
+            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
+            handle_anomalies_with: Defines the anomaly handler to handle anomalies in the dataset. `Defaults: config`.  
+            create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Defaults: config`.  
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
+            train_workers: Number of workers for loading training data. `Defaults: config`.
+            val_workers: Number of workers for loading validation data. `Defaults: config`.
+            test_workers: Number of workers for loading test data. `Defaults: config`.
+            all_workers: Number of workers for loading all data.  `Defaults: config`.
+            init_workers: Number of workers for dataset configuration. `Defaults: config`.                          
+            workers: How many workers to use when updating configuration. `Defaults: config`.  
+            display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
+        """
+
+        config_editor = TimeBasedConfigEditor(self._export_config_copy,
+                                              default_values,
+                                              train_batch_size,
+                                              val_batch_size,
+                                              test_batch_size,
+                                              all_batch_size,
+                                              fill_missing_with,
+                                              transform_with,
+                                              handle_anomalies_with,
+                                              create_transformer_per_time_series,
+                                              partial_fit_initialized_transformers,
+                                              train_workers,
+                                              val_workers,
+                                              test_workers,
+                                              all_workers,
+                                              init_workers,
+                                              sliding_window_size,
+                                              sliding_window_prediction_size,
+                                              sliding_window_step,
+                                              set_shared_size
+                                              )
+
+        self._update_dataset_config_and_initialize(config_editor, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test", "all"]) -> dict:
         """

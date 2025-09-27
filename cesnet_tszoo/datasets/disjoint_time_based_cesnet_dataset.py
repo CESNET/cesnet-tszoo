@@ -12,6 +12,7 @@ from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, Transfo
 from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
+from cesnet_tszoo.configs.config_editors.disjoint_time_based_config_editor import DisjointTimeBasedConfigEditor
 from cesnet_tszoo.pytables_data.datasets.disjoint_time_based import DisjointTimeBasedSplittedDataset, DisjointTimeBasedInitializerDataset, DisjointTimeBasedDataloaderFactory, DisjointTimeBasedDataloader
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.data_models.init_dataset_configs.disjoint_time_init_config import DisjointTimeDatasetInitConfig
@@ -214,7 +215,27 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
         """
 
-        return super(DisjointTimeBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_batch_size, val_batch_size, test_batch_size, "config", fill_missing_with, transform_with, handle_anomalies_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, "config", init_workers, workers, display_config_details)
+        config_editor = DisjointTimeBasedConfigEditor(self._export_config_copy,
+                                                      default_values,
+                                                      train_batch_size,
+                                                      val_batch_size,
+                                                      test_batch_size,
+                                                      fill_missing_with,
+                                                      transform_with,
+                                                      handle_anomalies_with,
+                                                      "config",
+                                                      partial_fit_initialized_transformers,
+                                                      train_workers,
+                                                      val_workers,
+                                                      test_workers,
+                                                      init_workers,
+                                                      sliding_window_size,
+                                                      sliding_window_prediction_size,
+                                                      sliding_window_step,
+                                                      set_shared_size
+                                                      )
+
+        self._update_dataset_config_and_initialize(config_editor, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test"]) -> dict:
         """

@@ -21,6 +21,7 @@ import cesnet_tszoo.utils.filler.factory as filler_factories
 from cesnet_tszoo.pytables_data.dataloader_factory import DataloaderFactory
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
+from cesnet_tszoo.configs.config_editors.config_editor import ConfigEditor
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
@@ -845,211 +846,49 @@ class CesnetDataset(ABC):
         dataloader = self.get_all_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_numpy(dataloader, ts_ids, time_period)
 
-    def update_dataset_config_and_initialize(self,
-                                             default_values: list[Number] | npt.NDArray[np.number] | dict[str, Number] | Number | Literal["default"] | None | Literal["config"] = "config",
-                                             sliding_window_size: int | None | Literal["config"] = "config",
-                                             sliding_window_prediction_size: int | None | Literal["config"] = "config",
-                                             sliding_window_step: int | Literal["config"] = "config",
-                                             set_shared_size: float | int | Literal["config"] = "config",
-                                             train_batch_size: int | Literal["config"] = "config",
-                                             val_batch_size: int | Literal["config"] = "config",
-                                             test_batch_size: int | Literal["config"] = "config",
-                                             all_batch_size: int | Literal["config"] = "config",
-                                             fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
-                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
-                                             handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"] = "config",
-                                             create_transformer_per_time_series: bool | Literal["config"] = "config",
-                                             partial_fit_initialized_transformers: bool | Literal["config"] = "config",
-                                             train_workers: int | Literal["config"] = "config",
-                                             val_workers: int | Literal["config"] = "config",
-                                             test_workers: int | Literal["config"] = "config",
-                                             all_workers: int | Literal["config"] = "config",
-                                             init_workers: int | Literal["config"] = "config",
-                                             workers: int | Literal["config"] = "config",
-                                             display_config_details: bool = False):
-        """Used for updating selected configurations set in config.
-
-        Set parameter to `config` to keep it as it is config.
-
-        If exception is thrown during set, no changes are made.
-
-        Can affect following configuration. 
-
-        | Dataset config                          | Description                                                                                                                                     |
-        | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-        | `default_values`                        | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |  
-        | `sliding_window_size`                   | Number of times in one window. Impacts dataloader behavior. Refer to relevant config for details.                                               |
-        | `sliding_window_prediction_size`        | Number of times to predict from sliding_window_size. Refer to relevant config for details.                                                      |
-        | `sliding_window_step`                   | Number of times to move by after each window. Refer to relevant config for details.                                                             |
-        | `set_shared_size`                       | How much times should time periods share. Order of sharing is training set < validation set < test set. Refer to relevant config for details.   |           
-        | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
-        | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
-        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
-        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
-        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |                
-        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               | 
-        | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the dataset.                                                                                 |            
-        | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers.                        |   
-        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
-        | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
-        | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
-        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |
-        | `all_workers`                           | Number of workers for loading all data.                                                                                                         |     
-        | `init_workers`                          | Number of workers for dataset configuration.                                                                                                    |                        
-
-        Parameters:
-            default_values: Default values for missing data, applied before fillers. `Defaults: config`.  
-            sliding_window_size: Number of times in one window. `Defaults: config`.
-            sliding_window_prediction_size: Number of times to predict from sliding_window_size. `Defaults: config`.
-            sliding_window_step: Number of times to move by after each window. `Defaults: config`.
-            set_shared_size: How much times should time periods share. `Defaults: config`.            
-            train_batch_size: Number of samples per batch for train set. `Defaults: config`.
-            val_batch_size: Number of samples per batch for val set. `Defaults: config`.
-            test_batch_size: Number of samples per batch for test set. `Defaults: config`.
-            all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
-            fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
-            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
-            handle_anomalies_with: Defines the anomaly handler to handle anomalies in the dataset. `Defaults: config`.  
-            create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Defaults: config`.  
-            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
-            train_workers: Number of workers for loading training data. `Defaults: config`.
-            val_workers: Number of workers for loading validation data. `Defaults: config`.
-            test_workers: Number of workers for loading test data. `Defaults: config`.
-            all_workers: Number of workers for loading all data.  `Defaults: config`.
-            init_workers: Number of workers for dataset configuration. `Defaults: config`.                          
-            workers: How many workers to use when updating configuration. `Defaults: config`.  
-            display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
-        """
+    def _update_dataset_config_and_initialize(self, config_editor: ConfigEditor, workers: int | Literal["config"] = "config", display_config_details: bool = False):
+        """Updates config via passed config editor. """
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating dataset configuration.")
 
-        requires_init = False
-
-        if default_values == "config":
-            default_values = self._export_config_copy.default_values
-        else:
-            requires_init = True
-
-        if isinstance(self.dataset_config, TimeBasedHandler):
-            if sliding_window_size == "config":
-                sliding_window_size = self.dataset_config.sliding_window_size
-            if sliding_window_prediction_size == "config":
-                sliding_window_prediction_size = self.dataset_config.sliding_window_prediction_size
-            if sliding_window_step == "config":
-                sliding_window_step = self.dataset_config.sliding_window_step
-            if set_shared_size == "config":
-                set_shared_size = self.dataset_config.set_shared_size
-            else:
-                requires_init = True
-
-        if train_batch_size == "config":
-            train_batch_size = self.dataset_config.train_batch_size
-        if val_batch_size == "config":
-            val_batch_size = self.dataset_config.val_batch_size
-        if test_batch_size == "config":
-            test_batch_size = self.dataset_config.test_batch_size
-        if all_batch_size == "config":
-            all_batch_size = self.dataset_config.all_batch_size
-
-        if fill_missing_with == "config":
-            fill_missing_with = self._export_config_copy.filler_factory.filler_type
-        else:
-            requires_init = True
-
-        if create_transformer_per_time_series == "config":
-            create_transformer_per_time_series = self._export_config_copy.create_transformer_per_time_series
-        else:
-            requires_init = True
-
-        if partial_fit_initialized_transformers == "config":
-            partial_fit_initialized_transformers = self._export_config_copy.partial_fit_initialized_transformers
-        else:
-            requires_init = True
-
-        if transform_with == "config":
-            if self._export_config_copy.transformer_factory.has_already_initialized:
-                transform_with = self._export_config_copy.transformer_factory.initialized_transformers
-            else:
-                transform_with = self._export_config_copy.transformer_factory.transformer_type
-        else:
-            requires_init = True
-
-        if handle_anomalies_with == "config":
-            handle_anomalies_with = self._export_config_copy.anomaly_handler_factory.anomaly_handler_type
-        else:
-            requires_init = True
-
-        if train_workers == "config":
-            train_workers = self.dataset_config.train_workers
-        if val_workers == "config":
-            val_workers = self.dataset_config.val_workers
-        if test_workers == "config":
-            test_workers = self.dataset_config.test_workers
-        if all_workers == "config":
-            all_workers = self.dataset_config.all_workers
-        if init_workers == "config":
-            init_workers = self.dataset_config.init_workers
-
         original_config = deepcopy(self.dataset_config)
         original_export_config = deepcopy(self._export_config_copy)
+
         try:
-            if requires_init:
+            if config_editor.requires_init:
                 self.logger.info("Re-initialization is required.")
-                self._export_config_copy.default_values = default_values
-                if isinstance(self.dataset_config, TimeBasedHandler):
-                    self._export_config_copy.sliding_window_size = sliding_window_size
-                    self._export_config_copy.sliding_window_prediction_size = sliding_window_prediction_size
-                    self._export_config_copy.sliding_window_step = sliding_window_step
-                    self._export_config_copy.set_shared_size = set_shared_size
-                self._export_config_copy.train_batch_size = train_batch_size
-                self._export_config_copy.val_batch_size = val_batch_size
-                self._export_config_copy.test_batch_size = test_batch_size
-                self._export_config_copy.all_batch_size = all_batch_size
-                self._export_config_copy.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
-                self._export_config_copy.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
-                self._export_config_copy.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
-                self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
-                self._export_config_copy.create_transformer_per_time_series = create_transformer_per_time_series
-                self._export_config_copy.train_workers = train_workers
-                self._export_config_copy.val_workers = val_workers
-                self._export_config_copy.test_workers = test_workers
-                self._export_config_copy.all_workers = all_workers
-                self._export_config_copy.init_workers = init_workers
-                self._export_config_copy._validate_construction()
+                config_editor.modify_dataset_config(self._export_config_copy, self.metadata)
                 self.set_dataset_config_and_initialize(self._export_config_copy, False, workers)
+
             else:
-                self.logger.info("Re-initialization is not needed.")
-                self.dataset_config._update_batch_sizes(train_batch_size, val_batch_size, test_batch_size, all_batch_size)
-                self.dataset_config._update_workers(train_workers, val_workers, test_workers, all_workers, init_workers)
+                config_editor.modify_dataset_config(self.dataset_config, self.metadata)
 
-                if isinstance(self.dataset_config, TimeBasedHandler):
-                    self.dataset_config._update_sliding_window(sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, self.metadata.time_indices)
-
-                if self.train_dataloader is not None:
-                    del self.train_dataloader
-                    self.train_dataloader = None
-                    self.logger.info("Destroyed cached train_dataloader.")
-
-                if self.val_dataloader is not None:
-                    del self.val_dataloader
-                    self.val_dataloader = None
-                    self.logger.info("Destroyed cached val_dataloader.")
-
-                if self.test_dataloader is not None:
-                    del self.test_dataloader
-                    self.test_dataloader = None
-                    self.logger.info("Destroyed cached test_dataloader.")
-
-                if self.all_dataloader is not None:
-                    del self.all_dataloader
-                    self.all_dataloader = None
-                    self.logger.info("Destroyed cached all_dataloader.")
         except Exception:
             self.dataset_config = original_config
             self._export_config_copy = original_export_config
             self.logger.error("Error occured, reverting changes.")
             raise
+
+        if self.train_dataloader is not None:
+            del self.train_dataloader
+            self.train_dataloader = None
+            self.logger.info("Destroyed cached train_dataloader.")
+
+        if self.val_dataloader is not None:
+            del self.val_dataloader
+            self.val_dataloader = None
+            self.logger.info("Destroyed cached val_dataloader.")
+
+        if self.test_dataloader is not None:
+            del self.test_dataloader
+            self.test_dataloader = None
+            self.logger.info("Destroyed cached test_dataloader.")
+
+        if self.all_dataloader is not None:
+            del self.all_dataloader
+            self.all_dataloader = None
+            self.logger.info("Destroyed cached all_dataloader.")
 
         self._update_config_imported_status(None)
         self._update_export_config_copy()
@@ -1058,6 +897,11 @@ class CesnetDataset(ABC):
 
         if display_config_details:
             self.display_config()
+
+    @abstractmethod
+    def update_dataset_config_and_initialize(self, **kwargs):
+        """Used to modify selected configurations set in config."""
+        ...
 
     def apply_filler(self, fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None, workers: int | Literal["config"] = "config") -> None:
         """Used for updating filler set in config.

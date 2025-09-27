@@ -196,7 +196,7 @@ class TimeBasedHandler(ABC):
         assert sliding_window_size is None or (isinstance(sliding_window_size, int) and sliding_window_size > 1), "sliding_window_size must be an integer greater than 1, or None."
 
         # Ensure sliding_window_prediction_size is either None or a valid integer greater or equal to 0
-        assert sliding_window_prediction_size is None or (isinstance(sliding_window_prediction_size, int) and sliding_window_prediction_size >= 0), "sliding_window_prediction_size must be an integer greater than 0, or None."
+        assert sliding_window_prediction_size is None or (isinstance(sliding_window_prediction_size, int) and sliding_window_prediction_size >= 0), "sliding_window_prediction_size must be an integer greater than equal to 0, or None."
 
         # When sliding_window_prediction_size is set then sliding_window_size must be set too
         assert (sliding_window_size is None and sliding_window_prediction_size is None) or (sliding_window_size is not None), "When sliding_window_prediction_size is set then sliding_window_size must be set too."

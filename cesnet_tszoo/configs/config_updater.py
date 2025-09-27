@@ -12,6 +12,7 @@ import cesnet_tszoo.version as version
 
 
 class ConfigUpdater:
+    """Updates config to newer version. """
 
     def __init__(self, config: DatasetConfig):
         self.logger = logging.getLogger("config_updater")

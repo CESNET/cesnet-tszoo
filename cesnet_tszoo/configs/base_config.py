@@ -9,7 +9,7 @@ import numpy.typing as npt
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
-from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
@@ -206,6 +206,11 @@ class DatasetConfig(ABC):
         assert isinstance(val_batch_size, int) and val_batch_size > 0, "val_batch_size must be a positive integer."
         assert isinstance(test_batch_size, int) and test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(all_batch_size, int) and all_batch_size > 0, "all_batch_size must be a positive integer."
+
+        self.train_batch_size = train_batch_size
+        self.val_batch_size = val_batch_size
+        self.test_batch_size = test_batch_size
+        self.all_batch_size = all_batch_size
 
         self.logger.debug("Updated batch sizes.")
 

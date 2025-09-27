@@ -13,6 +13,7 @@ from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.utils.utils import try_concatenate
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
+from cesnet_tszoo.configs.config_editors.series_based_config_editor import SeriesBasedConfigEditor
 from cesnet_tszoo.pytables_data.datasets.series_based import SeriesBasedInitializerDataset, SeriesBasedDataloader, SeriesBasedDataloaderFactory, SeriesBasedDataset
 from cesnet_tszoo.data_models.init_dataset_configs.series_init_config import SeriesDatasetInitConfig
 from cesnet_tszoo.data_models.load_dataset_configs.series_load_config import SeriesLoadConfig
@@ -134,7 +135,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                              test_batch_size: int | Literal["config"] = "config",
                                              all_batch_size: int | Literal["config"] = "config",
                                              fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
-                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
                                              handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"] = "config",
                                              partial_fit_initialized_transformers: bool | Literal["config"] = "config",
                                              train_workers: int | Literal["config"] = "config",
@@ -188,7 +189,25 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
         """
 
-        return super(SeriesBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, "config", "config", "config", "config", train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, handle_anomalies_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
+        config_editor = SeriesBasedConfigEditor(self._export_config_copy,
+                                                default_values,
+                                                train_batch_size,
+                                                val_batch_size,
+                                                test_batch_size,
+                                                all_batch_size,
+                                                fill_missing_with,
+                                                transform_with,
+                                                handle_anomalies_with,
+                                                "config",
+                                                partial_fit_initialized_transformers,
+                                                train_workers,
+                                                val_workers,
+                                                test_workers,
+                                                all_workers,
+                                                init_workers
+                                                )
+
+        self._update_dataset_config_and_initialize(config_editor, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test", "all"]) -> dict:
         """
