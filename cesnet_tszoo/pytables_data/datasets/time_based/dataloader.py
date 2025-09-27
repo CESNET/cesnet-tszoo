@@ -3,7 +3,7 @@ import logging
 
 from torch.utils.data import DataLoader, BatchSampler, SequentialSampler
 
-from cesnet_tszoo.pytables_data.datasets.time_based.splitted_dataset import TimeBasedSplittedDataset
+from cesnet_tszoo.pytables_data.time_based_splitted_dataset import TimeBasedSplittedDataset
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.constants import LOADING_WARNING_THRESHOLD

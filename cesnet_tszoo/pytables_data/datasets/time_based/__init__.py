@@ -1,4 +1,2 @@
 from cesnet_tszoo.pytables_data.datasets.time_based.dataloader import TimeBasedDataloader
 from cesnet_tszoo.pytables_data.datasets.time_based.dataloader_factory import TimeBasedDataloaderFactory
-from cesnet_tszoo.pytables_data.datasets.time_based.initializer_dataset import TimeBasedInitializerDataset
-from cesnet_tszoo.pytables_data.datasets.time_based.splitted_dataset import TimeBasedSplittedDataset

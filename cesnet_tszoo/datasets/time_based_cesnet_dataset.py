@@ -13,7 +13,9 @@ from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.configs.config_editors.time_based_config_editor import TimeBasedConfigEditor
-from cesnet_tszoo.pytables_data.datasets.time_based import TimeBasedSplittedDataset, TimeBasedDataloader, TimeBasedDataloaderFactory, TimeBasedInitializerDataset
+from cesnet_tszoo.pytables_data.datasets.time_based import TimeBasedDataloader, TimeBasedDataloaderFactory
+from cesnet_tszoo.pytables_data.time_based_initializer_dataset import TimeBasedInitializerDataset
+from cesnet_tszoo.pytables_data.time_based_splitted_dataset import TimeBasedSplittedDataset
 from cesnet_tszoo.data_models.load_dataset_configs.time_load_config import TimeLoadConfig
 from cesnet_tszoo.data_models.init_dataset_configs.time_init_config import TimeDatasetInitConfig
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders

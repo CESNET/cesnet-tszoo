@@ -1,4 +1,4 @@
-from cesnet_tszoo.pytables_data.datasets.disjoint_time_based.splitted_dataset import DisjointTimeBasedSplittedDataset
+from cesnet_tszoo.pytables_data.disjoint_based_splitted_dataset import DisjointTimeBasedSplittedDataset
 from cesnet_tszoo.pytables_data.datasets.disjoint_time_based.dataloader import DisjointTimeBasedDataloader
 from cesnet_tszoo.configs import DisjointTimeBasedConfig
 from cesnet_tszoo.utils.enums import DataloaderOrder

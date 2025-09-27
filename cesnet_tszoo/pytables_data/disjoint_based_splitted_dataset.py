@@ -1,6 +1,6 @@
 import logging
 
-from cesnet_tszoo.pytables_data.datasets.disjoint_time_based.split_dataset import DisjointTimeBasedSplitDataset
+from cesnet_tszoo.pytables_data.disjoint_based_split_dataset import DisjointTimeBasedSplitDataset
 from cesnet_tszoo.pytables_data.base_datasets.splitted_dataset import SplittedDataset
 from cesnet_tszoo.data_models.load_dataset_configs.time_load_config import TimeLoadConfig
 

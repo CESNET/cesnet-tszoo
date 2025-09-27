@@ -1,4 +1,4 @@
-from cesnet_tszoo.pytables_data.datasets.series_based.dataset import SeriesBasedDataset
+from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
 from cesnet_tszoo.pytables_data.datasets.series_based.dataloader import SeriesBasedDataloader
 from cesnet_tszoo.configs import SeriesBasedConfig
 from cesnet_tszoo.utils.enums import DataloaderOrder
