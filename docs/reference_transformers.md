@@ -16,4 +16,5 @@
         - PowerTransformer
         - QuantileTransformer
         - RobustScaler
+        - NoTransformer
         filters: ["!^_"]

@@ -8,20 +8,25 @@ import numpy.typing as npt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DataloaderOrder, TransformerType, FillerType, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, TransformerType, FillerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
+from cesnet_tszoo.utils.utils import try_concatenate
 from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
+from cesnet_tszoo.configs.config_editors.series_based_config_editor import SeriesBasedConfigEditor
+from cesnet_tszoo.pytables_data.datasets.series_based import SeriesBasedDataloader, SeriesBasedDataloaderFactory
 from cesnet_tszoo.pytables_data.series_based_initializer_dataset import SeriesBasedInitializerDataset
-from cesnet_tszoo.datasets.loaders import create_numpy_from_dataloader
+from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
+from cesnet_tszoo.data_models.init_dataset_configs.series_init_config import SeriesDatasetInitConfig
+from cesnet_tszoo.data_models.load_dataset_configs.series_load_config import SeriesLoadConfig
+import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.transformer import Transformer
 
 
 @dataclass
 class SeriesBasedCesnetDataset(CesnetDataset):
     """
-    This class is used for series-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] with parameter `dataset_type` = `DatasetType.SERIES_BASED`.
+    This class is used for series-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] with parameter `dataset_type` = `DatasetType.SERIES_BASED`.
 
     Series-based means batch size affects number of returned time series in one batch. Which times for each time series are returned does not change.
 
@@ -39,7 +44,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
     **Intended usage:**
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
@@ -55,20 +60,10 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy].       
 
     Parameters:
-        database_name: Name of the database.
-        dataset_path: Path to the dataset file.     
-        configs_root: Path to the folder where configurations are saved.
-        benchmarks_root: Path to the folder where benchmarks are saved.
-        annotations_root: Path to the folder where annotations are saved.
-        source_type: The source type of the dataset.
-        aggregation: The aggregation type for the selected source type.
-        ts_id_name: Name of the id used for time series.
-        default_values: Default values for each available feature.
-        additional_data: Available small datasets. Can get them by calling [`get_additional_data`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_additional_data] with their name.
+        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
 
     Attributes:
-        time_indices: Available time IDs for the dataset.
-        ts_indices: Available time series IDs for the dataset.
+        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
         annotations: Annotations for the selected dataset.
         logger: Logger for displaying information.  
         imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
@@ -78,7 +73,6 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize] is called.
 
     Attributes:
-        dataset_type: Type of this dataset.
         dataset_config: Configuration of the dataset.
         train_dataset: Training set as a `SeriesBasedDataset` instance wrapping the PyTables database.
         val_dataset: Validation set as a `SeriesBasedDataset` instance wrapping the PyTables database.
@@ -97,9 +91,21 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     test_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
     all_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
 
+    train_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    val_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    test_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    all_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+
+    dataloader_factory: SeriesBasedDataloaderFactory = field(default=SeriesBasedDataloaderFactory(), init=False)
+
     dataset_type: DatasetType = field(default=DatasetType.SERIES_BASED, init=False)
 
     _export_config_copy: Optional[SeriesBasedConfig] = field(default=None, init=False)
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        self.logger.info("Dataset is series-based. Use cesnet_tszoo.configs.SeriesBasedConfig")
 
     def set_dataset_config_and_initialize(self, dataset_config: SeriesBasedConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
         """
@@ -120,7 +126,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         """
 
         assert dataset_config is not None, "Used dataset_config cannot be None."
-        assert isinstance(dataset_config, SeriesBasedConfig), f"This config is used for dataset of type '{dataset_config.dataset_type}'. Meanwhile this dataset is of type '{self.dataset_type}'."
+        assert isinstance(dataset_config, SeriesBasedConfig), f"This config is used for dataset of type '{dataset_config.dataset_type}'. Meanwhile this dataset is of type '{self.metadata.dataset_type}'."
 
         super(SeriesBasedCesnetDataset, self).set_dataset_config_and_initialize(dataset_config, display_config_details, workers)
 
@@ -131,7 +137,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                              test_batch_size: int | Literal["config"] = "config",
                                              all_batch_size: int | Literal["config"] = "config",
                                              fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
-                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
+                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
                                              handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"] = "config",
                                              partial_fit_initialized_transformers: bool | Literal["config"] = "config",
                                              train_workers: int | Literal["config"] = "config",
@@ -185,7 +191,25 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
         """
 
-        return super(SeriesBasedCesnetDataset, self).update_dataset_config_and_initialize(default_values, "config", "config", "config", "config", train_batch_size, val_batch_size, test_batch_size, all_batch_size, fill_missing_with, transform_with, handle_anomalies_with, "config", partial_fit_initialized_transformers, train_workers, val_workers, test_workers, all_workers, init_workers, workers, display_config_details)
+        config_editor = SeriesBasedConfigEditor(self._export_config_copy,
+                                                default_values,
+                                                train_batch_size,
+                                                val_batch_size,
+                                                test_batch_size,
+                                                all_batch_size,
+                                                fill_missing_with,
+                                                transform_with,
+                                                handle_anomalies_with,
+                                                "config",
+                                                partial_fit_initialized_transformers,
+                                                train_workers,
+                                                val_workers,
+                                                test_workers,
+                                                all_workers,
+                                                init_workers
+                                                )
+
+        self._update_dataset_config_and_initialize(config_editor, workers, display_config_details)
 
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test", "all"]) -> dict:
         """
@@ -233,13 +257,13 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         else:
             raise NotImplementedError("Should not happen")
 
-        datetime_temp = np.array([datetime.fromtimestamp(time, tz=timezone.utc) for time in self.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]]])
+        datetime_temp = np.array([datetime.fromtimestamp(time, tz=timezone.utc) for time in self.metadata.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]]])
 
         result["ts_ids"] = ts_ids.copy()
         result[TimeFormat.ID_TIME] = time_period[ID_TIME_COLUMN_NAME].copy()
         result[TimeFormat.DATETIME] = datetime_temp.copy()
-        result[TimeFormat.UNIX_TIME] = self.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]].copy()
-        result[TimeFormat.SHIFTED_UNIX_TIME] = self.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]] - self.time_indices[TIME_COLUMN_NAME][0]
+        result[TimeFormat.UNIX_TIME] = self.metadata.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]].copy()
+        result[TimeFormat.SHIFTED_UNIX_TIME] = self.metadata.time_indices[TIME_COLUMN_NAME][time_period[ID_TIME_COLUMN_NAME]] - self.metadata.time_indices[TIME_COLUMN_NAME][0]
 
         return result
 
@@ -247,71 +271,27 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
-            self.train_dataset = SeriesBasedDataset(self.dataset_path,
-                                                    self.dataset_config._get_table_data_path(),
-                                                    self.dataset_config.ts_id_name,
-                                                    self.dataset_config.train_ts_row_ranges,
-                                                    self.dataset_config.time_period,
-                                                    self.dataset_config.features_to_take,
-                                                    self.dataset_config.indices_of_features_to_take_no_ids,
-                                                    self.dataset_config.default_values,
-                                                    self.dataset_config.train_fillers,
-                                                    self.dataset_config.include_time,
-                                                    self.dataset_config.include_ts_id,
-                                                    self.dataset_config.time_format,
-                                                    self.dataset_config.transformers,
-                                                    self.dataset_config.anomaly_handlers)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.TRAIN)
+            self.train_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
+
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
-            self.val_dataset = SeriesBasedDataset(self.dataset_path,
-                                                  self.dataset_config._get_table_data_path(),
-                                                  self.dataset_config.ts_id_name,
-                                                  self.dataset_config.val_ts_row_ranges,
-                                                  self.dataset_config.time_period,
-                                                  self.dataset_config.features_to_take,
-                                                  self.dataset_config.indices_of_features_to_take_no_ids,
-                                                  self.dataset_config.default_values,
-                                                  self.dataset_config.val_fillers,
-                                                  self.dataset_config.include_time,
-                                                  self.dataset_config.include_ts_id,
-                                                  self.dataset_config.time_format,
-                                                  self.dataset_config.transformers,
-                                                  None)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.VAL)
+            self.val_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
+
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
-            self.test_dataset = SeriesBasedDataset(self.dataset_path,
-                                                   self.dataset_config._get_table_data_path(),
-                                                   self.dataset_config.ts_id_name,
-                                                   self.dataset_config.test_ts_row_ranges,
-                                                   self.dataset_config.time_period,
-                                                   self.dataset_config.features_to_take,
-                                                   self.dataset_config.indices_of_features_to_take_no_ids,
-                                                   self.dataset_config.default_values,
-                                                   self.dataset_config.test_fillers,
-                                                   self.dataset_config.include_time,
-                                                   self.dataset_config.include_ts_id,
-                                                   self.dataset_config.time_format,
-                                                   self.dataset_config.transformers,
-                                                   None)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.TEST)
+            self.test_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
+
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all():
-            self.all_dataset = SeriesBasedDataset(self.dataset_path,
-                                                  self.dataset_config._get_table_data_path(),
-                                                  self.dataset_config.ts_id_name,
-                                                  self.dataset_config.all_ts_row_ranges,
-                                                  self.dataset_config.time_period,
-                                                  self.dataset_config.features_to_take,
-                                                  self.dataset_config.indices_of_features_to_take_no_ids,
-                                                  self.dataset_config.default_values,
-                                                  self.dataset_config.all_fillers,
-                                                  self.dataset_config.include_time,
-                                                  self.dataset_config.include_ts_id,
-                                                  self.dataset_config.time_format,
-                                                  self.dataset_config.transformers,
-                                                  None)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.ALL)
+            self.all_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
+
             self.logger.debug("all_dataset initiliazed.")
 
     def _initialize_transformers_and_details(self, workers: int) -> None:
@@ -321,118 +301,99 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         Goes through data to validate time series against `nan_threshold`, partial fit `transformers`, fit `anomaly handlers` and prepare `fillers`.
         """
 
-        init_dataset = SeriesBasedInitializerDataset(self.dataset_path,
-                                                     self.dataset_config._get_table_data_path(),
-                                                     self.dataset_config.ts_id_name,
-                                                     self.dataset_config.train_ts_row_ranges,
-                                                     self.dataset_config.val_ts_row_ranges,
-                                                     self.dataset_config.test_ts_row_ranges,
-                                                     self.dataset_config.all_ts_row_ranges,
-                                                     self.dataset_config.time_period,
-                                                     self.dataset_config.features_to_take,
-                                                     self.dataset_config.indices_of_features_to_take_no_ids,
-                                                     self.dataset_config.default_values,
-                                                     self.dataset_config.all_fillers,
-                                                     self.dataset_config.anomaly_handlers)
+        if self.dataset_config.has_train():
+            can_fit_transformers = not self.dataset_config.transformer_factory.has_already_initialized or self.dataset_config.partial_fit_initialized_transformers
+            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.TRAIN)
+
+            updated_ts_row_ranges, updated_ts_ids, updated_fillers, updated_anomaly_handlers = self.__initialize_transformers_and_details_for_set(init_config, workers, "train", can_fit_transformers)
+            self.dataset_config.train_ts = updated_ts_ids
+            self.dataset_config.train_ts_row_ranges = updated_ts_row_ranges
+            self.dataset_config.train_fillers = updated_fillers
+            self.dataset_config.anomaly_handlers = updated_anomaly_handlers
+
+            self.logger.debug("Train set updated: %s time series left.", len(updated_ts_ids))
+
+        if self.dataset_config.has_val():
+            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.VAL)
+
+            updated_ts_row_ranges, updated_ts_ids, updated_fillers, _ = self.__initialize_transformers_and_details_for_set(init_config, workers, "val", False)
+            self.dataset_config.val_ts = updated_ts_ids
+            self.dataset_config.val_ts_row_ranges = updated_ts_row_ranges
+            self.dataset_config.val_fillers = updated_fillers
+
+            self.logger.debug("Val set updated: %s time series left.", len(updated_ts_ids))
+
+        if self.dataset_config.has_test():
+            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.TEST)
+
+            updated_ts_row_ranges, updated_ts_ids, updated_fillers, _ = self.__initialize_transformers_and_details_for_set(init_config, workers, "test", False)
+            self.dataset_config.test_ts = updated_ts_ids
+            self.dataset_config.test_ts_row_ranges = updated_ts_row_ranges
+            self.dataset_config.test_fillers = updated_fillers
+
+            self.logger.debug("Test set updated: %s time series left.", len(updated_ts_ids))
+
+        if self.dataset_config.has_all():
+
+            if not self.dataset_config.has_train() and not self.dataset_config.has_val() and not self.dataset_config.has_test():
+                init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.ALL)
+
+                updated_ts_row_ranges, updated_ts_ids, updated_fillers, _ = self.__initialize_transformers_and_details_for_set(init_config, workers, "all", False)
+                self.dataset_config.all_ts = updated_ts_ids
+                self.dataset_config.all_ts_row_ranges = updated_ts_row_ranges
+                self.dataset_config.all_fillers = updated_fillers
+            else:
+                self.dataset_config.all_ts = try_concatenate(self.dataset_config.train_ts, self.dataset_config.val_ts, self.dataset_config.test_ts)
+                self.dataset_config.all_ts_row_ranges = try_concatenate(self.dataset_config.train_ts_row_ranges, self.dataset_config.val_ts_row_ranges, self.dataset_config.test_ts_row_ranges)
+                self.dataset_config.all_fillers = try_concatenate(self.dataset_config.train_fillers, self.dataset_config.val_fillers, self.dataset_config.test_fillers)
+
+            self.logger.debug("All set updated: %s time series left.", len(updated_ts_ids))
+
+        self.logger.info("Dataset initialization complete. Configuration updated.")
+
+    def __initialize_transformers_and_details_for_set(self, init_config: SeriesDatasetInitConfig, workers, set_name, can_fit_transformer):
+        """Initializes transformers and details for provided time series. """
+        init_dataset = SeriesBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
         sampler = SequentialSampler(init_dataset)
-        dataloader = DataLoader(init_dataset,
-                                num_workers=workers,
-                                collate_fn=self._collate_fn,
-                                worker_init_fn=SeriesBasedInitializerDataset.worker_init_fn,
-                                persistent_workers=False,
-                                sampler=sampler)
+        dataloader = DataLoader(init_dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=SeriesBasedInitializerDataset.worker_init_fn, persistent_workers=False, sampler=sampler)
 
         if workers == 0:
             init_dataset.pytables_worker_init()
 
-        train_ts_ids_to_take = []
-        val_ts_ids_to_take = []
-        test_ts_ids_to_take = []
-        all_ts_ids_to_take = []
+        ts_ids_to_take = []
 
-        self.logger.info("Updating config on train/val/test/all and selected time period.")
-        for i, data in enumerate(tqdm(dataloader)):
-            train_data, count_values, is_train, is_val, is_test, offsetted_idx, anomaly_handler = data[0]
-
-            missing_percentage = count_values[1] / (count_values[0] + count_values[1])
+        self.logger.info("Updating config for %s set.", set_name)
+        for i, data in enumerate(tqdm(dataloader, total=len(init_config.ts_row_ranges))):
+            data, count_values, anomaly_handler = data[0]
 
             # Filter time series based on missing data threshold
-            if missing_percentage <= self.dataset_config.nan_threshold:
-                if is_train:
-                    train_ts_ids_to_take.append(offsetted_idx)
-                elif is_val:
-                    val_ts_ids_to_take.append(offsetted_idx)
-                elif is_test:
-                    test_ts_ids_to_take.append(offsetted_idx)
+            missing_train_percentage = count_values[1] / (count_values[0] + count_values[1])
 
-                all_ts_ids_to_take.append(i)
+            if missing_train_percentage <= self.dataset_config.nan_threshold:
+                ts_ids_to_take.append(i)
 
-                # Partial fit transformer on train data if applicable
-                if self.dataset_config.transform_with is not None and is_train and (not self.dataset_config.are_transformers_premade or self.dataset_config.partial_fit_initialized_transformers):
-                    self.dataset_config.transformers.partial_fit(train_data)
+                # Fit transformers if required
+                if can_fit_transformer:
+                    self.dataset_config.transformers.partial_fit(data)
 
-                if anomaly_handler is not None:
-                    self.dataset_config.anomaly_handlers[i] = anomaly_handler
+                # Sets fitted anomaly handlers
+                if init_config.anomaly_handlers is not None:
+                    init_config.anomaly_handlers[i] = anomaly_handler
 
         if workers == 0:
             init_dataset.cleanup()
 
-        # Update sets based on filtered time series
-        if self.dataset_config.has_train():
-            if len(train_ts_ids_to_take) == 0:
-                raise ValueError("No time series left in training set after applying nan_threshold.")
-            self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[train_ts_ids_to_take]
-            self.dataset_config.train_ts = self.dataset_config.train_ts[train_ts_ids_to_take]
+        if len(ts_ids_to_take) == 0:
+            raise ValueError(f"No valid time series left in {set_name} set after applying nan_threshold.")
 
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.train_fillers = self.dataset_config.train_fillers[train_ts_ids_to_take]
+        # Update config based on filtered time series
+        updated_ts_row_ranges = init_config.ts_row_ranges[ts_ids_to_take]
+        updated_ts_ids = init_config.ts_ids[ts_ids_to_take]
+        updated_fillers = init_config.fillers[ts_ids_to_take]
+        updated_anomaly_handlers = None if init_config.anomaly_handlers is None else init_config.anomaly_handlers[ts_ids_to_take]
 
-            if self.dataset_config.handle_anomalies_with is not None:
-                self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[train_ts_ids_to_take]
-
-            self.logger.debug("Train set updated: %s time series left.", len(train_ts_ids_to_take))
-
-        if self.dataset_config.has_val():
-            if len(val_ts_ids_to_take) == 0:
-                raise ValueError("No time series left in validation set after applying nan_threshold.")
-            self.dataset_config.val_ts_row_ranges = self.dataset_config.val_ts_row_ranges[val_ts_ids_to_take]
-            self.dataset_config.val_ts = self.dataset_config.val_ts[val_ts_ids_to_take]
-
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.val_fillers = self.dataset_config.val_fillers[val_ts_ids_to_take]
-
-            self.logger.debug("Validation set updated: %s time series selected.", len(val_ts_ids_to_take))
-
-        if self.dataset_config.has_test():
-            if len(test_ts_ids_to_take) == 0:
-                raise ValueError("No time series left in test set after applying nan_threshold.")
-            self.dataset_config.test_ts_row_ranges = self.dataset_config.test_ts_row_ranges[test_ts_ids_to_take]
-            self.dataset_config.test_ts = self.dataset_config.test_ts[test_ts_ids_to_take]
-
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.test_fillers = self.dataset_config.test_fillers[test_ts_ids_to_take]
-
-            self.logger.debug("Test set updated: %s time series selected.", len(test_ts_ids_to_take))
-
-        if self.dataset_config.has_all():
-            if len(all_ts_ids_to_take) == 0:
-                raise ValueError("No series left in all set after applying nan_threshold.")
-            self.dataset_config.all_ts = self.dataset_config.all_ts[all_ts_ids_to_take]
-            self.dataset_config.all_ts_row_ranges = self.dataset_config.all_ts_row_ranges[all_ts_ids_to_take]
-
-            if self.dataset_config.fill_missing_with is not None:
-                self.dataset_config.all_fillers = self.dataset_config.all_fillers[all_ts_ids_to_take]
-
-            self.logger.debug("All set updated: %s time series selected.", len(all_ts_ids_to_take))
-
-        self.dataset_config.used_ts_ids = self.dataset_config.all_ts
-        self.dataset_config.used_ts_row_ranges = self.dataset_config.all_ts_row_ranges
-        self.dataset_config.used_fillers = self.dataset_config.all_fillers
-        self.dataset_config.used_times = self.time_indices
-        self.dataset_config.used_anomaly_handlers = self.dataset_config.anomaly_handlers
-
-        self.logger.info("Dataset initialization complete. Configuration updated.")
+        return updated_ts_row_ranges, updated_ts_ids, updated_fillers, updated_anomaly_handlers
 
     def _update_export_config_copy(self) -> None:
         """
@@ -441,7 +402,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         Updates values of config used for saving config.
         """
 
-        self._export_config_copy.database_name = self.database_name
+        self._export_config_copy.database_name = self.metadata.database_name
 
         if self.dataset_config.has_train():
             self._export_config_copy.train_ts = self.dataset_config.train_ts.copy()
@@ -486,43 +447,19 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     def _get_singular_time_series_dataset(self, parent_dataset: SeriesBasedDataset, ts_id: int) -> SeriesBasedDataset:
         """Returns dataset for single time series """
 
-        temp = np.where(np.isin(parent_dataset.ts_row_ranges[self.ts_id_name], [ts_id]))[0]
+        temp = np.where(np.isin(parent_dataset.load_config.ts_row_ranges[self.metadata.ts_id_name], [ts_id]))[0]
 
         if len(temp) == 0:
-            raise ValueError(f"ts_id {ts_id} was not found in valid time series for this set. Available time series are: {parent_dataset.ts_row_ranges[self.ts_id_name]}")
+            raise ValueError(f"ts_id {ts_id} was not found in valid time series for this set. Available time series are: {parent_dataset.load_config.ts_row_ranges[self.metadata.ts_id_name]}")
 
         time_series_position = temp[0]
 
-        filler = None if parent_dataset.fillers is None else parent_dataset.fillers[time_series_position:time_series_position + 1]
-        transformer = None if parent_dataset.transformers is None else parent_dataset.transformers
-        anomaly_handler = None if parent_dataset.anomaly_handlers is None else parent_dataset.anomaly_handlers[time_series_position:time_series_position + 1]
+        split_load_config = parent_dataset.load_config.create_split_copy(slice(time_series_position, time_series_position + 1))
 
-        dataset = SeriesBasedDataset(self.dataset_path,
-                                     self.dataset_config._get_table_data_path(),
-                                     self.dataset_config.ts_id_name,
-                                     parent_dataset.ts_row_ranges[time_series_position: time_series_position + 1],
-                                     parent_dataset.time_period,
-                                     self.dataset_config.features_to_take,
-                                     self.dataset_config.indices_of_features_to_take_no_ids,
-                                     self.dataset_config.default_values,
-                                     filler,
-                                     self.dataset_config.include_time,
-                                     self.dataset_config.include_ts_id,
-                                     self.dataset_config.time_format,
-                                     transformer,
-                                     anomaly_handler
-                                     )
+        dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, split_load_config)
         self.logger.debug("Singular time series dataset initiliazed.")
 
         return dataset
-
-    def _get_dataloader(self, dataset: SeriesBasedDataset, workers: int | Literal["config"], take_all: bool, batch_size: int, **kwargs) -> DataLoader:
-        """Set series based dataloader for this dataset. """
-
-        default_kwargs = {'order': DataloaderOrder.SEQUENTIAL}
-        kwargs = {**default_kwargs, **kwargs}
-
-        return self._get_series_based_dataloader(dataset, workers, take_all, batch_size, kwargs["order"])
 
     def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
         """Dataset type specific retrieval of data. """
@@ -560,11 +497,11 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
     def __get_ts_data_for_plot(self, dataset: SeriesBasedDataset, ts_id: int, feature_indices: list[int]):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
-        dataloader = self._get_series_based_dataloader(dataset, 0, True, None)
+        dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
-        temp_data = create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.time_format, dataset.include_time, DatasetType.SERIES_BASED, True)
+        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.load_config.time_format, dataset.load_config.include_time, DatasetType.SERIES_BASED, True)
 
-        if (dataset.time_format == TimeFormat.DATETIME and dataset.include_time):
+        if (dataset.load_config.time_format == TimeFormat.DATETIME and dataset.load_config.include_time):
             temp_data = temp_data[0]
 
         temp_data = temp_data[0][:, feature_indices]

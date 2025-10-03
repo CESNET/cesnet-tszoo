@@ -11,7 +11,8 @@ from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-from cesnet_tszoo.datasets.datasets import CESNET_TimeSeries24, CESNET_AGG23, CesnetDatabase
+import cesnet_tszoo.datasets.databases.database_factory as database_factory
+from cesnet_tszoo.datasets.databases import CesnetDatabase
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
 from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
@@ -31,7 +32,7 @@ class Benchmark:
 
     When using [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset] (`dataset_type` = `DatasetType.TIME_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
@@ -40,7 +41,7 @@ class Benchmark:
 
     When using [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] (`dataset_type` = `DatasetType.SERIES_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
@@ -49,7 +50,7 @@ class Benchmark:
 
     When using [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] (`dataset_type` = `DatasetType.DISJOINT_TIME_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
@@ -176,14 +177,9 @@ def load_benchmark(identifier: str, data_root: str) -> Benchmark:
 def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
     """Returns `dataset` based on `export_benchmark`. """
 
-    if export_benchmark.database_name == CESNET_TimeSeries24.name:
-        dataset = CESNET_TimeSeries24.get_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
-    elif export_benchmark.database_name == CESNET_AGG23:
-        dataset = CESNET_AGG23.get_dataset(data_root, False, False)
-    else:
-        raise ValueError("Invalid database name.")
+    factory = database_factory.get_database_factory(export_benchmark.database_name)
 
-    return dataset
+    return factory.create_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
 
 
 def _get_built_in_benchmark(identifier: str, data_root: str) -> Benchmark:

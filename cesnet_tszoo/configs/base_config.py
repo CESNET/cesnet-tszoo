@@ -9,8 +9,12 @@ import numpy.typing as npt
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
-from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
+import cesnet_tszoo.utils.transformer.factory as transformer_factories
+import cesnet_tszoo.utils.filler.factory as filler_factories
+import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 
 
 class DatasetConfig(ABC):
@@ -33,26 +37,14 @@ class DatasetConfig(ABC):
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
-        transform_with_display: Used to display the configured type of `transform_with`.
-        fill_missing_with_display: Used to display the configured type of `fill_missing_with`.
-        handle_anomalies_with_display: Used to display the configured type of `handle_anomalies_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
-        is_transformer_custom: Flag indicating whether the transformer is custom.
-        is_filler_custom: Flag indicating whether the filler is custom.
-        is_anomaly_handler_custom: Flag indicating whether the anomaly handler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
-        used_times: List of all times used in the configuration.
-        used_ts_ids: List of all time series IDs used in the configuration.
-        used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
-        used_fillers: List of all fillers used in the configuration.
-        used_anomaly_handlers: List of all anomaly handlers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
         used_singular_all_time_series: Currently used singular all set time series for dataloader.        
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
-        are_transformers_premade: Indicates whether the transformers are premade.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
@@ -126,26 +118,14 @@ class DatasetConfig(ABC):
         self.aggregation = None
         self.source_type = None
         self.database_name = None
-        self.transform_with_display = None
-        self.fill_missing_with_display = None
-        self.handle_anomalies_with_display = None
         self.features_to_take_without_ids = None
         self.indices_of_features_to_take_no_ids = None
-        self.is_transformer_custom = False
-        self.is_filler_custom = False
-        self.is_anomaly_handler_custom = False
         self.ts_id_name = None
-        self.used_times = None
-        self.used_ts_ids = None
-        self.used_ts_row_ranges = None
-        self.used_fillers = None
-        self.used_anomaly_handlers = None
         self.used_singular_train_time_series = None
         self.used_singular_val_time_series = None
         self.used_singular_test_time_series = None
         self.used_singular_all_time_series = None
         self.transformers = None
-        self.are_transformers_premade = False
         self.train_fillers = None
         self.val_fillers = None
         self.test_fillers = None
@@ -161,9 +141,6 @@ class DatasetConfig(ABC):
         self.val_batch_size = val_batch_size
         self.test_batch_size = test_batch_size
         self.all_batch_size = all_batch_size
-        self.fill_missing_with = fill_missing_with
-        self.transform_with = transform_with
-        self.handle_anomalies_with = handle_anomalies_with
         self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
         self.include_time = include_time
         self.include_ts_id = include_ts_id
@@ -178,6 +155,15 @@ class DatasetConfig(ABC):
         self.dataset_type = dataset_type
         self.train_dataloader_order = train_dataloader_order
         self.random_state = random_state
+
+        # new
+        self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
+        self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
+        self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
+        # new
+
+        # to remove
+        # to remove
 
         self._validate_construction()
 
@@ -213,20 +199,6 @@ class DatasetConfig(ABC):
         self.time_format = TimeFormat(self.time_format)
         self.train_dataloader_order = DataloaderOrder(self.train_dataloader_order)
 
-        # Validate and process transformer type
-        if isinstance(self.transform_with, (str, TransformerType)):
-            self.transform_with = TransformerType(self.transform_with)
-            if self.transform_with in [TransformerType.POWER_TRANSFORMER, TransformerType.QUANTILE_TRANSFORMER, TransformerType.ROBUST_SCALER] and not self.create_transformer_per_time_series:
-                raise NotImplementedError("The selected transformer requires a working partial_fit method, which is not implemented for this configuration.")
-
-        # Validate and process missing data filler type
-        if isinstance(self.fill_missing_with, (str, FillerType)):
-            self.fill_missing_with = FillerType(self.fill_missing_with)
-
-        # Validate and process anomaly handler type
-        if isinstance(self.handle_anomalies_with, (str, AnomalyHandlerType)):
-            self.handle_anomalies_with = AnomalyHandlerType(self.handle_anomalies_with)
-
     def _update_batch_sizes(self, train_batch_size: int, val_batch_size: int, test_batch_size: int, all_batch_size: int) -> None:
 
         # Ensuring batch size values are positive integers
@@ -234,6 +206,11 @@ class DatasetConfig(ABC):
         assert isinstance(val_batch_size, int) and val_batch_size > 0, "val_batch_size must be a positive integer."
         assert isinstance(test_batch_size, int) and test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(all_batch_size, int) and all_batch_size > 0, "all_batch_size must be a positive integer."
+
+        self.train_batch_size = train_batch_size
+        self.val_batch_size = val_batch_size
+        self.test_batch_size = test_batch_size
+        self.all_batch_size = all_batch_size
 
         self.logger.debug("Updated batch sizes.")
 
@@ -294,51 +271,41 @@ class DatasetConfig(ABC):
         """Returns whether all set is used. """
         ...
 
-    def _get_table_data_path(self) -> str:
-        """Returns the path to the data table corresponding to the `source_type` and `aggregation`."""
-        return f"/{self.source_type.value}/{AgreggationType._to_str_with_agg(self.aggregation)}"
+    def _update_identifiers_from_dataset_metadata(self, dataset_metadata: DatasetMetadata) -> None:
+        """Updates identifying attributes from dataset metadata. """
 
-    def _get_table_identifiers_row_ranges_path(self) -> str:
-        """Returns the path to the identifiers' row ranges table corresponding to the `source_type` and `aggregation`. """
-        return f"/{self.source_type.value}/id_ranges_{AgreggationType._to_str_with_agg(self.aggregation)}"
+        self.aggregation = dataset_metadata.aggregation
+        self.source_type = dataset_metadata.source_type
+        self.database_name = dataset_metadata.database_name
 
-    def _dataset_init(self, all_real_ts_ids: np.ndarray, all_time_ids: np.ndarray, all_ts_row_ranges: np.ndarray, all_dataset_features: dict[str, np.dtype], default_values: dict[str, Number], ts_id_name: str) -> None:
+    def _dataset_init(self, dataset_metadata: DatasetMetadata) -> None:
         """Performs deeper parameter validation and updates values based on data from the dataset. """
 
-        self.ts_id_name = ts_id_name
+        self.ts_id_name = dataset_metadata.ts_id_name
 
-        # Set the features to take
-        self._set_features_to_take(all_dataset_features)
+        self._set_features_to_take(dataset_metadata.features)
         self.logger.debug("Features to take have been successfully set.")
 
-        # Set time series IDs
-        self._set_ts(all_real_ts_ids, all_ts_row_ranges)
+        self._set_ts(dataset_metadata.ts_indices, dataset_metadata.ts_row_ranges)
         self.logger.debug("Time series IDs have been successfully set.")
 
-        # Set the time periods
-        self._set_time_period(all_time_ids)
+        self._set_time_period(dataset_metadata.time_indices)
         self.logger.debug("Time period have been successfully set.")
 
-        # Set default values
-        self._set_default_values(default_values)
+        self._set_default_values(dataset_metadata.default_values)
         self.logger.debug("Default values have been successfully set.")
 
-        # Set feature transformers
         self._set_feature_transformers()
         self.logger.debug("Feature transformers have been successfully set.")
 
-        # Set fillers
         self._set_fillers()
         self.logger.debug("Fillers have been successfully set.")
 
-        # Set anomaly handlers
         self._set_anomaly_handlers()
         self.logger.debug("Anomaly handlers have been successfully set.")
 
-        # Final validation and finalization
         self._validate_finalization()
-
-        self.logger.info("Finalization and validation completed successfully.")
+        self.logger.debug("Finalization and validation completed successfully.")
 
     def _set_features_to_take(self, all_dataset_features: dict[str, np.dtype]) -> None:
         """Validates and filters the input `features_to_take` based on the `dataset`, `source_type`, and `aggregation`. """
@@ -431,17 +398,17 @@ class DatasetConfig(ABC):
 
     @abstractmethod
     def _set_feature_transformers(self) -> None:
-        """Creates and/or validates transformers based on the `transform_with` parameter. """
+        """Creates transformers with `transformer_factory`. """
         ...
 
     @abstractmethod
     def _set_fillers(self) -> None:
-        """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
+        """Creates fillers with `filler_factory`. """
         ...
 
     @abstractmethod
     def _set_anomaly_handlers(self) -> None:
-        """Creates and/or validates anomaly handlers based on the `handle_anomalies_with` parameter. """
+        """Creates anomaly handlers with `anomaly_handler_factory`. """
         ...
 
     @abstractmethod

@@ -2,9 +2,6 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from cesnet_tszoo.utils.enums import FillerType
-from cesnet_tszoo.utils.constants import MEAN_FILLER, FORWARD_FILLER, LINEAR_INTERPOLATION_FILLER
-
 
 class Filler(ABC):
     """
@@ -198,19 +195,12 @@ class LinearInterpolationFiller(Filler):
         self.last_values_x_pos = -1
 
 
-def filler_from_input_to_type(filler_from_input: FillerType | type | str) -> tuple[type, bool]:
-    """Converts from input to type value and str that represents filler's name."""
+class NoFiller(Filler):
+    """
+    Does nothing. 
 
-    if filler_from_input is None:
-        return None, None
+    Corresponds to enum [`FillerType.NO_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `no_filler`.
+    """
 
-    if filler_from_input == ForwardFiller or filler_from_input == FillerType.FORWARD_FILLER:
-        return ForwardFiller, FORWARD_FILLER
-    elif filler_from_input == LinearInterpolationFiller or filler_from_input == FillerType.LINEAR_INTERPOLATION_FILLER:
-        return LinearInterpolationFiller, LINEAR_INTERPOLATION_FILLER
-    elif filler_from_input == MeanFiller or filler_from_input == FillerType.MEAN_FILLER:
-        return MeanFiller, MEAN_FILLER
-    elif issubclass(filler_from_input, Filler):
-        return filler_from_input, f"{filler_from_input.__name__} (Custom)"
-    else:
-        raise TypeError("Custom filler must be inherited from base class Filler!")
+    def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
+        ...

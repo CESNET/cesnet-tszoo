@@ -4,7 +4,6 @@ import numpy as np
 import sklearn.preprocessing as sk
 
 from cesnet_tszoo.utils.enums import TransformerType
-from cesnet_tszoo.utils.constants import LOG_TRANSFORMER, L2_NORMALIZER, STANDARD_SCALER, MIN_MAX_SCALER, MAX_ABS_SCALER, POWER_TRANSFORMER, QUANTILE_TRANSFORMER, ROBUST_SCALER
 
 
 class Transformer(ABC):
@@ -83,7 +82,7 @@ class Transformer(ABC):
         Returns:
             The original representation of transformed data, with the same shape as the input `(times, features)`.            
         """
-        ...
+        return transformed_data
 
 
 class MinMaxScaler(Transformer):
@@ -105,7 +104,7 @@ class MinMaxScaler(Transformer):
     def transform(self, data: np.ndarray) -> np.ndarray:
         return self.transformer.transform(data)
 
-    def inverse_transform(self, transformed_data) -> np.ndarray:
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
         return self.transformer.inverse_transform(transformed_data)
 
 
@@ -128,7 +127,7 @@ class StandardScaler(Transformer):
     def transform(self, data: np.ndarray) -> np.ndarray:
         return self.transformer.transform(data)
 
-    def inverse_transform(self, transformed_data):
+    def inverse_transform(self, transformed_data: np.ndarray):
         return self.transformer.inverse_transform(transformed_data)
 
 
@@ -151,7 +150,7 @@ class MaxAbsScaler(Transformer):
     def transform(self, data: np.ndarray):
         return self.transformer.transform(data)
 
-    def inverse_transform(self, transformed_data):
+    def inverse_transform(self, transformed_data: np.ndarray):
         return self.transformer.inverse_transform(transformed_data)
 
 
@@ -173,7 +172,7 @@ class LogTransformer(Transformer):
 
         return log_data.filled(np.nan)
 
-    def inverse_transform(self, transformed_data):
+    def inverse_transform(self, transformed_data: np.ndarray):
         return np.exp(transformed_data)
 
 
@@ -196,7 +195,7 @@ class L2Normalizer(Transformer):
     def transform(self, data: np.ndarray):
         return self.transformer.fit_transform(data)
 
-    def inverse_transform(self, transformed_data):
+    def inverse_transform(self, transformed_data: np.ndarray):
         raise NotImplementedError("Normalizer does not support inverse_transform.")
 
 
@@ -222,7 +221,7 @@ class RobustScaler(Transformer):
     def transform(self, data: np.ndarray):
         return self.transformer.transform(data)
 
-    def inverse_transform(self, transformed_data):
+    def inverse_transform(self, transformed_data: np.ndarray):
         return self.transformer.inverse_transform(transformed_data)
 
 
@@ -248,7 +247,7 @@ class PowerTransformer(Transformer):
     def transform(self, data: np.ndarray):
         return self.transformer.transform(data)
 
-    def inverse_transform(self, transformed_data):
+    def inverse_transform(self, transformed_data: np.ndarray):
         return self.transformer.inverse_transform(transformed_data)
 
 
@@ -274,11 +273,31 @@ class QuantileTransformer(Transformer):
     def transform(self, data: np.ndarray):
         return self.transformer.transform(data)
 
-    def inverse_transform(self, transformed_data):
+    def inverse_transform(self, transformed_data: np.ndarray):
         return self.transformer.inverse_transform(transformed_data)
 
 
-def input_has_fit_method(to_check) -> bool:
+class NoTransformer(Transformer):
+    """
+    Does nothing.
+
+    Corresponds to enum [`TransformerType.NO_TRANSFORMER`][cesnet_tszoo.utils.enums.TransformerType] or literal `no_transformer`.
+    """
+
+    def fit(self, data: np.ndarray):
+        ...
+
+    def partial_fit(self, data: np.ndarray) -> None:
+        ...
+
+    def transform(self, data: np.ndarray) -> np.ndarray:
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+        return transformed_data
+
+
+def transformer_has_fit_method(to_check) -> bool:
     """Checks whether `to_check` has fit method. """
 
     fit_method = getattr(to_check, "fit", None)
@@ -288,7 +307,7 @@ def input_has_fit_method(to_check) -> bool:
     return False
 
 
-def input_has_partial_fit_method(to_check) -> bool:
+def transformer_has_partial_fit_method(to_check) -> bool:
     """Checks whether `to_check` has partial_fit method. """
 
     partial_fit_method = getattr(to_check, "partial_fit", None)
@@ -298,8 +317,8 @@ def input_has_partial_fit_method(to_check) -> bool:
     return False
 
 
-def input_has_transform(to_check) -> bool:
-    """Checks whether `to_check` has transform method. """
+def transformer_has_transform(to_check) -> bool:
+    """Checks wheter type has transform method. """
 
     transform_method = getattr(to_check, "transform", None)
     if callable(transform_method):
@@ -308,35 +327,41 @@ def input_has_transform(to_check) -> bool:
     return False
 
 
-def transformer_from_input_to_transformer_type(transformer_from_input: TransformerType | type, check_for_fit: bool, check_for_partial_fit: bool) -> tuple[type, str]:
-    """Converts from input to type value and str that represents transformer's name."""
+def get_transformer_type_or_enum_and_validate(transform_with: TransformerType | str | type | None) -> TransformerType | type:
+    """Returns type or enum variant of the passed transform_with. """
 
-    if transformer_from_input is None:
-        return None, None
+    if transform_with is None:
+        return TransformerType.NO_TRANSFORMER
 
-    if transformer_from_input == StandardScaler or transformer_from_input == TransformerType.STANDARD_SCALER:
-        return StandardScaler, STANDARD_SCALER
-    elif transformer_from_input == L2Normalizer or transformer_from_input == TransformerType.L2_NORMALIZER:
-        return L2Normalizer, L2_NORMALIZER
-    elif transformer_from_input == LogTransformer or transformer_from_input == TransformerType.LOG_TRANSFORMER:
-        return LogTransformer, LOG_TRANSFORMER
-    elif transformer_from_input == MaxAbsScaler or transformer_from_input == TransformerType.MAX_ABS_SCALER:
-        return MaxAbsScaler, MAX_ABS_SCALER
-    elif transformer_from_input == MinMaxScaler or transformer_from_input == TransformerType.MIN_MAX_SCALER:
-        return MinMaxScaler, MIN_MAX_SCALER
-    elif transformer_from_input == PowerTransformer or transformer_from_input == TransformerType.POWER_TRANSFORMER:
-        return PowerTransformer, POWER_TRANSFORMER
-    elif transformer_from_input == QuantileTransformer or transformer_from_input == TransformerType.QUANTILE_TRANSFORMER:
-        return QuantileTransformer, QUANTILE_TRANSFORMER
-    elif transformer_from_input == RobustScaler or transformer_from_input == TransformerType.ROBUST_SCALER:
-        return RobustScaler, ROBUST_SCALER
-    else:
+    if isinstance(transform_with, (str, TransformerType)):
+        return TransformerType(transform_with)
 
-        assert input_has_transform(transformer_from_input)
-        if check_for_fit:
-            assert input_has_fit_method(transformer_from_input)
+    if isinstance(transform_with, type):
+        return transform_with
 
-        if check_for_partial_fit:
-            assert input_has_partial_fit_method(transformer_from_input)
+    if isinstance(transform_with, (list, np.ndarray)):
+        transformer_type = type(transform_with[0])
+        for transformer in transform_with:
+            assert transformer_type == type(transformer), "All transformers in passed list must be of the same type. "
 
-        return transformer_from_input, f"{transformer_from_input.__name__} (Custom)"
+        return transformer_type
+
+    return type(transform_with)
+
+
+def is_transformer_already_initialized(transform_with: TransformerType | str | type | None) -> bool:
+    """Checks whether passed transform_with is already inialized. """
+
+    if transform_with is None:
+        return False
+
+    if isinstance(transform_with, (str, TransformerType)):
+        return False
+
+    if isinstance(transform_with, type):
+        return False
+
+    if isinstance(transform_with, (list, np.ndarray)):
+        return True
+
+    return True

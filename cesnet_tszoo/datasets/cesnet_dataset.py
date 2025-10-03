@@ -13,26 +13,28 @@ import pandas as pd
 import tables as tb
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from torch.utils.data import DataLoader, BatchSampler, SequentialSampler, Dataset, RandomSampler
-import torch
+from torch.utils.data import DataLoader, Dataset
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
+import cesnet_tszoo.utils.filler.factory as filler_factories
+from cesnet_tszoo.pytables_data.dataloader_factory import DataloaderFactory
+import cesnet_tszoo.utils.transformer.factory as transformer_factories
+import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
+from cesnet_tszoo.configs.config_editors.config_editor import ConfigEditor
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
-from cesnet_tszoo.datasets.loaders import collate_fn_simple
-from cesnet_tszoo.pytables_data.series_based_dataset import SeriesBasedDataset
-from cesnet_tszoo.pytables_data.splitted_dataset import SplittedDataset
-from cesnet_tszoo.pytables_data.utils.utils import get_time_indices, get_table_time_indices_path, get_ts_indices, get_table_identifiers_path, get_ts_row_ranges, get_column_types, get_column_names, get_additional_data, load_database
-from cesnet_tszoo.datasets.loaders import create_multiple_df_from_dataloader, create_single_df_from_dataloader, create_numpy_from_dataloader
+import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
+from cesnet_tszoo.pytables_data.utils.utils import get_additional_data, load_database
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
 from cesnet_tszoo.utils.transformer import Transformer
-from cesnet_tszoo.utils.enums import SplitType, AgreggationType, SourceType, TimeFormat, DataloaderOrder, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 from cesnet_tszoo.utils.download import resumable_download
 from cesnet_tszoo.configs.config_loading import load_config
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 @dataclass
@@ -54,7 +56,7 @@ class CesnetDataset(ABC):
 
     **Intended usage:**
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`DatasetConfig`][cesnet_tszoo.configs.base_config.DatasetConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_numpy] to get training data for chosen model.
@@ -69,20 +71,10 @@ class CesnetDataset(ABC):
     5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_numpy].   
 
     Parameters:
-        database_name: Name of the database.
-        dataset_path: Path to the dataset file.     
-        configs_root: Path to the folder where configurations are saved.
-        benchmarks_root: Path to the folder where benchmarks are saved.
-        annotations_root: Path to the folder where annotations are saved.
-        source_type: The source type of the dataset.
-        aggregation: The aggregation type for the selected source type.
-        ts_id_name: Name of the id used for time series.
-        default_values: Default values for each available feature.
-        additional_data: Available small datasets. Can get them by calling [`get_additional_data`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_additional_data] with their name.
+        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
 
     Attributes:
-        time_indices: Available time IDs for the dataset.
-        ts_indices: Available time series IDs for the dataset.
+        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
         annotations: Annotations for the selected dataset.
         logger: Logger for displaying information.  
         imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
@@ -91,7 +83,6 @@ class CesnetDataset(ABC):
 
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize] is called:
     Attributes:
-        dataset_type: Type of this dataset.
         dataset_config: Configuration of the dataset.
         train_dataset: Training set as a `BaseDataset` instance wrapping the PyTables database.
         val_dataset: Validation set as a `BaseDataset` instance wrapping the PyTables database.
@@ -103,18 +94,7 @@ class CesnetDataset(ABC):
         all_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set.
     """
 
-    database_name: str
-    dataset_path: str
-    configs_root: str
-    benchmarks_root: str
-    annotations_root: str
-    source_type: SourceType
-    aggregation: AgreggationType
-    ts_id_name: str
-    default_values: dict
-    additional_data: dict[str, tuple]
-
-    dataset_type: DatasetType | None = field(default=None, init=False)
+    metadata: DatasetMetadata
 
     dataset_config: Optional[DatasetConfig] = field(default=None, init=False)
 
@@ -128,31 +108,23 @@ class CesnetDataset(ABC):
     test_dataloader: Optional[DataLoader] = field(default=None, init=False)
     all_dataloader: Optional[DataLoader] = field(default=None, init=False)
 
+    dataloader_factory: Optional[DataloaderFactory] = field(default=None, init=False)
+
+    dataset_type: Optional[DatasetType] = field(default=None, init=False)
+
     _collate_fn: Optional[Callable] = field(default=None, init=False)
     _export_config_copy: Optional[DatasetConfig] = field(default=None, init=False)
 
     def __post_init__(self):
         self.logger = logging.getLogger("cesnet_dataset")
 
-        self._collate_fn = collate_fn_simple
+        self._collate_fn = dataset_loaders.collate_fn_simple
         self.annotations = Annotations()
 
         # Initialize annotation states
         self.imported_annotations_ts_identifier = None
         self.imported_annotations_time_identifier = None
         self.imported_annotations_both_identifier = None
-
-        # Set time and ts indices
-        self.time_indices = get_time_indices(self.dataset_path, get_table_time_indices_path(self.aggregation))
-        self.logger.debug("Time indices have been successfully set.")
-
-        self.ts_indices = get_ts_indices(self.dataset_path, get_table_identifiers_path(self.source_type))
-        self.logger.debug("Time series indices have been successfully set.")
-
-        # Set only needed default values
-        used_features = self.get_feature_names()
-        self.default_values = {feature: self.default_values[feature] for feature in self.default_values if feature in used_features}
-        self.logger.debug("Default values for features set.")
 
     def set_dataset_config_and_initialize(self, dataset_config: DatasetConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
         """
@@ -177,9 +149,7 @@ class CesnetDataset(ABC):
 
         # If the config is not initialized, set a copy of the configuration for export
         if not self.dataset_config.is_initialized:
-            self.dataset_config.aggregation = self.aggregation
-            self.dataset_config.source_type = self.source_type
-            self.dataset_config.database_name = self.database_name
+            self.dataset_config._update_identifiers_from_dataset_metadata(self.metadata)
             self._export_config_copy = deepcopy(self.dataset_config)
             self.logger.debug("New export_config_copy created.")
 
@@ -189,12 +159,7 @@ class CesnetDataset(ABC):
             workers = self.dataset_config.init_workers
 
         if not self.dataset_config.is_initialized:
-            # Retrieve row ranges and dataset features necessary for final config initialization
-            ts_row_ranges = get_ts_row_ranges(self.dataset_path, self.dataset_config._get_table_identifiers_row_ranges_path())
-            dataset_features = get_column_types(self.dataset_path, self.dataset_config.source_type, self.dataset_config.aggregation)
-            self.logger.debug("Successfully retrieved row ranges and dataset features for config finalization.")
-
-            self.dataset_config._dataset_init(self.ts_indices, self.time_indices, ts_row_ranges, dataset_features, self.default_values, self.ts_id_name)
+            self.dataset_config._dataset_init(self.metadata)
             self._initialize_transformers_and_details(workers)
             self.dataset_config.is_initialized = True
             self.logger.info("Config initialized successfully.")
@@ -281,7 +246,7 @@ class CesnetDataset(ABC):
                 self.logger.info("Destroyed previous cached train_dataloader.")
 
             self.dataset_config.used_train_workers = 0
-            self.train_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.train_batch_size)
+            self.train_dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, False, self.dataset_config.train_batch_size)
             self.logger.info("Created new cached train_dataloader.")
             return self.train_dataloader
         elif self.dataset_config.used_singular_train_time_series is not None and self.train_dataloader is not None:
@@ -309,13 +274,13 @@ class CesnetDataset(ABC):
 
         # If caching is enabled, create a new cached dataloader
         if kwargs["cache_loader"]:
-            self.train_dataloader = self._get_dataloader(self.train_dataset, workers, kwargs['take_all'], self.dataset_config.train_batch_size, order=self.dataset_config.train_dataloader_order)
+            self.train_dataloader = self.dataloader_factory.create_dataloader(self.train_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.train_batch_size, order=self.dataset_config.train_dataloader_order)
             self.logger.info("Created new cached train_dataloader.")
             return self.train_dataloader
 
         # If caching is disabled, create a new uncached dataloader
         self.logger.debug("Created new uncached train_dataloader.")
-        return self._get_dataloader(self.train_dataset, workers, kwargs['take_all'], self.dataset_config.train_batch_size, order=self.dataset_config.train_dataloader_order)
+        return self.dataloader_factory.create_dataloader(self.train_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.train_batch_size, order=self.dataset_config.train_dataloader_order)
 
     def get_val_dataloader(self, ts_id: int | None = None, workers: int | Literal["config"] = "config", **kwargs) -> DataLoader:
         """
@@ -385,7 +350,7 @@ class CesnetDataset(ABC):
                 self.logger.info("Destroyed previous cached val_dataloader.")
 
             self.dataset_config.used_val_workers = 0
-            self.val_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.val_batch_size)
+            self.val_dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, False, self.dataset_config.val_batch_size)
             self.logger.info("Created new cached val_dataloader.")
             return self.val_dataloader
         elif self.dataset_config.used_singular_val_time_series is not None and self.val_dataloader is not None:
@@ -413,13 +378,13 @@ class CesnetDataset(ABC):
 
         # If caching is enabled, create a new cached dataloader
         if kwargs["cache_loader"]:
-            self.val_dataloader = self._get_dataloader(self.val_dataset, workers, kwargs['take_all'], self.dataset_config.val_batch_size)
+            self.val_dataloader = self.dataloader_factory.create_dataloader(self.val_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.val_batch_size)
             self.logger.info("Created new cached val_dataloader.")
             return self.val_dataloader
 
         # If caching is disabled, create a new uncached dataloader
         self.logger.debug("Created new uncached val_dataloader.")
-        return self._get_dataloader(self.val_dataset, workers, kwargs['take_all'], self.dataset_config.val_batch_size)
+        return self.dataloader_factory.create_dataloader(self.val_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.val_batch_size)
 
     def get_test_dataloader(self, ts_id: int | None = None, workers: int | Literal["config"] = "config", **kwargs) -> DataLoader:
         """
@@ -489,7 +454,7 @@ class CesnetDataset(ABC):
                 self.logger.info("Destroyed previous cached test_dataloader.")
 
             self.dataset_config.used_test_workers = 0
-            self.test_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.test_batch_size)
+            self.test_dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, False, self.dataset_config.test_batch_size)
             self.logger.info("Created new cached test_dataloader.")
             return self.test_dataloader
         elif self.dataset_config.used_singular_test_time_series is not None and self.test_dataloader is not None:
@@ -517,13 +482,13 @@ class CesnetDataset(ABC):
 
         # If caching is enabled, create a new cached dataloader
         if kwargs["cache_loader"]:
-            self.test_dataloader = self._get_dataloader(self.test_dataset, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
+            self.test_dataloader = self.dataloader_factory.create_dataloader(self.test_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
             self.logger.info("Created new cached test_dataloader.")
             return self.test_dataloader
 
         # If caching is disabled, create a new uncached dataloader
         self.logger.debug("Created new uncached test_dataloader.")
-        return self._get_dataloader(self.test_dataset, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
+        return self.dataloader_factory.create_dataloader(self.test_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.test_batch_size)
 
     def get_all_dataloader(self, ts_id: int | None = None, workers: int | Literal["config"] = "config", **kwargs) -> DataLoader:
         """
@@ -593,7 +558,7 @@ class CesnetDataset(ABC):
                 self.logger.info("Destroyed previous cached all_dataloader.")
 
             self.dataset_config.used_all_workers = 0
-            self.all_dataloader = self._get_dataloader(dataset, 0, False, self.dataset_config.all_batch_size)
+            self.all_dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, False, self.dataset_config.all_batch_size)
             self.logger.info("Created new cached all_dataloader.")
             return self.all_dataloader
         elif self.dataset_config.used_singular_all_time_series is not None and self.all_dataloader is not None:
@@ -621,13 +586,13 @@ class CesnetDataset(ABC):
 
         # If caching is enabled, create a new cached dataloader
         if kwargs["cache_loader"]:
-            self.all_dataloader = self._get_dataloader(self.all_dataset, workers, kwargs['take_all'], self.dataset_config.all_batch_size)
+            self.all_dataloader = self.dataloader_factory.create_dataloader(self.all_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.all_batch_size)
             self.logger.info("Created new cached all_dataloader.")
             return self.all_dataloader
 
         # If caching is disabled, create a new uncached dataloader
         self.logger.debug("Creating new uncached all_dataloader.")
-        return self._get_dataloader(self.all_dataset, workers, kwargs['take_all'], self.dataset_config.all_batch_size)
+        return self.dataloader_factory.create_dataloader(self.all_dataset, self.dataset_config, workers, kwargs['take_all'], self.dataset_config.all_batch_size)
 
     def get_train_df(self, workers: int | Literal["config"] = "config", as_single_dataframe: bool = True) -> pd.DataFrame:
         """
@@ -881,208 +846,49 @@ class CesnetDataset(ABC):
         dataloader = self.get_all_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_numpy(dataloader, ts_ids, time_period)
 
-    def update_dataset_config_and_initialize(self,
-                                             default_values: list[Number] | npt.NDArray[np.number] | dict[str, Number] | Number | Literal["default"] | None | Literal["config"] = "config",
-                                             sliding_window_size: int | None | Literal["config"] = "config",
-                                             sliding_window_prediction_size: int | None | Literal["config"] = "config",
-                                             sliding_window_step: int | Literal["config"] = "config",
-                                             set_shared_size: float | int | Literal["config"] = "config",
-                                             train_batch_size: int | Literal["config"] = "config",
-                                             val_batch_size: int | Literal["config"] = "config",
-                                             test_batch_size: int | Literal["config"] = "config",
-                                             all_batch_size: int | Literal["config"] = "config",
-                                             fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
-                                             transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
-                                             handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"] = "config",
-                                             create_transformer_per_time_series: bool | Literal["config"] = "config",
-                                             partial_fit_initialized_transformers: bool | Literal["config"] = "config",
-                                             train_workers: int | Literal["config"] = "config",
-                                             val_workers: int | Literal["config"] = "config",
-                                             test_workers: int | Literal["config"] = "config",
-                                             all_workers: int | Literal["config"] = "config",
-                                             init_workers: int | Literal["config"] = "config",
-                                             workers: int | Literal["config"] = "config",
-                                             display_config_details: bool = False):
-        """Used for updating selected configurations set in config.
-
-        Set parameter to `config` to keep it as it is config.
-
-        If exception is thrown during set, no changes are made.
-
-        Can affect following configuration. 
-
-        | Dataset config                          | Description                                                                                                                                     |
-        | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-        | `default_values`                        | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |  
-        | `sliding_window_size`                   | Number of times in one window. Impacts dataloader behavior. Refer to relevant config for details.                                               |
-        | `sliding_window_prediction_size`        | Number of times to predict from sliding_window_size. Refer to relevant config for details.                                                      |
-        | `sliding_window_step`                   | Number of times to move by after each window. Refer to relevant config for details.                                                             |
-        | `set_shared_size`                       | How much times should time periods share. Order of sharing is training set < validation set < test set. Refer to relevant config for details.   |           
-        | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
-        | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
-        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
-        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
-        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |                
-        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               | 
-        | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the dataset.                                                                                 |            
-        | `create_transformer_per_time_series`    | If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers.                        |   
-        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
-        | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
-        | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
-        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |
-        | `all_workers`                           | Number of workers for loading all data.                                                                                                         |     
-        | `init_workers`                          | Number of workers for dataset configuration.                                                                                                    |                        
-
-        Parameters:
-            default_values: Default values for missing data, applied before fillers. `Defaults: config`.  
-            sliding_window_size: Number of times in one window. `Defaults: config`.
-            sliding_window_prediction_size: Number of times to predict from sliding_window_size. `Defaults: config`.
-            sliding_window_step: Number of times to move by after each window. `Defaults: config`.
-            set_shared_size: How much times should time periods share. `Defaults: config`.            
-            train_batch_size: Number of samples per batch for train set. `Defaults: config`.
-            val_batch_size: Number of samples per batch for val set. `Defaults: config`.
-            test_batch_size: Number of samples per batch for test set. `Defaults: config`.
-            all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
-            fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
-            transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
-            handle_anomalies_with: Defines the anomaly handler to handle anomalies in the dataset. `Defaults: config`.  
-            create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. `Defaults: config`.  
-            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Defaults: config`.    
-            train_workers: Number of workers for loading training data. `Defaults: config`.
-            val_workers: Number of workers for loading validation data. `Defaults: config`.
-            test_workers: Number of workers for loading test data. `Defaults: config`.
-            all_workers: Number of workers for loading all data.  `Defaults: config`.
-            init_workers: Number of workers for dataset configuration. `Defaults: config`.                          
-            workers: How many workers to use when updating configuration. `Defaults: config`.  
-            display_config_details: Whether config details should be displayed after configuration. `Defaults: False`. 
-        """
+    def _update_dataset_config_and_initialize(self, config_editor: ConfigEditor, workers: int | Literal["config"] = "config", display_config_details: bool = False):
+        """Updates config via passed config editor. """
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating dataset configuration.")
 
-        requires_init = False
-
-        if default_values == "config":
-            default_values = self._export_config_copy.default_values
-        else:
-            requires_init = True
-
-        if isinstance(self.dataset_config, TimeBasedHandler):
-            if sliding_window_size == "config":
-                sliding_window_size = self.dataset_config.sliding_window_size
-            if sliding_window_prediction_size == "config":
-                sliding_window_prediction_size = self.dataset_config.sliding_window_prediction_size
-            if sliding_window_step == "config":
-                sliding_window_step = self.dataset_config.sliding_window_step
-            if set_shared_size == "config":
-                set_shared_size = self.dataset_config.set_shared_size
-            else:
-                requires_init = True
-
-        if train_batch_size == "config":
-            train_batch_size = self.dataset_config.train_batch_size
-        if val_batch_size == "config":
-            val_batch_size = self.dataset_config.val_batch_size
-        if test_batch_size == "config":
-            test_batch_size = self.dataset_config.test_batch_size
-        if all_batch_size == "config":
-            all_batch_size = self.dataset_config.all_batch_size
-
-        if fill_missing_with == "config":
-            fill_missing_with = self._export_config_copy.fill_missing_with
-        else:
-            requires_init = True
-
-        if create_transformer_per_time_series == "config":
-            create_transformer_per_time_series = self._export_config_copy.create_transformer_per_time_series
-        else:
-            requires_init = True
-
-        if partial_fit_initialized_transformers == "config":
-            partial_fit_initialized_transformers = self._export_config_copy.partial_fit_initialized_transformers
-        else:
-            requires_init = True
-
-        if transform_with == "config":
-            transform_with = self._export_config_copy.transform_with
-        else:
-            requires_init = True
-
-        if handle_anomalies_with == "config":
-            handle_anomalies_with = self._export_config_copy.handle_anomalies_with
-        else:
-            requires_init = True
-
-        if train_workers == "config":
-            train_workers = self.dataset_config.train_workers
-        if val_workers == "config":
-            val_workers = self.dataset_config.val_workers
-        if test_workers == "config":
-            test_workers = self.dataset_config.test_workers
-        if all_workers == "config":
-            all_workers = self.dataset_config.all_workers
-        if init_workers == "config":
-            init_workers = self.dataset_config.init_workers
-
         original_config = deepcopy(self.dataset_config)
         original_export_config = deepcopy(self._export_config_copy)
+
         try:
-            if requires_init:
+            if config_editor.requires_init:
                 self.logger.info("Re-initialization is required.")
-                self._export_config_copy.default_values = default_values
-                if isinstance(self.dataset_config, TimeBasedHandler):
-                    self._export_config_copy.sliding_window_size = sliding_window_size
-                    self._export_config_copy.sliding_window_prediction_size = sliding_window_prediction_size
-                    self._export_config_copy.sliding_window_step = sliding_window_step
-                    self._export_config_copy.set_shared_size = set_shared_size
-                self._export_config_copy.train_batch_size = train_batch_size
-                self._export_config_copy.val_batch_size = val_batch_size
-                self._export_config_copy.test_batch_size = test_batch_size
-                self._export_config_copy.all_batch_size = all_batch_size
-                self._export_config_copy.fill_missing_with = fill_missing_with
-                self._export_config_copy.transform_with = transform_with
-                self._export_config_copy.handle_anomalies_with = handle_anomalies_with
-                self._export_config_copy.partial_fit_initialized_transformers = partial_fit_initialized_transformers
-                self._export_config_copy.create_transformer_per_time_series = create_transformer_per_time_series
-                self._export_config_copy.train_workers = train_workers
-                self._export_config_copy.val_workers = val_workers
-                self._export_config_copy.test_workers = test_workers
-                self._export_config_copy.all_workers = all_workers
-                self._export_config_copy.init_workers = init_workers
-                self._export_config_copy._validate_construction()
+                config_editor.modify_dataset_config(self._export_config_copy, self.metadata)
                 self.set_dataset_config_and_initialize(self._export_config_copy, False, workers)
+
             else:
-                self.logger.info("Re-initialization is not needed.")
-                self.dataset_config._update_batch_sizes(train_batch_size, val_batch_size, test_batch_size, all_batch_size)
-                self.dataset_config._update_workers(train_workers, val_workers, test_workers, all_workers, init_workers)
+                config_editor.modify_dataset_config(self.dataset_config, self.metadata)
 
-                if isinstance(self.dataset_config, TimeBasedHandler):
-                    self.dataset_config._update_sliding_window(sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, self.time_indices)
-
-                if self.train_dataloader is not None:
-                    del self.train_dataloader
-                    self.train_dataloader = None
-                    self.logger.info("Destroyed cached train_dataloader.")
-
-                if self.val_dataloader is not None:
-                    del self.val_dataloader
-                    self.val_dataloader = None
-                    self.logger.info("Destroyed cached val_dataloader.")
-
-                if self.test_dataloader is not None:
-                    del self.test_dataloader
-                    self.test_dataloader = None
-                    self.logger.info("Destroyed cached test_dataloader.")
-
-                if self.all_dataloader is not None:
-                    del self.all_dataloader
-                    self.all_dataloader = None
-                    self.logger.info("Destroyed cached all_dataloader.")
         except Exception:
             self.dataset_config = original_config
             self._export_config_copy = original_export_config
             self.logger.error("Error occured, reverting changes.")
             raise
+
+        if self.train_dataloader is not None:
+            del self.train_dataloader
+            self.train_dataloader = None
+            self.logger.info("Destroyed cached train_dataloader.")
+
+        if self.val_dataloader is not None:
+            del self.val_dataloader
+            self.val_dataloader = None
+            self.logger.info("Destroyed cached val_dataloader.")
+
+        if self.test_dataloader is not None:
+            del self.test_dataloader
+            self.test_dataloader = None
+            self.logger.info("Destroyed cached test_dataloader.")
+
+        if self.all_dataloader is not None:
+            del self.all_dataloader
+            self.all_dataloader = None
+            self.logger.info("Destroyed cached all_dataloader.")
 
         self._update_config_imported_status(None)
         self._update_export_config_copy()
@@ -1091,6 +897,11 @@ class CesnetDataset(ABC):
 
         if display_config_details:
             self.display_config()
+
+    @abstractmethod
+    def update_dataset_config_and_initialize(self, **kwargs):
+        """Used to modify selected configurations set in config."""
+        ...
 
     def apply_filler(self, fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None, workers: int | Literal["config"] = "config") -> None:
         """Used for updating filler set in config.
@@ -1258,15 +1069,15 @@ class CesnetDataset(ABC):
         to_display = f'''
 Dataset details:
 
-    {self.aggregation}
-        Time indices: {range(self.time_indices[ID_TIME_COLUMN_NAME][0], self.time_indices[ID_TIME_COLUMN_NAME][-1])}
-        Datetime: {(datetime.fromtimestamp(self.time_indices['time'][0], tz=timezone.utc), datetime.fromtimestamp(self.time_indices['time'][-1], timezone.utc))}
+    {self.metadata.aggregation}
+        Time indices: {range(self.metadata.time_indices[ID_TIME_COLUMN_NAME][0], self.metadata.time_indices[ID_TIME_COLUMN_NAME][-1])}
+        Datetime: {(datetime.fromtimestamp(self.metadata.time_indices['time'][0], tz=timezone.utc), datetime.fromtimestamp(self.metadata.time_indices['time'][-1], timezone.utc))}
 
-    {self.source_type}
-        Time series indices: {get_abbreviated_list_string(self.ts_indices[self.ts_id_name])}; use 'get_available_ts_indices' for full list
-        Features with default values: {self.default_values}
+    {self.metadata.source_type}
+        Time series indices: {get_abbreviated_list_string(self.metadata.ts_indices[self.metadata.ts_id_name])}; use 'get_available_ts_indices' for full list
+        Features with default values: {self.metadata.default_values}
         
-        Additional data: {list(self.additional_data.keys())}
+        Additional data: {list(self.metadata.additional_data.keys())}
         '''
 
         print(to_display)
@@ -1281,7 +1092,7 @@ Dataset details:
     def get_feature_names(self) -> list[str]:
         """Returns a list of all available feature names in the dataset. """
 
-        return get_column_names(self.dataset_path, self.source_type, self.aggregation)
+        return list(self.metadata.features.keys())
 
     @abstractmethod
     def get_data_about_set(self, about: SplitType | Literal["train", "val", "test", "all"]) -> dict:
@@ -1296,9 +1107,9 @@ Dataset details:
         """
         ...
 
-    def get_available_ts_indices(self):
+    def get_available_ts_indices(self) -> np.ndarray:
         """Returns the available time series indices in this dataset. """
-        return self.ts_indices
+        return self.metadata.ts_indices
 
     def get_additional_data(self, data_name: str) -> pd.DataFrame:
         """Create a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html) of additional data of `data_name`.
@@ -1310,14 +1121,14 @@ Dataset details:
             Dataframe of additional data of `data_name`.
         """
 
-        if data_name not in self.additional_data:
+        if data_name not in self.metadata.additional_data:
             self.logger.error("%s is not available for this dataset.", data_name)
-            raise ValueError(f"{data_name} is not available for this dataset.", f"Possible options are: {self.additional_data}")
+            raise ValueError(f"{data_name} is not available for this dataset.", f"Possible options are: {self.metadata.additional_data}")
 
-        data = get_additional_data(self.dataset_path, data_name)
+        data = get_additional_data(self.metadata.dataset_path, data_name)
         data_df = pd.DataFrame(data)
 
-        for column, column_type in self.additional_data[data_name]:
+        for column, column_type in self.metadata.additional_data[data_name]:
             if column_type == datetime:
                 data_df[column] = data_df[column].apply(lambda x: datetime.fromtimestamp(x, tz=timezone.utc))
             else:
@@ -1486,7 +1297,7 @@ Dataset details:
         """
         on = AnnotationType(on)
 
-        return self.annotations.get_annotations(on, self.ts_id_name)
+        return self.annotations.get_annotations(on, self.metadata.ts_id_name)
 
     def import_annotations(self, identifier: str, enforce_ids: bool = True) -> None:
         """ 
@@ -1501,7 +1312,7 @@ Dataset details:
             enforce_ids: Flag indicating whether the `ts_id` and `id_time` must belong to this dataset. `Default: True`                
         """
 
-        annotations_file_path, is_built_in = get_annotations_path_and_whether_it_is_built_in(identifier, self.annotations_root, self.logger)
+        annotations_file_path, is_built_in = get_annotations_path_and_whether_it_is_built_in(identifier, self.metadata.annotations_root, self.logger)
 
         if is_built_in:
             self.logger.info("Built-in annotations found: %s.", identifier)
@@ -1524,18 +1335,18 @@ Dataset details:
         on = None
 
         # Check the columns of the DataFrame to identify the type of annotation
-        if self.ts_id_name in temp_df.columns and ID_TIME_COLUMN_NAME in temp_df.columns:
+        if self.metadata.ts_id_name in temp_df.columns and ID_TIME_COLUMN_NAME in temp_df.columns:
             self.annotations.clear_time_in_time_series()
             time_id_index = temp_df.columns.tolist().index(ID_TIME_COLUMN_NAME)
-            ts_id_index = temp_df.columns.tolist().index(self.ts_id_name)
+            ts_id_index = temp_df.columns.tolist().index(self.metadata.ts_id_name)
             on = AnnotationType.BOTH
-            self.logger.info("Annotations detected as %s (both %s and id_time)", AnnotationType.BOTH, self.ts_id_name)
+            self.logger.info("Annotations detected as %s (both %s and id_time)", AnnotationType.BOTH, self.metadata.ts_id_name)
 
-        elif self.ts_id_name in temp_df.columns:
+        elif self.metadata.ts_id_name in temp_df.columns:
             self.annotations.clear_time_series()
-            ts_id_index = temp_df.columns.tolist().index(self.ts_id_name)
+            ts_id_index = temp_df.columns.tolist().index(self.metadata.ts_id_name)
             on = AnnotationType.TS_ID
-            self.logger.info("Annotations detected as %s (%s only)", AnnotationType.TS_ID, self.ts_id_name)
+            self.logger.info("Annotations detected as %s (%s only)", AnnotationType.TS_ID, self.metadata.ts_id_name)
 
         elif ID_TIME_COLUMN_NAME in temp_df.columns:
             self.annotations.clear_time()
@@ -1544,7 +1355,7 @@ Dataset details:
             self.logger.info("Annotations detected as %s (%s only)", AnnotationType.ID_TIME, ID_TIME_COLUMN_NAME)
 
         else:
-            raise ValueError(f"Could not find {self.ts_id_name} and {ID_TIME_COLUMN_NAME} in the imported CSV.")
+            raise ValueError(f"Could not find {self.metadata.ts_id_name} and {ID_TIME_COLUMN_NAME} in the imported CSV.")
 
         # Process each row in the DataFrame and add annotations
         for row in temp_df.itertuples(False):
@@ -1588,7 +1399,7 @@ Dataset details:
         """
 
         # Load config
-        config = load_config(identifier, self.configs_root, self.database_name, self.source_type, self.aggregation, self.logger)
+        config = load_config(identifier, self.metadata.configs_root, self.metadata.database_name, self.metadata.source_type, self.metadata.aggregation, self.logger)
 
         self.logger.info("Initializing dataset configuration with the imported config.")
         self.set_dataset_config_and_initialize(config, display_config_details, workers)
@@ -1618,11 +1429,11 @@ Dataset details:
         temp_df = self.get_annotations(on)
 
         # Ensure the annotations root directory exists, creating it if necessary
-        if not os.path.exists(self.annotations_root):
-            os.makedirs(self.annotations_root)
-            self.logger.info("Created annotations directory at %s", self.annotations_root)
+        if not os.path.exists(self.metadata.annotations_root):
+            os.makedirs(self.metadata.annotations_root)
+            self.logger.info("Created annotations directory at %s", self.metadata.annotations_root)
 
-        path = os.path.join(self.annotations_root, f"{identifier}.csv")
+        path = os.path.join(self.metadata.annotations_root, f"{identifier}.csv")
 
         if os.path.exists(path) and not force_write:
             raise ValueError(f"Annotations already exist at {path}. Set force_write=True to overwrite.")
@@ -1656,12 +1467,12 @@ Dataset details:
             raise ValueError("Built-in config with this identifier already exists. Choose another identifier.")
 
         # Ensure the config directory exists
-        if not os.path.exists(self.configs_root):
-            os.makedirs(self.configs_root)
-            self.logger.info("Created config directory at %s", self.configs_root)
+        if not os.path.exists(self.metadata.configs_root):
+            os.makedirs(self.metadata.configs_root)
+            self.logger.info("Created config directory at %s", self.metadata.configs_root)
 
-        path_pickle = os.path.join(self.configs_root, f"{identifier}.pickle")
-        path_details = os.path.join(self.configs_root, f"{identifier}.txt")
+        path_pickle = os.path.join(self.metadata.configs_root, f"{identifier}.pickle")
+        path_details = os.path.join(self.metadata.configs_root, f"{identifier}.txt")
 
         if os.path.exists(path_pickle) and not force_write:
             raise ValueError(f"Config at path {path_pickle} already exists. Set force_write=True to overwrite.")
@@ -1672,10 +1483,13 @@ Dataset details:
                 raise ValueError(f"Config details at path {path_details} already exists. Set force_write=True to overwrite.")
             self.logger.debug("Config details path: %s", path_details)
 
-        if self.dataset_config.is_filler_custom:
+        if not self.dataset_config.filler_factory.creates_built_in:
             self.logger.warning("You are using a custom filler. Ensure the config is distributed with the source code of the filler.")
 
-        if self.dataset_config.is_transformer_custom:
+        if not self.dataset_config.anomaly_handler_factory.creates_built_in:
+            self.logger.warning("You are using a custom anomaly handler. Ensure the config is distributed with the source code of the anomaly handler.")
+
+        if not self.dataset_config.transformer_factory.creates_built_in:
             self.logger.warning("You are using a custom transformer. Ensure the config is distributed with the source code of the transformer.")
 
         pickle_dump(self._export_config_copy, path_pickle)
@@ -1733,10 +1547,10 @@ Dataset details:
         # Use the imported identifier if available and update is not necessary, otherwise default to the current identifier
         config_name = self.dataset_config.import_identifier if (self.dataset_config.import_identifier is not None and not self.dataset_config.export_update_needed) else identifier
 
-        export_benchmark = ExportBenchmark(self.database_name,
-                                           self.source_type.value,
-                                           self.aggregation.value,
-                                           self.dataset_type.value,
+        export_benchmark = ExportBenchmark(self.metadata.database_name,
+                                           self.metadata.source_type.value,
+                                           self.metadata.aggregation.value,
+                                           self.metadata.dataset_type.value,
                                            config_name,
                                            annotations_ts_name,
                                            annotations_time_name,
@@ -1768,11 +1582,11 @@ Dataset details:
             self.logger.info("Using already existing annotations with identifier: %s; type: %s", self.imported_annotations_both_identifier, AnnotationType.BOTH)
 
         # Ensure the benchmark directory exists
-        if not os.path.exists(self.benchmarks_root):
-            os.makedirs(self.benchmarks_root)
-            self.logger.info("Created benchmarks directory at %s", self.benchmarks_root)
+        if not os.path.exists(self.metadata.benchmarks_root):
+            os.makedirs(self.metadata.benchmarks_root)
+            self.logger.info("Created benchmarks directory at %s", self.metadata.benchmarks_root)
 
-        benchmark_path = os.path.join(self.benchmarks_root, f"{identifier}.yaml")
+        benchmark_path = os.path.join(self.metadata.benchmarks_root, f"{identifier}.yaml")
 
         if os.path.exists(benchmark_path) and not force_write:
             self.logger.error("Benchmark file already exists at %s", benchmark_path)
@@ -1796,7 +1610,7 @@ Dataset details:
         Raises an exception if corrupted.
         """
 
-        dataset, _ = load_database(self.dataset_path)
+        dataset, _ = load_database(self.metadata.dataset_path)
 
         try:
             node_iter = dataset.walk_nodes()
@@ -1873,121 +1687,24 @@ Dataset details:
 
         # Handle when id_time is provided
         if id_time is not None:
-            time_indices = self.time_indices
+            time_indices = self.metadata.time_indices
             if id_time < time_indices[ID_TIME_COLUMN_NAME][0] or id_time > time_indices[ID_TIME_COLUMN_NAME][-1]:
                 valid_range = range(time_indices[ID_TIME_COLUMN_NAME][0], time_indices[ID_TIME_COLUMN_NAME][-1])
-                raise ValueError(f"id_time {id_time} does not fall within the valid range for {self.aggregation}. "
+                raise ValueError(f"id_time {id_time} does not fall within the valid range for {self.metadata.aggregation}. "
                                  f"Valid id_time range: {valid_range}.")
 
         # Handle when ts_id is provided
         if ts_id is not None:
-            ts_indices = self.ts_indices[self.ts_id_name]
+            ts_indices = self.metadata.ts_indices[self.metadata.ts_id_name]
 
             if ts_id not in ts_indices:
-                valid_ts_range = self.ts_indices[self.ts_id_name]
-                raise ValueError(f"ts_id {ts_id} does not exist in the available range for {self.source_type}. "
+                valid_ts_range = self.metadata.ts_indices[self.metadata.ts_id_name]
+                raise ValueError(f"ts_id {ts_id} does not exist in the available range for {self.metadata.source_type}. "
                                  f"Valid ts_id values: {valid_ts_range}.")
 
-    def _get_time_based_dataloader(self, dataset: SplittedDataset, workers: int, take_all: bool, batch_size: int) -> DataLoader:
-        """
-        Returns a time-based PyTorch DataLoader. 
-
-        The batch size determines the number of times for time series are included in each batch.    
-        """
-
-        if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before getting dataloader.")
-
-        if take_all:
-            batch_size = len(dataset)
-            self.logger.debug("Using full dataset as batch size (%d samples).", batch_size)
-        else:
-            self.logger.debug("Using batch size from config: %d", batch_size)
-
-            total_batch_size = batch_size * len(dataset.ts_row_ranges)
-            if total_batch_size >= LOADING_WARNING_THRESHOLD:
-                self.logger.warning("The total number of samples in one batch is %d (%d time series × %d times(batch size) ). Consider lowering the batch size.", total_batch_size, len(dataset.ts_row_ranges), batch_size)
-
-        should_drop = not take_all and self.dataset_config.sliding_window_size is not None
-
-        batch_sampler = BatchSampler(sampler=SequentialSampler(dataset), batch_size=batch_size, drop_last=should_drop)
-
-        dataloader = DataLoader(dataset, num_workers=0, collate_fn=self._collate_fn, persistent_workers=False, batch_size=None, sampler=batch_sampler)
-
-        self.logger.debug("Dataloader created with SequentialSampler and batch size %d.", batch_size)
-
-        # Prepare the dataset for loading, either with the full batch or with windowed batching
-        if take_all:
-            dataset.prepare_dataset(batch_size, None, None, None, workers)
-            self.logger.debug("Dataset prepared with full batch size (%d samples).", batch_size)
-        else:
-            dataset.prepare_dataset(batch_size, self.dataset_config.sliding_window_size, self.dataset_config.sliding_window_prediction_size, self.dataset_config.sliding_window_step, workers)
-            self.logger.debug("Dataset prepared with window size (%d).", self.dataset_config.sliding_window_size)
-
-        return dataloader
-
-    def _get_series_based_dataloader(self, dataset: SeriesBasedDataset, workers: int, take_all: bool, batch_size: int, order: DataloaderOrder = DataloaderOrder.SEQUENTIAL) -> DataLoader:
-        """ 
-        Returns a series-based PyTorch DataLoader.
-
-        The batch size determines the number of time series included in each batch.
-        """
-
-        if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before getting dataloader.")
-
-        if take_all:
-            batch_size = len(dataset)
-            self.logger.debug("Using full dataset as batch size (%d samples) to return the entire dataset.", batch_size)
-        else:
-            self.logger.debug("Using batch size from config: %d", batch_size)
-
-        total_batch_size = batch_size * len(dataset.time_period)
-        if total_batch_size >= LOADING_WARNING_THRESHOLD:
-            self.logger.warning("The total number of samples in one batch is %d (%d time series(batch size) × %d times ). Consider lowering the batch size.", total_batch_size, batch_size, len(dataset.time_period))
-
-        if order == DataloaderOrder.RANDOM:
-            if self.dataset_config.random_state is not None:
-                generator = torch.Generator()
-                generator.manual_seed(self.dataset_config.random_state)
-                self.logger.debug("Prepared RandomSampler with fixed seed %d for series dataloader.", self.dataset_config.random_state)
-            else:
-                generator = None
-                self.logger.debug("Prepared RandomSampler with dynamic seed for series dataloader.")
-
-            sampler = RandomSampler(dataset, generator=generator)
-
-        elif order == DataloaderOrder.SEQUENTIAL:
-            sampler = SequentialSampler(dataset)
-            self.logger.debug("Prepared SequentialSampler for series dataloader.")
-        else:
-            raise ValueError("Invalid order specified for the dataloader. Supported values are DataloaderOrder.RANDOM and DataloaderOrder.SEQUENTIAL.")
-
-        batch_sampler = BatchSampler(sampler=sampler, batch_size=batch_size, drop_last=False)
-        dataloader = DataLoader(dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=SeriesBasedDataset.worker_init_fn, persistent_workers=False, batch_size=None, sampler=batch_sampler)
-
-        # Must be done if dataloader runs on main process.
-        if workers == 0:
-            dataset.pytables_worker_init(0)
-
-        self.logger.debug("Series-based dataset prepared for dataloader with batch size %d and %s order.", batch_size, order.name)
-
-        return dataloader
-
     @abstractmethod
-    def _get_singular_time_series_dataset(self, parent_dataset: SeriesBasedDataset | SplittedDataset, ts_id: int) -> SeriesBasedDataset | SplittedDataset:
+    def _get_singular_time_series_dataset(self, parent_dataset: Dataset, ts_id: int) -> Dataset:
         """Returns dataset for single time series """
-        ...
-
-    @abstractmethod
-    def _get_dataloader(self, dataset: Dataset, workers: int, take_all: bool, batch_size: int, **kwargs) -> DataLoader:
-        """
-        Sets the DataLoader based on the type of dataset. 
-
-        This method determines whether the dataset is series-based or time-based and calls the corresponding method to return the appropriate DataLoader:
-        - Calls [`_get_series_based_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset._get_series_based_dataloader] if the dataset is series-based.
-        - Calls [`_get_time_based_dataloader`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset._get_time_based_dataloader] if the dataset is time-based.
-        """
         ...
 
     def _get_df(self, dataloader: DataLoader, as_single_dataframe: bool, ts_ids: np.ndarray, time_period: np.ndarray) -> pd.DataFrame:
@@ -2002,7 +1719,7 @@ Dataset details:
 
         if as_single_dataframe:
             self.logger.debug("Returning a single DataFrame with all features for all time series.")
-            return create_single_df_from_dataloader(
+            return dataset_loaders.create_single_df_from_dataloader(
                 dataloader,
                 ts_ids,
                 self.dataset_config.features_to_take,
@@ -2014,7 +1731,7 @@ Dataset details:
             )
         else:
             self.logger.debug("Returning multiple DataFrames, one per time series.")
-            return create_multiple_df_from_dataloader(
+            return dataset_loaders.create_multiple_df_from_dataloader(
                 dataloader,
                 ts_ids,
                 self.dataset_config.features_to_take,
@@ -2036,7 +1753,7 @@ Dataset details:
             self.logger.warning("The dataset contains %d samples (%d time series × %d times). Consider using get_*_dataloader() for batch loading.", total_samples, len(ts_ids), len(time_period))
 
         self.logger.debug("Creating numpy array from dataloader.")
-        return create_numpy_from_dataloader(
+        return dataset_loaders.create_numpy_from_dataloader(
             dataloader,
             ts_ids,
             self.dataset_config.time_format,
@@ -2097,18 +1814,18 @@ Dataset details:
     def _validate_config_for_dataset(self, config: DatasetConfig) -> bool:
         """Validates whether config is supposed to be used for this dataset. """
 
-        if config.database_name != self.database_name:
+        if config.database_name != self.metadata.database_name:
             self.logger.error("This config is not compatible with the current dataset. Difference in database name between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.database_name == {config.database_name} and dataset.database_name == {self.database_name}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.database_name == {config.database_name} and dataset.database_name == {self.metadata.database_name}")
 
-        if config.dataset_type != self.dataset_type:
+        if config.dataset_type != self.metadata.dataset_type:
             self.logger.error("This config is not compatible with the current dataset. Difference in is_series_based between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.dataset_type == {config.dataset_type} and dataset.dataset_type == {self.dataset_type}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.dataset_type == {config.dataset_type} and dataset.dataset_type == {self.metadata.dataset_type}")
 
-        if config.aggregation != self.aggregation:
+        if config.aggregation != self.metadata.aggregation:
             self.logger.error("This config is not compatible with the current dataset. Difference in aggregation type between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.aggregation == {config.aggregation} and dataset.aggregation == {self.aggregation}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.aggregation == {config.aggregation} and dataset.aggregation == {self.metadata.aggregation}")
 
-        if config.source_type != self.source_type:
+        if config.source_type != self.metadata.source_type:
             self.logger.error("This config is not compatible with the current dataset. Difference in source type between config and this dataset.")
-            raise ValueError("This config is not compatible with the current dataset.", f"config.source_type == {config.source_type} and dataset.source_type == {self.source_type}")
+            raise ValueError("This config is not compatible with the current dataset.", f"config.source_type == {config.source_type} and dataset.source_type == {self.metadata.source_type}")

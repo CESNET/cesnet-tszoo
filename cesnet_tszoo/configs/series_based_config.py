@@ -6,9 +6,9 @@ from numbers import Number
 import numpy as np
 import numpy.typing as npt
 
-from cesnet_tszoo.utils.filler import filler_from_input_to_type
-from cesnet_tszoo.utils.transformer import transformer_from_input_to_transformer_type, Transformer
-from cesnet_tszoo.utils.anomaly_handler import anomaly_handler_from_input_to_anomaly_handler_type
+from cesnet_tszoo.utils.transformer import Transformer
+import cesnet_tszoo.utils.transformer.factory as transformer_factories
+import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
@@ -65,26 +65,14 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
-        transform_with_display: Used to display the configured type of `transform_with`.
-        fill_missing_with_display: Used to display the configured type of `fill_missing_with`.
-        handle_anomalies_with_display: Used to display the configured type of `handle_anomalies_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
-        is_transformer_custom: Flag indicating whether the transformer is custom.
-        is_filler_custom: Flag indicating whether the filler is custom.
-        is_anomaly_handler_custom: Flag indicating whether the anomaly handler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
-        used_times: List of all times used in the configuration.
-        used_ts_ids: List of all time series IDs used in the configuration.
-        used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
-        used_fillers: List of all fillers used in the configuration.
-        used_anomaly_handlers: List of all anomaly handlers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
         used_singular_all_time_series: Currently used singular all set time series for dataloader.        
         transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
-        are_transformers_premade: Indicates whether the transformers are premade.
         train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
         val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
         test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
@@ -227,104 +215,59 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state)
 
     def _set_feature_transformers(self) -> None:
-        """Creates and/or validates transformers based on the `transform_with` parameter. """
+        """Creates transformer with `transformer_factory`. """
 
-        self.create_transformer_per_time_series = False
-
-        if self.transform_with is None:
-            self.transform_with_display = None
-            self.are_transformers_premade = False
-            self.transformers = None
-            self.is_transformer_custom = None
-
-            self.logger.debug("No transformer will be used because transform_with is not set.")
-            return
-
-        # Treat transform_with as already initialized transformer
-        if not isinstance(self.transform_with, (type, TransformerType)):
-            self.transformers = self.transform_with
-
-            if not self.has_train():
-                if self.partial_fit_initialized_transformers:
-                    self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
+        if self.transformer_factory.has_already_initialized:
+            if not self.has_train() and self.partial_fit_initialized_transformers:
                 self.partial_fit_initialized_transformers = False
+                self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
 
-            self.transform_with, self.transform_with_display = transformer_from_input_to_transformer_type(type(self.transform_with), check_for_fit=False, check_for_partial_fit=self.partial_fit_initialized_transformers)
-
-            self.are_transformers_premade = True
-
-            self.is_transformer_custom = "Custom" in self.transform_with_display
-            self.logger.debug("Using initialized transformer of type: %s", self.transform_with_display)
-
-        # Treat transform_with as uninitialized transformer
+            self.transformers = self.transformer_factory.get_already_initialized_transformers()
+            self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.name)
         else:
-            if not self.has_train():
-                self.transform_with = None
-                self.transform_with_display = None
-                self.are_transformers_premade = False
-                self.transformers = None
-                self.is_transformer_custom = None
-
+            if not self.has_train() and not self.transformer_factory.is_empty_factory:
+                self.transformer_factory = transformer_factories.get_transformer_factory(None, self.create_transformer_per_time_series, self.partial_fit_initialized_transformers)
                 self.logger.warning("No transformer will be used because train set is not used.")
-                return
 
-            self.transform_with, self.transform_with_display = transformer_from_input_to_transformer_type(self.transform_with, check_for_fit=False, check_for_partial_fit=True)
-            self.transformers = self.transform_with()
-
-            self.are_transformers_premade = False
-
-            self.is_transformer_custom = "Custom" in self.transform_with_display
-            self.logger.debug("Using uninitialized transformer of type: %s", self.transform_with_display)
+            self.transformers = self.transformer_factory.create_transformer()
+            self.logger.debug("Using transformer %s.", self.transformer_factory.name)
 
     def _set_fillers(self) -> None:
-        """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
-
-        self.fill_missing_with, self.fill_missing_with_display = filler_from_input_to_type(self.fill_missing_with)
-        self.is_filler_custom = "Custom" in self.fill_missing_with_display if self.fill_missing_with is not None else None
-
-        if self.fill_missing_with is None:
-            self.logger.debug("No filler is used because fill_missing_with is set to None.")
-            return
+        """Creates fillers with `filler_factory`. """
 
         # Set the fillers for the training set
         if self.has_train():
-            self.train_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.train_ts])
+            self.train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.train_ts])
             self.logger.debug("Fillers for training set are set.")
 
         # Set the fillers for the validation set
         if self.has_val():
-            self.val_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.val_ts])
+            self.val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.val_ts])
             self.logger.debug("Fillers for validation set are set.")
 
         # Set the fillers for the test set
         if self.has_test():
-            self.test_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.test_ts])
+            self.test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
 
         # Set the fillers for the all set
         if self.has_all():
-            self.all_fillers = np.array([self.fill_missing_with(self.features_to_take_without_ids) for _ in self.all_ts])
+            self.all_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.all_ts])
             self.logger.debug("Fillers for all set are set.")
 
-        self.logger.debug("Using filler: %s.", self.fill_missing_with_display)
+        self.logger.debug("Using filler %s", self.filler_factory.name)
 
     def _set_anomaly_handlers(self):
-        """Creates and/or validates anomaly handlers based on the `handle_anomalies_with` parameter. """
+        """Creates anomaly handlers with `anomaly_handler_factory`. """
 
-        if self.handle_anomalies_with is None:
-            self.logger.debug("No anomaly handler is used because handle_anomalies_with is set to None.")
-            return
+        if not self.has_train() and not self.anomaly_handler_factory.is_empty_factory:
+            self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(None)
+            self.logger.warning("No anomaly handler will be used because train set is not used.")
 
-        if not self.has_train():
-            self.logger.error("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
-            raise ValueError("Anomaly handler cannot be used without train set. Either set train set or set handle_anomalies_with to None")
+        if self.has_train():
+            self.anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.train_ts])
 
-        self.logger.info("Anomaly handler will only be used for train set.")
-
-        self.handle_anomalies_with, self.handle_anomalies_with_display = anomaly_handler_from_input_to_anomaly_handler_type(self.handle_anomalies_with)
-        self.is_anomaly_handler_custom = "Custom" in self.handle_anomalies_with_display
-
-        self.anomaly_handlers = np.array([self.handle_anomalies_with() for _ in self.train_ts])
+        self.logger.debug("Using anomaly handler %s", self.anomaly_handler_factory.name)
 
     def _validate_finalization(self) -> None:
         """Performs final validation of the configuration. """
@@ -333,11 +276,11 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
 
     def __str__(self) -> str:
 
-        if self.transform_with is None:
-            transformer_part = f"Transformer type: {str(self.transform_with_display)}"
+        if self.transformer_factory.is_empty_factory:
+            transformer_part = f"Transformer type: {self.transformer_factory.name}"
         else:
-            transformer_part = f'''Transformer type: {str(self.transform_with_display)}
-        Are transformers premade: {self.are_transformers_premade}
+            transformer_part = f'''Transformer type: {self.transformer_factory.name}
+        Are transformers premade: {self.transformer_factory.has_already_initialized}
         Are premade transformers partial_fitted: {self.partial_fit_initialized_transformers}'''
 
         if self.include_time:
@@ -365,11 +308,11 @@ Config Details:
         Time series ID included: {str(self.include_ts_id)}
         {time_part}
     Fillers         
-        Filler type: {str(self.fill_missing_with_display)}
+        Filler type: {self.filler_factory.name}
     Transformers
         {transformer_part}
     Anomaly handler
-        Anomaly handler type (train set): {str(self.handle_anomalies_with_display)}   
+        Anomaly handler type (train set): {self.anomaly_handler_factory.name}   
     Batch sizes
         Train batch size: {self.train_batch_size}
         Val batch size: {self.val_batch_size}

@@ -11,35 +11,33 @@ class SeriesBasedDataset(BaseDataset):
     """
 
     def __getitem__(self, batch_idx):
-        fillers = self.fillers[batch_idx] if self.fillers is not None else None
-        anomaly_handlers = self.anomaly_handlers[batch_idx] if self.anomaly_handlers is not None else None
+        fillers = self.load_config.fillers[batch_idx]
+        anomaly_handlers = self.load_config.anomaly_handlers[batch_idx] if self.load_config.anomaly_handlers is not None else None
 
-        data = self.load_data_from_table(self.ts_row_ranges[batch_idx], self.time_period, fillers, anomaly_handlers)
+        data = self.load_data_from_table(self.load_config.ts_row_ranges[batch_idx], self.load_config.time_period, fillers, anomaly_handlers)
 
-        if self.include_time:
-            if self.time_format == TimeFormat.ID_TIME:
-                data[:, :, self.time_col_index] = self.time_period[ID_TIME_COLUMN_NAME]
-            elif self.time_format == TimeFormat.UNIX_TIME or self.time_format == TimeFormat.SHIFTED_UNIX_TIME:
-                data[:, :, self.time_col_index] = self.time_period[TIME_COLUMN_NAME]
+        if self.load_config.include_time:
+            if self.load_config.time_format == TimeFormat.ID_TIME:
+                data[:, :, self.time_col_index] = self.load_config.time_period[ID_TIME_COLUMN_NAME]
+            elif self.load_config.time_format == TimeFormat.UNIX_TIME or self.load_config.time_format == TimeFormat.SHIFTED_UNIX_TIME:
+                data[:, :, self.time_col_index] = self.load_config.time_period[TIME_COLUMN_NAME]
 
-        if self.include_ts_id:
+        if self.load_config.include_ts_id:
             data[:, :, self.ts_id_col_index] = self.ts_id_fill[batch_idx]
 
-        # Transform data if applicable
-        if self.transformers is not None:
-            transformer = self.transformers
-            for i, _ in enumerate(data):
-                if len(self.indices_of_features_to_take_no_ids) == 1:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(-1, 1))
-                elif len(self.time_period) == 1:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids].reshape(1, -1))
-                else:
-                    data[i][:, self.indices_of_features_to_take_no_ids] = transformer.transform(data[i][:, self.indices_of_features_to_take_no_ids])
+        # Transform data
+        for i, _ in enumerate(data):
+            if len(self.load_config.indices_of_features_to_take_no_ids) == 1:
+                data[i][:, self.load_config.indices_of_features_to_take_no_ids] = self.load_config.transformers.transform(data[i][:, self.load_config.indices_of_features_to_take_no_ids].reshape(-1, 1))
+            elif len(self.load_config.time_period) == 1:
+                data[i][:, self.load_config.indices_of_features_to_take_no_ids] = self.load_config.transformers.transform(data[i][:, self.load_config.indices_of_features_to_take_no_ids].reshape(1, -1))
+            else:
+                data[i][:, self.load_config.indices_of_features_to_take_no_ids] = self.load_config.transformers.transform(data[i][:, self.load_config.indices_of_features_to_take_no_ids])
 
-        if self.include_time and self.time_format == TimeFormat.DATETIME:
-            return data, self.time_period[TIME_COLUMN_NAME].copy()
+        if self.load_config.include_time and self.load_config.time_format == TimeFormat.DATETIME:
+            return data, self.load_config.time_period[TIME_COLUMN_NAME].copy()
         else:
             return data
 
     def __len__(self) -> int:
-        return len(self.ts_row_ranges)
+        return len(self.load_config.ts_row_ranges)

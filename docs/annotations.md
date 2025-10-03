@@ -72,7 +72,7 @@ dataset.remove_annotation(annotation_group="test3", ts_id=3, id_time=0 ) # Remov
 
 ## Exporting annotations
 - You can export your created annotation with `save_annotations` method.
-- `save_annotations` creates CSV file at: `os.path.join(dataset.annotations_root, identifier)`.
+- `save_annotations` creates CSV file at: `os.path.join(dataset.metadata.annotations_root, identifier)`.
 - When parameter `force_write` is True, existing files with same name will be overwritten.
 - You should not add ".csv" to identifier, because it will be added automatically.
 

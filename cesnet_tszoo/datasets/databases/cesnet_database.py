@@ -2,25 +2,25 @@ import logging
 import os
 from abc import ABC
 
-from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
-from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
-from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
+import cesnet_tszoo.datasets.dataset_factory as dataset_factories
+from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.utils.download import resumable_download
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 class CesnetDatabase(ABC):
     """
     Base class for cesnet databases. This class should **not** be used directly. Use it as base for adding new databases.
 
-    Derived databases are used by calling class method [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] which will create a new dataset instance of [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] 
+    Derived databases are used by calling class method [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] which will create a new dataset instance of [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] 
     or [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset]. Check them for more info about how to use them.
 
     **Intended usage:**
 
     When using [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset] (`dataset_type` = `DatasetType.TIME_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
@@ -29,7 +29,7 @@ class CesnetDatabase(ABC):
 
     When using [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] (`dataset_type` = `DatasetType.SERIES_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
@@ -38,7 +38,7 @@ class CesnetDatabase(ABC):
 
     When using [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] (`dataset_type` = `DatasetType.DISJOINT_TIME_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
     2. Create an instance of [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
     3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
@@ -50,11 +50,11 @@ class CesnetDatabase(ABC):
     Attributes:
         name: Name of the database.
         bucket_url: URL of the bucket where the dataset is stored.
-        tszoo_root: Path to folder where all databases are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] was called at least once.
-        database_root: Path to the folder where datasets belonging to the database are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] was called at least once.
-        configs_root: Path to the folder where configurations are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] was called at least once.
-        benchmarks_root: Path to the folder where benchmarks are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] was called at least once.
-        annotations_root: Path to the folder where annotations are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset] was called at least once.
+        tszoo_root: Path to folder where all databases are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] was called at least once.
+        database_root: Path to the folder where datasets belonging to the database are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] was called at least once.
+        configs_root: Path to the folder where configurations are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] was called at least once.
+        benchmarks_root: Path to the folder where benchmarks are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] was called at least once.
+        annotations_root: Path to the folder where annotations are saved. Set after [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] was called at least once.
         id_names: Names for time series IDs for each `source_type`.
         default_values: Default values for each available feature.
         source_types: Available source types for the database.
@@ -81,7 +81,7 @@ class CesnetDatabase(ABC):
         raise ValueError("To create dataset instance use class method 'get_dataset' instead.")
 
     @classmethod
-    def get_dataset(cls, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset:
+    def get_dataset(cls, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False) -> CesnetDataset:
         """
         Create new dataset instance.
 
@@ -127,29 +127,16 @@ class CesnetDatabase(ABC):
         if not cls._is_downloaded(dataset_path):
             cls._download(dataset_name, dataset_path)
 
-        if dataset_type == DatasetType.SERIES_BASED:
-            dataset = SeriesBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
-        elif dataset_type == DatasetType.TIME_BASED:
-            dataset = TimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
-        elif dataset_type == DatasetType.DISJOINT_TIME_BASED:
-            dataset = DisjointTimeBasedCesnetDataset(cls.name, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
-        else:
-            raise NotImplementedError()
+        dataset_metadata = DatasetMetadata(cls.name, dataset_type, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
+
+        dataset_factory = dataset_factories.get_dataset_factory(dataset_type)
+        dataset = dataset_factory.create_dataset(dataset_metadata)
 
         if check_errors:
             dataset.check_errors()
 
         if display_details:
             dataset.display_dataset_details()
-
-        if dataset_type == DatasetType.SERIES_BASED:
-            logger.info("Dataset is series-based. Use cesnet_tszoo.configs.SeriesBasedConfig")
-        elif dataset_type == DatasetType.TIME_BASED:
-            logger.info("Dataset is time-based. Use cesnet_tszoo.configs.TimeBasedConfig")
-        elif dataset_type == DatasetType.DISJOINT_TIME_BASED:
-            logger.info("Dataset is disjoint_time_based. Use cesnet_tszoo.configs.DisjointTimeBasedConfig")
-        else:
-            raise NotImplementedError()
 
         return dataset
 

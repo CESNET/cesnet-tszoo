@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+import numpy as np
+
 from cesnet_tszoo.utils.enums import AgreggationType, SourceType, DatasetType
 import cesnet_tszoo.version as version
 from packaging.version import Version
@@ -32,6 +34,26 @@ def is_config_used_for_dataset(config, dataset_database: str, dataset_source_typ
         return False
 
     return True
+
+
+def try_concatenate(*arrays) -> np.ndarray:
+
+    result = None
+
+    to_merge = []
+
+    for array in arrays:
+        if array is None or len(array) == 0:
+            continue
+
+        to_merge.append(array)
+
+    if len(to_merge) == 0:
+        result = np.array([])
+    else:
+        result = np.concatenate(to_merge)
+
+    return result
 
 
 @dataclass

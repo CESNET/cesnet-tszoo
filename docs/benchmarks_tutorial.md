@@ -42,10 +42,10 @@ dataset = benchmark.get_initialized_dataset(display_config_details=True, check_e
 ## Exporting benchmarks
 
 - You can use method `save_benchmark` to save benchmark.
-- Saving benchmark creates YAML file, which hold metadata, at: `os.path.join(dataset.benchmarks_root, identifier)`.
+- Saving benchmark creates YAML file, which hold metadata, at: `os.path.join(dataset.metadata.benchmarks_root, identifier)`.
 - Saving benchmark automatically creates files for config and annotations with identifiers matching benchmark identifier
-  - config will be saved at: `os.path.join(dataset.configs_root, identifier)`
-  - annotations will be saved at: `os.path.join(dataset.annotations_root, identifier, str(AnnotationType))`
+  - config will be saved at: `os.path.join(dataset.metadata.configs_root, identifier)`
+  - annotations will be saved at: `os.path.join(dataset.metadata.annotations_root, identifier, str(AnnotationType))`
   - When parameter `force_write` is True, existing files with the same name will be overwritten.
 - When using imported config or annotations, only their identifier will be passed to benchmark and no new files will get created
   - if calling anything that changes annotations, it will no longer be taken as imported
@@ -73,7 +73,7 @@ Instead of exporting or importing whole benchmark you can do for specific config
 ### Config
 - Saving config
     - When parameter `force_write` is True, existing files with the same name will be overwritten.
-    - Config will be saved as pickle file at: `os.path.join(dataset.configs_root, identifier)`
+    - Config will be saved as pickle file at: `os.path.join(dataset.metadata.configs_root, identifier)`
     - When parameter `create_with_details_file` is True, text file with config details will be exported along pickle config.
 - Importing config
     - - First, it attempts to load the built-in config, if no built-in config with such an identifier exists, it attempts to load a custom config from the `"data_root"/tszoo/configs/` directory.
@@ -97,7 +97,7 @@ time_based_dataset.import_config(identifier="test_config1", display_config_detai
 ### Annotations
 - Saving annotation
     - When parameter `force_write` is True, existing files with the same name will be overwritten.
-    - Annotations will be saved as CSV file at: `os.path.join(dataset.annotations_root, identifier)`.
+    - Annotations will be saved as CSV file at: `os.path.join(dataset.metadata.annotations_root, identifier)`.
 - Importing annotation
     - First, it attempts to load the built-in annotations, if no built-in annotations with such an identifier exists, it attempts to load a custom annotations from the `"data_root"/tszoo/annotations/` directory.
 
