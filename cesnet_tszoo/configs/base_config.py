@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 
 import cesnet_tszoo.version as version
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER
 from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
@@ -89,6 +89,7 @@ class DatasetConfig(ABC):
                  val_batch_size: int,
                  test_batch_size: int,
                  all_batch_size: int,
+                 preprocess_order: list[str],
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None,
                  transform_with: type | TransformerType | list[Transformer] | np.ndarray[Transformer] | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None,
                  handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None,
@@ -160,6 +161,7 @@ class DatasetConfig(ABC):
         self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
         self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
         self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
+        self.preprocess_order = preprocess_order
         # new
 
         # to remove
@@ -190,6 +192,12 @@ class DatasetConfig(ABC):
         assert isinstance(self.val_batch_size, int) and self.val_batch_size > 0, "val_batch_size must be a positive integer."
         assert isinstance(self.test_batch_size, int) and self.test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(self.all_batch_size, int) and self.all_batch_size > 0, "all_batch_size must be a positive integer."
+
+        # Ensuring that preprocess order contains all required preprocesses
+        assert self.preprocess_order is not None, "preprocess_order must be set."
+        assert isinstance(self.preprocess_order, list), "preprocess_order must be list"
+        assert MANDATORY_PREPROCESSES_ORDER.issubset(self.preprocess_order), f"preprocess_order must at least contain order for {list(MANDATORY_PREPROCESSES_ORDER)}"
+        assert len(self.preprocess_order) == 4, f"preprocess_order must not contain duplicate mandatory orders (from {list(MANDATORY_PREPROCESSES_ORDER)})"
 
         # Validate nan_threshold value
         assert isinstance(self.nan_threshold, Number) and 0 <= self.nan_threshold <= 1, "nan_threshold must be a number between 0 and 1."
