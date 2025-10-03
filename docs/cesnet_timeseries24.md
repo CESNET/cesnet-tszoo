@@ -64,8 +64,8 @@ Moreover, the time series created by re-aggregation contains following time seri
 | sum_n_dest_asn         | Sum of numbers of unique destination ASNs.                                   |
 | avg_n_dest_asn         | The average number of unique destination ASNs.                               |
 | std_n_dest_asn         | Standard deviation of numbers of unique destination ASNs.                    |
-| sum_n_dest_port        | Sum of numbers of unique destination transport layer ports.                  |
-| avg_n_dest_port        |  The average number of unique destination transport layer ports.             |
-| std_n_dest_port        | Standard deviation of numbers of unique destination transport layer ports.   |
+| sum_n_dest_ports        | Sum of numbers of unique destination transport layer ports.                  |
+| avg_n_dest_ports        |  The average number of unique destination transport layer ports.             |
+| std_n_dest_ports        | Standard deviation of numbers of unique destination transport layer ports.   |
 
 More detailed description is available in the dataset [paper](https://doi.org/10.1038/s41597-025-04603-x) or you can contact dataset author [Josef Koumar](https://koumajos.github.io/).

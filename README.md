@@ -45,6 +45,19 @@ or for editable install with:
 pip install -e git+https://github.com/CESNET/cesnet-tszoo#egg=cesnet-tszoo
 ```
 
+## Citation
+
+If you use CESNET TS-Zoo, please cite our paper:
+
+```
+@misc{kures2025,
+    title={CESNET TS-Zoo: A Library for Reproducible Analysis of Network Traffic Time Series}, 
+    author={Milan Kureš and Josef Koumar and Karel Hynek},
+    booktitle={2025 21th International Conference on Network and Service Management (CNSM)}, 
+    year={2025}
+}
+```
+
 ## Examples
 
 ### Initialize dataset to create train, validation, and test dataframes
@@ -72,7 +85,8 @@ test_dataframe = dataset.get_test_df()
 
 Time-based datasets are configured with [`TimeBasedConfig`](https://cesnet.github.io/cesnet-tszoo/reference_time_based_config/).
 
-#### Using [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] dataset
+#### Using [`DisjointTimeBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_disjoint_time_based_cesnet_dataset/) dataset
+
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType
@@ -94,7 +108,7 @@ val_dataframe = dataset.get_val_df()
 test_dataframe = dataset.get_test_df()
 ```
 
-Disjoint-time-based datasets are configured with [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig].
+Disjoint-time-based datasets are configured with [`DisjointTimeBasedConfig`](https://cesnet.github.io/cesnet-tszoo/reference_disjoint_time_based_config/).
 
 #### Using [`SeriesBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_series_based_cesnet_dataset/) dataset
 
@@ -133,5 +147,3 @@ test_dataframe = dataset.get_test_df()
 ```
 
 Whether loaded dataset is series-based or time-based depends on the benchmark. What can be loaded corresponds to previous datasets.
-
-## Papers
