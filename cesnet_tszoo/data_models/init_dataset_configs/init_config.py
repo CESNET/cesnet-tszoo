@@ -14,7 +14,6 @@ class DatasetInitConfig(ABC):
         self.ts_id_name = config.ts_id_name
         self.features_to_take = config.features_to_take
         self.indices_of_features_to_take_no_ids = config.indices_of_features_to_take_no_ids
-        self.default_values = config.default_values
         self.time_period = None
         self.anomaly_handlers = None
 

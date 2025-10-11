@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import numpy as np
 
 from cesnet_tszoo.configs import TimeBasedConfig
@@ -20,9 +18,9 @@ class TimeDatasetInitConfig(DatasetInitConfig):
         self.test_time_period = None
         self.all_time_period = None
 
-        self.train_fillers = None
-        self.val_fillers = None
-        self.test_fillers = None
+        self.train_preprocess_order_group = None
+        self.val_preprocess_order_group = None
+        self.test_preprocess_order_group = None
 
         super().__init__(config, None)
 
@@ -43,22 +41,22 @@ class TimeDatasetInitConfig(DatasetInitConfig):
         """Initializes from train data of config """
 
         self.train_time_period = self.config.train_time_period
-        self.train_fillers = deepcopy(self.config.train_fillers)
-        self.anomaly_handlers = self.config.anomaly_handlers
+        self.train_preprocess_order_group = self.config.train_preprocess_order
 
     def _init_val(self):
         """Initializes from val data of config """
 
         self.val_time_period = self.config.val_time_period
-        self.val_fillers = self.config.val_fillers
+        self.train_preprocess_order_group = self.config.val_preprocess_order
 
     def _init_test(self):
         """Initializes from test data of config """
 
         self.test_time_period = self.config.test_time_period
-        self.test_fillers = self.config.test_fillers
+        self.train_preprocess_order_group = self.config.test_preprocess_order
 
     def _init_all(self):
         """Initializes from all data of config """
 
         self.all_time_period = self.config.all_time_period
+        self.train_preprocess_order_group = self.config.all_preprocess_order
