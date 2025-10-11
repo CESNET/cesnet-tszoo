@@ -15,6 +15,7 @@ class DatasetInitConfig(ABC):
         self.features_to_take = config.features_to_take
         self.indices_of_features_to_take_no_ids = config.indices_of_features_to_take_no_ids
         self.time_period = None
+        self.nan_threshold = config.nan_threshold
 
         if limit_init_to_set == SplitType.TRAIN:
             self._init_train()
