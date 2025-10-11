@@ -8,10 +8,11 @@ from cesnet_tszoo.utils.filler.filler import Filler, MeanFiller, ForwardFiller, 
 class FillerFactory(ABC):
     """Base class for filler factories. """
 
-    def __init__(self, filler_type: type, identifier: FillerType | None, creates_built_in: bool = True):
+    def __init__(self, filler_type: type, identifier: FillerType | None, creates_built_in: bool = True, is_empty_factory: bool = False):
         self.filler_type = filler_type
         self.creates_built_in = creates_built_in
         self.identifier = identifier
+        self.is_empty_factory = is_empty_factory
 
         if isinstance(filler_type, type):
             self.name = filler_type.__name__
@@ -70,7 +71,7 @@ class NoFillerFactory(FillerFactory):
     """Factory class for NoFiller. """
 
     def __init__(self):
-        super().__init__(NoFiller, FillerType.NO_FILLER)
+        super().__init__(NoFiller, FillerType.NO_FILLER, is_empty_factory=True)
 
     def create_filler(self, features) -> NoFiller:
         return NoFiller(features)

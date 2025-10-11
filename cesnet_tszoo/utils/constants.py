@@ -1,3 +1,5 @@
+from cesnet_tszoo.utils.enums import PreprocessType
+
 # Time formats
 
 UNIX_TIME_FORMAT = "unix_time"
@@ -16,4 +18,4 @@ ROW_START = "start"
 ROW_END = "end"
 LOADING_WARNING_THRESHOLD = 20_000_000
 ANNOTATIONS_DOWNLOAD_BUCKET = "https://liberouter.org/datazoo/download?bucket=annotations"
-MANDATORY_PREPROCESSES_ORDER = set(["anomaly_handler", "default_values", "filler", "transformer"])
+MANDATORY_PREPROCESSES_ORDER = set([PreprocessType.HANDLING_ANOMALIES.value, PreprocessType.FILLING_GAPS.value, PreprocessType.TRANSFORMING.value])

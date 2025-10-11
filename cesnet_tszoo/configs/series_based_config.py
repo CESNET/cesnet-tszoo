@@ -124,7 +124,7 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
                  val_batch_size: int = 64,
                  test_batch_size: int = 128,
                  all_batch_size: int = 128,
-                 preprocess_order: list[str] = ["anomaly_handler", "default_values", "filler", "transformer"],
+                 preprocess_order: list[str] = ["handling_anomalies", "filling_gaps", "transforming"],
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
                  transform_with: type | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None = None,
                  handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None = None,
@@ -149,7 +149,7 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
 
         SeriesBasedHandler.__init__(self, self.logger, True, train_ts, val_ts, test_ts)
         DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, all_batch_size, preprocess_order, fill_missing_with, transform_with, handle_anomalies_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
-                               train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, False, DatasetType.SERIES_BASED, train_dataloader_order, random_state, self.logger)
+                               train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, False, DatasetType.SERIES_BASED, train_dataloader_order, random_state, False, self.logger)
 
     def _validate_construction(self) -> None:
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig._dataset_init]. """

@@ -133,7 +133,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                  val_batch_size: int = 64,
                  test_batch_size: int = 128,
                  all_batch_size: int = 128,
-                 preprocess_order: list[str] = ["anomaly_handler", "default_values", "filler", "transformer"],
+                 preprocess_order: list[str] = ["handling_anomalies", "filling_gaps", "transforming"],
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
                  transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None = None,
                  handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None = None,
@@ -158,7 +158,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
         TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, all_batch_size, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
         DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, all_batch_size, preprocess_order, fill_missing_with, transform_with, handle_anomalies_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,
-                               train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, create_transformer_per_time_series, DatasetType.TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
+                               train_workers, val_workers, test_workers, all_workers, init_workers, nan_threshold, create_transformer_per_time_series, DatasetType.TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, True, self.logger)
 
     def _validate_construction(self) -> None:
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig._dataset_init]. """
@@ -293,6 +293,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                 self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.name)
             else:
                 assert len(self.transformers) == len(self.ts_ids), "Number of time series in ts_ids does not match with number of provided transformers."
+                self.create_transformer_per_time_series = True
                 self.logger.debug("Using list of initialized transformers of %s", self.transformer_factory.name)
         else:
             if not self.has_train() and not self.transformer_factory.is_empty_factory:

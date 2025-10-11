@@ -9,9 +9,11 @@ import numpy.typing as npt
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER
-from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType, PreprocessType
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
+from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
+from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
 import cesnet_tszoo.utils.filler.factory as filler_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
@@ -107,6 +109,7 @@ class DatasetConfig(ABC):
                  dataset_type: DatasetType,
                  train_dataloader_order: DataloaderOrder | Literal["random", "sequential"],
                  random_state: int | None,
+                 can_fit_fillers: bool,
                  logger: logging.Logger):
 
         self.used_train_workers = None
@@ -162,6 +165,7 @@ class DatasetConfig(ABC):
         self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
         self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
         self.preprocess_order = preprocess_order
+        self.can_fit_fillers = can_fit_fillers
         # new
 
         # to remove
@@ -197,7 +201,7 @@ class DatasetConfig(ABC):
         assert self.preprocess_order is not None, "preprocess_order must be set."
         assert isinstance(self.preprocess_order, list), "preprocess_order must be list"
         assert MANDATORY_PREPROCESSES_ORDER.issubset(self.preprocess_order), f"preprocess_order must at least contain order for {list(MANDATORY_PREPROCESSES_ORDER)}"
-        assert len(self.preprocess_order) == 4, f"preprocess_order must not contain duplicate mandatory orders (from {list(MANDATORY_PREPROCESSES_ORDER)})"
+        assert len(self.preprocess_order) == 3, f"preprocess_order must not contain duplicate mandatory orders (from {list(MANDATORY_PREPROCESSES_ORDER)})"
 
         # Validate nan_threshold value
         assert isinstance(self.nan_threshold, Number) and 0 <= self.nan_threshold <= 1, "nan_threshold must be a number between 0 and 1."
@@ -279,6 +283,41 @@ class DatasetConfig(ABC):
         """Returns whether all set is used. """
         ...
 
+    def _get_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
+        """Returns preprocess grouped orders used when initializing config. """
+
+        groups = []
+
+        last_group: PreprocessOrderGroup = None
+
+        outers = []
+        inners = []
+
+        preprocess_note: PreprocessNote
+        for preprocess_note in self.preprocess_order:
+
+            if preprocess_note.is_inner_preprocess:
+
+                if len(outers) > 0:
+                    group = PreprocessOrderGroup(inners + outers)
+
+                    groups.append(group)
+
+                    inners = [] if last_group is None else last_group.get_preprocess_orders_for_inner_transform()
+                    outers.clear()
+
+                inners.append(preprocess_note)
+
+            if not preprocess_note.is_inner_preprocess:
+                outers.append(preprocess_note)
+
+        group = PreprocessOrderGroup(inners + outers)
+
+        if group.any_preprocess_needs_fitting:
+            groups.append(group)
+
+        return groups
+
     def _update_identifiers_from_dataset_metadata(self, dataset_metadata: DatasetMetadata) -> None:
         """Updates identifying attributes from dataset metadata. """
 
@@ -311,6 +350,9 @@ class DatasetConfig(ABC):
 
         self._set_anomaly_handlers()
         self.logger.debug("Anomaly handlers have been successfully set.")
+
+        self.__set_preprocess_order()
+        self.logger.debug("Preprocess order have been successfully set.")
 
         self._validate_finalization()
         self.logger.debug("Finalization and validation completed successfully.")
@@ -393,6 +435,36 @@ class DatasetConfig(ABC):
             temp_default_values[i] = self.default_values[feature]
 
         self.default_values = temp_default_values
+
+    def __set_preprocess_order(self):
+        """Validates and converts preprocess order to their enum variant. """
+
+        for i, order in self.preprocess_order:
+            if isinstance(order, str):
+                self.preprocess_order[i] = PreprocessType(order)
+            else:
+                raise NotImplementedError("Currenty preprocess order supports only string names")
+
+        notes = []
+
+        for preprocess_type in self.preprocess_order:
+            preprocess_note = None
+
+            if preprocess_type == PreprocessType.TRANSFORMING:
+                needs_fitting = (self.partial_fit_initialized_transformers or not self.transformer_factory.has_already_initialized) and not self.transformer_factory.is_empty_factory
+                is_outer = not self.create_transformer_per_time_series and needs_fitting
+                preprocess_note = PreprocessNote(preprocess_type, needs_fitting, not is_outer)
+            elif preprocess_type == PreprocessType.FILLING_GAPS:
+                needs_fitting = self.can_fit_fillers and not self.filler_factory.is_empty_factory
+                preprocess_note = PreprocessNote(preprocess_type, needs_fitting, True)
+            elif preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                preprocess_note = PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, True)
+            else:
+                raise NotImplementedError()
+
+            notes.append(preprocess_note)
+
+        self.preprocess_order = notes
 
     @abstractmethod
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:
