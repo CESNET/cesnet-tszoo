@@ -9,8 +9,8 @@ class PreprocessOrderGroup:
     """Represent preprocess groups. Every preprocess in this group will be done in one init loop. """
 
     preprocess_orders: list[PreprocessNote] = field(init=True)
-    preprocess_inner_orders: list[PreprocessNote] = field(init=False, default=list())
-    preprocess_outer_orders: list[PreprocessNote] = field(init=False, default=list())
+    preprocess_inner_orders: list[PreprocessNote] = field(init=False, default_factory=lambda: [])
+    preprocess_outer_orders: list[PreprocessNote] = field(init=False, default_factory=lambda: [])
     any_preprocess_needs_fitting: bool = field(init=False)
 
     def __post_init__(self):
