@@ -46,7 +46,7 @@ class Filler(ABC):
         self.features = features
 
     @abstractmethod
-    def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
+    def fill(self, batch_values: np.ndarray, missing_mask: np.ndarray, **kwargs) -> None:
         """Fills missing data in the `batch_values`.
 
         This method is responsible for filling missing data within a single time series.
@@ -71,45 +71,28 @@ class MeanFiller(Filler):
         super().__init__(features)
 
         self.averages = np.zeros(len(features), dtype=np.float64)
-        self.total_existing_values = 0
+        self.total_existing_values = np.zeros(len(features), dtype=np.float64)
 
-    def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
-        self.total_existing_values += len(existing_indices)
+    def fill(self, batch_values: np.ndarray, missing_mask: np.ndarray, **kwargs) -> None:
 
-        if len(existing_indices) == 0:
-            if self.total_existing_values > 0:
-                batch_values[:, :][missing_indices] = self.averages
-            return
+        existing_mask = ~missing_mask
+        batch_counts = np.cumsum(existing_mask, axis=0)
+        batch_sums = np.cumsum(np.where(existing_mask, batch_values, 0.0), axis=0)
 
-        existing_values_until_now = self.total_existing_values - len(existing_indices)
+        prev_counts = self.total_existing_values
+        total_counts = batch_counts + prev_counts
 
-        total_divisors = np.arange(1 + existing_values_until_now, len(batch_values) + 1 + existing_values_until_now)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            running_avg = ((self.averages / total_counts) * prev_counts) + (batch_sums / total_counts)
 
-        missing_mask = np.zeros_like(total_divisors)
-        missing_mask[missing_indices] = 1
+        running_avg = np.vstack([self.averages, running_avg[:-1, :]])
 
-        total_divisors -= np.cumsum(missing_mask, axis=0)
+        fill_mask = missing_mask & (total_counts > 0)
+        batch_values[fill_mask] = running_avg[fill_mask]
 
-        if total_divisors[0] == 0:
-            missing_start_mask = np.logical_and(missing_mask, total_divisors <= 0)
-            missing_start_offset = len(batch_values[missing_start_mask])
-            total_divisors = total_divisors[missing_start_offset:]
-            missing_indices = np.logical_and(missing_mask[missing_start_offset:], total_divisors > 0)
-            batch_values[missing_start_offset:][missing_indices] = 0
-            new_sums = np.cumsum(batch_values[missing_start_offset:], axis=0)
-        else:
-            batch_values[missing_indices] = 0
-            missing_start_offset = 0
-            new_sums = np.cumsum(batch_values[:], axis=0)
-
-        for i in range(len(batch_values[0])):
-
-            updated_old_averages = existing_values_until_now * (self.averages[i] / total_divisors)
-
-            new_averages = new_sums[:, i] / total_divisors + updated_old_averages
-            batch_values[missing_start_offset:, i][missing_indices] = new_averages[missing_indices]
-
-            self.averages[i] = new_averages[-1]
+        self.total_existing_values = total_counts[-1]
+        valid_cols = self.total_existing_values > 0
+        self.averages[valid_cols] = running_avg[-1, valid_cols]
 
 
 class ForwardFiller(Filler):
@@ -124,14 +107,11 @@ class ForwardFiller(Filler):
 
         self.last_values = None
 
-    def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
-        if len(missing_indices) > 0 and missing_indices[0] == 0 and self.last_values is not None:
-            batch_values[0] = self.last_values
-            missing_indices = missing_indices[1:]
+    def fill(self, batch_values: np.ndarray, missing_mask: np.ndarray, **kwargs) -> None:
+        if self.last_values is not None and np.any(missing_mask[0]):
+            batch_values[0, missing_mask[0]] = self.last_values[missing_mask[0]]
 
-        mask = np.zeros_like(batch_values, dtype=bool)
-        mask[missing_indices] = True
-        mask = mask.T
+        mask = missing_mask.T
 
         idx = np.where(~mask, np.arange(mask.shape[1]), 0)
         np.maximum.accumulate(idx, axis=1, out=idx)
@@ -156,40 +136,44 @@ class LinearInterpolationFiller(Filler):
         self.last_values = None
         self.last_values_x_pos = None
 
-    def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
+    def fill(self, batch_values: np.ndarray, missing_mask: np.ndarray, **kwargs) -> None:
 
-        if missing_indices is None:
+        default_values = kwargs["default_values"]
+
+        existing_mask = ~missing_mask
+        any_existing = np.any(existing_mask, axis=0)
+        any_missing = np.any(missing_mask, axis=0)
+
+        no_missing = not np.any(any_missing)
+        no_existing = not np.any(any_existing)
+
+        if no_missing:
             self.last_values = np.copy(batch_values[-1, :])
             return
-        elif len(existing_indices) == 0 and (self.last_values is None or kwargs['first_next_existing_values'] is None):
+
+        if no_existing and self.last_values is None:
             return
 
-        if self.last_values is not None and kwargs['first_next_existing_values'] is not None:
-            if len(existing_indices) == 0:
-                existing_values = np.vstack((self.last_values, kwargs['first_next_existing_values']))
-                existing_values_x = np.hstack((self.last_values_x_pos, kwargs['first_next_existing_values_distance']))
-            else:
-                existing_values = np.vstack((self.last_values, batch_values[existing_indices, :], kwargs['first_next_existing_values']))
-                existing_values_x = np.hstack((self.last_values_x_pos, existing_indices, kwargs['first_next_existing_values_distance']))
-        elif self.last_values is not None:
-            if len(existing_indices) == 0:
-                existing_values = np.reshape(self.last_values, (1, len(batch_values[0])))
-                existing_values_x = [self.last_values_x_pos]
-            else:
-                existing_values = np.vstack((self.last_values, batch_values[existing_indices, :]))
-                existing_values_x = np.hstack((self.last_values_x_pos, existing_indices))
-        elif kwargs['first_next_existing_values'] is not None:
-            existing_values = np.vstack((batch_values[existing_indices, :], kwargs['first_next_existing_values']))
-            existing_values_x = np.hstack((existing_indices, kwargs['first_next_existing_values_distance']))
-        else:
-            existing_values = batch_values[existing_indices].view()
-            existing_values_x = existing_indices
+        x_positions = np.arange(batch_values.shape[0])
 
-        for i in range(len(batch_values[0])):
-            if len(existing_indices) == 0:
-                batch_values[:, i][missing_indices] = np.interp(missing_indices, existing_values_x, existing_values[:, i], left=kwargs["default_values"][i], right=kwargs["default_values"][i])
-            else:
-                batch_values[:, i][missing_indices] = np.interp(missing_indices, existing_values_x, existing_values[:, i], left=kwargs["default_values"][i], right=kwargs["default_values"][i])
+        for i in range(batch_values.shape[1]):
+            existing_x = x_positions[existing_mask[:, i]]
+            existing_y = batch_values[existing_mask[:, i], i]
+
+            if self.last_values is not None:
+                existing_x = np.insert(existing_x, 0, self.last_values_x_pos)
+                existing_y = np.insert(existing_y, 0, self.last_values[i])
+
+            missing_x = x_positions[missing_mask[:, i]]
+
+            if len(missing_x) > 0 and len(existing_x) > 0:
+                batch_values[missing_mask[:, i], i] = np.interp(
+                    missing_x,
+                    existing_x,
+                    existing_y,
+                    left=default_values[i],
+                    right=default_values[i],
+                )
 
         self.last_values = np.copy(batch_values[-1, :])
         self.last_values_x_pos = -1
@@ -202,5 +186,5 @@ class NoFiller(Filler):
     Corresponds to enum [`FillerType.NO_FILLER`][cesnet_tszoo.utils.enums.FillerType] or literal `no_filler`.
     """
 
-    def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
+    def fill(self, batch_values: np.ndarray, missing_mask: np.ndarray, **kwargs) -> None:
         ...
