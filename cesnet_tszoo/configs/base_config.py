@@ -475,12 +475,13 @@ class DatasetConfig(ABC):
 
     def __set_transform_order(self, preprocess_type: PreprocessType):
         needs_fitting = (self.partial_fit_initialized_transformers or not self.transformer_factory.has_already_initialized) and not self.transformer_factory.is_empty_factory
+        should_partial_fit = (self.transformer_factory.has_already_initialized and self.partial_fit_initialized_transformers) or (not self.transformer_factory.has_already_initialized and not self.create_transformer_per_time_series)
         is_outer = not self.create_transformer_per_time_series and needs_fitting
 
-        self.train_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, not is_outer, TransformerHolder(self.transformers)))
-        self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers)))
-        self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers)))
-        self.all_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers)))
+        self.train_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, should_partial_fit)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
+        self.all_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
 
     def __set_filling_order(self, preprocess_type: PreprocessType):
         needs_fitting = self.can_fit_fillers and not self.filler_factory.is_empty_factory
