@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from copy import deepcopy
+from copy import copy
 
 from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 
@@ -24,7 +24,7 @@ class PreprocessOrderGroup:
             self.any_preprocess_needs_fitting = True if preprocess.should_be_fitted else self.any_preprocess_needs_fitting
 
     def get_preprocess_orders_for_inner_transform(self) -> list[PreprocessNote]:
-        preprocess_orders_copy = deepcopy(self.preprocess_orders)
+        preprocess_orders_copy = copy(self.preprocess_orders)
 
         for preprocess in preprocess_orders_copy:
             preprocess.is_inner_preprocess = True
