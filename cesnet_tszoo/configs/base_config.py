@@ -439,7 +439,7 @@ class DatasetConfig(ABC):
     def __set_preprocess_order(self):
         """Validates and converts preprocess order to their enum variant. """
 
-        for i, order in self.preprocess_order:
+        for i, order in enumerate(self.preprocess_order):
             if isinstance(order, str):
                 self.preprocess_order[i] = PreprocessType(order)
             else:
