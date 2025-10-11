@@ -9,3 +9,13 @@ class TransformerHolder(Holder):
     transformers: list[Transformer] | Transformer = field(init=True)
     is_transformer_per_time_series: bool = field(init=True)
     should_partial_fit: bool = field(init=True)
+
+    def get_instance(self, idx: int) -> list[Transformer] | Transformer:
+
+        if self.transformers is None:
+            raise ValueError()
+
+        if self.is_transformer_per_time_series and idx > len(self.transformers):
+            raise ValueError()
+
+        return self.transformers[idx] if self.is_transformer_per_time_series else self.transformers

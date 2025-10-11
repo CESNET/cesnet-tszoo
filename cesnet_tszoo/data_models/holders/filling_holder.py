@@ -8,3 +8,13 @@ from cesnet_tszoo.utils.filler import Filler
 class FillingHolder(Holder):
     fillers: list[Filler] = field(init=True)
     default_values: list[float] = field(init=True)
+
+    def get_instance(self, idx: int) -> Filler:
+
+        if self.fillers is None:
+            raise ValueError()
+
+        if idx > len(self.fillers):
+            raise ValueError()
+
+        return self.fillers[idx]

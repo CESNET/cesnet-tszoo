@@ -1,5 +1,8 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
-class Holder:
-    ...
+class Holder(ABC):
+
+    @abstractmethod
+    def get_instance(self, idx: int) -> object:
+        ...
