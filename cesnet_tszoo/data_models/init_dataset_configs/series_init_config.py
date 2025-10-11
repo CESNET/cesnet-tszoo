@@ -11,7 +11,6 @@ class SeriesDatasetInitConfig(DatasetInitConfig):
 
         self.ts_row_ranges = None
         self.ts_ids = None
-        self.fillers = None
         self.preprocess_order_group = None
 
         super().__init__(config, limit_init_to_set)
