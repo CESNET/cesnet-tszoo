@@ -5,8 +5,11 @@ from torch.utils.data import Dataset
 import torch
 import numpy as np
 import numpy.lib.recfunctions as rf
-from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 
+from cesnet_tszoo.utils.enums import PreprocessType
+from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
+from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
+from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder
 from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME
 from cesnet_tszoo.pytables_data.utils.utils import load_database
 
@@ -45,8 +48,8 @@ class InitializerDataset(Dataset, ABC):
 
         self.database.close()
 
-    def load_data_from_table(self, identifier_row_range_to_take: np.ndarray, idx: int) -> np.ndarray:
-        """Returns data from table. Missing values are filled fillers and `default_values`. Prepares fillers."""
+    def load_data_from_table(self, identifier_row_range_to_take: np.ndarray) -> np.ndarray:
+        """Returns data from the table and indices of rows where values exists."""
 
         result = np.full((len(self.init_config.time_period), len(self.init_config.features_to_take)), fill_value=np.nan, dtype=np.float64)
         result[:, self.offset_exclude_feature_ids:] = np.nan
@@ -59,12 +62,7 @@ class InitializerDataset(Dataset, ABC):
 
         # No more existing values
         if start >= end:
-            missing_values_mask = np.ones(len(self.init_config.time_period), dtype=bool)
-
-            result[:, self.offset_exclude_feature_ids:] = self.init_config.default_values
-            count_values = self.fill_values(missing_values_mask, idx, result, None, None)
-
-            return result, count_values
+            return result, np.array([], dtype=int)
 
         # Expected range for times in time series
         if expected_offset + start >= end:
@@ -73,7 +71,7 @@ class InitializerDataset(Dataset, ABC):
         # Naive getting data from table
         rows = self.table[start: start + expected_offset]
 
-        # Getting more date if needed... if received data could contain more relevant data
+        # Getting more data if needed... if received data could contain more relevant data
         if rows[-1][ID_TIME_COLUMN_NAME] < first_time_index:
             if start + expected_offset + last_time_index - rows[-1][ID_TIME_COLUMN_NAME] >= end:
                 rows = self.table[start + expected_offset: end]
@@ -93,29 +91,45 @@ class InitializerDataset(Dataset, ABC):
         filtered_rows[ID_TIME_COLUMN_NAME] = filtered_rows[ID_TIME_COLUMN_NAME] - first_time_index
         existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
-        missing_values_mask = np.ones(len(self.init_config.time_period), dtype=bool)
-        missing_values_mask[existing_indices] = 0
-        missing_indices = np.nonzero(missing_values_mask)[0]
+        # missing_values_mask = np.ones(len(self.init_config.time_period), dtype=bool)
+        # missing_values_mask[existing_indices] = 0
+        # xmissing_indices = np.nonzero(missing_values_mask)[0]
 
         if len(filtered_rows) > 0:
             result[existing_indices, :] = rf.structured_to_unstructured(filtered_rows[:][self.init_config.features_to_take], dtype=np.float64, copy=False)
 
-        self.handle_anomalies(result, idx)
+        # result, count_values = self._handle_data_preprocess(result, missing_indices, missing_values_mask, idx)
 
-        result[missing_indices, self.offset_exclude_feature_ids:] = self.init_config.default_values
-
-        count_values = self.fill_values(missing_values_mask, idx, result, None, None)
-
-        return result, count_values
+        return result, existing_indices
 
     @abstractmethod
-    def fill_values(self, missing_values_mask: np.ndarray, idx, result, first_next_existing_values, first_next_existing_values_distance):
+    def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
+        ...
+
+    def _handle_data_preprocess_order_group(self, preprocess_order_group: PreprocessOrderGroup, data: np.ndarray, idx: int) -> np.ndarray:
+        for preprocess_order in preprocess_order_group.preprocess_inner_orders:
+            if preprocess_order.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                self._handle_anomalies(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
+                self._handle_filling(preprocess_order.holder, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
+                data = self._handle_transforming(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
+
+        return data
+
+    @abstractmethod
+    def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int):
         """Fills data. """
         ...
 
     @abstractmethod
-    def handle_anomalies(self, data: np.ndarray, idx: int):
+    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int):
         """Fits and uses anomaly handlers. """
+        ...
+
+    @abstractmethod
+    def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        """Fits and uses transformers """
         ...
 
     @staticmethod

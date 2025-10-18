@@ -165,7 +165,7 @@ class DatasetConfig(ABC):
         self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
         self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
         self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
-        self.preprocess_order = preprocess_order
+        self.preprocess_order = list(preprocess_order)
         self.train_preprocess_order = []
         self.val_preprocess_order = []
         self.test_preprocess_order = []
@@ -291,21 +291,10 @@ class DatasetConfig(ABC):
     def _get_train_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
         return self.__get_preprocess_init_order_groups(self.train_preprocess_order)
 
-    def _get_val_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
-        return self.__get_preprocess_init_order_groups(self.val_preprocess_order)
-
-    def _get_test_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
-        return self.__get_preprocess_init_order_groups(self.test_preprocess_order)
-
-    def _get_all_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
-        return self.__get_preprocess_init_order_groups(self.all_preprocess_order)
-
     def __get_preprocess_init_order_groups(self, preprocess_order) -> list[PreprocessOrderGroup]:
         """Returns preprocess grouped orders used when initializing config. """
 
         groups = []
-
-        last_group: PreprocessOrderGroup = None
 
         outers = []
         inners = []
@@ -317,10 +306,9 @@ class DatasetConfig(ABC):
 
                 if len(outers) > 0:
                     group = PreprocessOrderGroup(inners + outers)
-
                     groups.append(group)
 
-                    inners = [] if last_group is None else last_group.get_preprocess_orders_for_inner_transform()
+                    inners = group.get_preprocess_orders_for_inner_transform()
                     outers.clear()
 
                 inners.append(preprocess_note)
@@ -332,6 +320,9 @@ class DatasetConfig(ABC):
 
         if group.any_preprocess_needs_fitting:
             groups.append(group)
+
+        if len(groups) == 0:
+            groups.append(PreprocessOrderGroup([]))
 
         return groups
 
