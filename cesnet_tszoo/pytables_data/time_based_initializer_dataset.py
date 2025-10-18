@@ -196,7 +196,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
                 previous_offset = current_start_index - first_start_index
 
                 val_mask = np.isnan(data[:current_start_index - first_start_index])
-                data[val_mask] = np.take(val_filling_holder.default_values, np.nonzero(val_mask)[1])
+                data[:current_start_index - first_start_index][val_mask] = np.take(val_filling_holder.default_values, np.nonzero(val_mask)[1])
 
                 train_should_fill = False
                 val_filling_holder.get_instance(idx).fill(data[:current_start_index - first_start_index].view(), val_mask, default_values=val_filling_holder.default_values)
@@ -217,7 +217,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
                     test_filling_holder.fillers[idx] = deepcopy(val_filling_holder.get_instance(idx))
 
                 test_mask = np.isnan(data[previous_offset:current_start_index - first_start_index])
-                data[test_mask] = np.take(test_filling_holder.default_values, np.nonzero(test_mask)[1])
+                data[previous_offset:current_start_index - first_start_index][test_mask] = np.take(test_filling_holder.default_values, np.nonzero(test_mask)[1])
 
                 train_should_fill = False
                 test_filling_holder.get_instance(idx).fill(data[previous_offset:current_start_index - first_start_index].view(), test_mask, default_values=test_filling_holder.default_values)
