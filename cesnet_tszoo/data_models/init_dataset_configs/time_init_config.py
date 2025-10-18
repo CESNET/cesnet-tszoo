@@ -11,8 +11,6 @@ class TimeDatasetInitConfig(DatasetInitConfig):
     """For time based init datasets. """
 
     def __init__(self, config: TimeBasedConfig, train_group: PreprocessOrderGroup, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup, all_group: PreprocessOrderGroup):
-        self.config = config
-
         self.ts_row_ranges = config.ts_row_ranges
         self.ts_ids = config.ts_ids
 
@@ -41,22 +39,22 @@ class TimeDatasetInitConfig(DatasetInitConfig):
         else:
             self.time_period = self.all_time_period
 
-    def _init_train(self):
+    def _init_train(self, config: TimeBasedConfig):
         """Initializes from train data of config """
 
-        self.train_time_period = self.config.train_time_period
+        self.train_time_period = config.train_time_period
 
-    def _init_val(self):
+    def _init_val(self, config: TimeBasedConfig):
         """Initializes from val data of config """
 
-        self.val_time_period = self.config.val_time_period
+        self.val_time_period = config.val_time_period
 
-    def _init_test(self):
+    def _init_test(self, config: TimeBasedConfig):
         """Initializes from test data of config """
 
-        self.test_time_period = self.config.test_time_period
+        self.test_time_period = config.test_time_period
 
-    def _init_all(self):
+    def _init_all(self, config: TimeBasedConfig):
         """Initializes from all data of config """
 
-        self.all_time_period = self.config.all_time_period
+        self.all_time_period = config.all_time_period

@@ -10,35 +10,33 @@ class DisjointTimeDatasetInitConfig(DatasetInitConfig):
     """For disjoint time based init datasets. """
 
     def __init__(self, config: DisjointTimeBasedConfig, limit_init_to_set: SplitType, group: PreprocessOrderGroup):
-        self.config = config
-
         self.ts_row_ranges = None
         self.ts_ids = None
         self.preprocess_order_group = deepcopy(group)
 
         super().__init__(config, limit_init_to_set)
 
-    def _init_train(self):
+    def _init_train(self, config: DisjointTimeBasedConfig):
         """Initializes from train data of config """
 
-        self.time_period = self.config.train_time_period
-        self.ts_row_ranges = self.config.train_ts_row_ranges
-        self.ts_ids = self.config.train_ts
+        self.time_period = config.train_time_period
+        self.ts_row_ranges = config.train_ts_row_ranges
+        self.ts_ids = config.train_ts
 
-    def _init_val(self):
+    def _init_val(self, config: DisjointTimeBasedConfig):
         """Initializes from val data of config """
 
-        self.time_period = self.config.val_time_period
-        self.ts_row_ranges = self.config.val_ts_row_ranges
-        self.ts_ids = self.config.val_ts
+        self.time_period = config.val_time_period
+        self.ts_row_ranges = config.val_ts_row_ranges
+        self.ts_ids = config.val_ts
 
-    def _init_test(self):
+    def _init_test(self, config: DisjointTimeBasedConfig):
         """Initializes from test data of config """
 
-        self.time_period = self.config.test_time_period
-        self.ts_row_ranges = self.config.test_ts_row_ranges
-        self.ts_ids = self.config.test_ts
+        self.time_period = config.test_time_period
+        self.ts_row_ranges = config.test_ts_row_ranges
+        self.ts_ids = config.test_ts
 
-    def _init_all(self):
+    def _init_all(self, config: DisjointTimeBasedConfig):
         """Initializes from all data of config """
         raise NotImplementedError()
