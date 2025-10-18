@@ -25,6 +25,6 @@ class TransformerHolder(Holder):
 
         split_copy = copy(self)
 
-        split_copy.transformers = self.transformers if self.is_transformer_per_time_series else list(self.transformers[split_range])
+        split_copy.transformers = list(self.transformers[split_range]) if self.is_transformer_per_time_series else self.transformers
 
         return split_copy
