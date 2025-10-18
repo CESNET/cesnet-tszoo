@@ -21,6 +21,9 @@ class TransformerHolder(Holder):
 
         return self.transformers[idx] if self.is_transformer_per_time_series else self.transformers
 
+    def is_empty(self):
+        return self.transformers is None
+
     def create_split_copy(self, split_range: slice) -> "TransformerHolder":
 
         split_copy = copy(self)

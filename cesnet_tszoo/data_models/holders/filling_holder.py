@@ -20,6 +20,9 @@ class FillingHolder(Holder):
 
         return self.fillers[idx]
 
+    def is_empty(self):
+        return self.fillers is None
+
     def create_split_copy(self, split_range: slice) -> "FillingHolder":
 
         split_copy = copy(self)

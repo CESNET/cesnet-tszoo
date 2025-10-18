@@ -291,6 +291,12 @@ class DatasetConfig(ABC):
     def _get_train_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
         return self.__get_preprocess_init_order_groups(self.train_preprocess_order)
 
+    def _get_val_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
+        return self.__get_preprocess_init_order_groups(self.val_preprocess_order)
+
+    def _get_test_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
+        return self.__get_preprocess_init_order_groups(self.test_preprocess_order)
+
     def __get_preprocess_init_order_groups(self, preprocess_order) -> list[PreprocessOrderGroup]:
         """Returns preprocess grouped orders used when initializing config. """
 
@@ -478,23 +484,23 @@ class DatasetConfig(ABC):
         is_outer = not self.create_transformer_per_time_series and needs_fitting
 
         self.train_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, should_partial_fit)))
-        self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
-        self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
         self.all_preprocess_order.append(PreprocessNote(preprocess_type, False, True, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
 
     def __set_filling_order(self, preprocess_type: PreprocessType):
         needs_fitting = self.can_fit_fillers and not self.filler_factory.is_empty_factory
 
-        self.train_preprocess_order.append(PreprocessNote(preprocess_type, False, True, FillingHolder(self.train_fillers, self.default_values)))
+        self.train_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, True, FillingHolder(self.train_fillers, self.default_values)))
         self.val_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, True, FillingHolder(self.val_fillers, self.default_values)))
         self.test_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, True, FillingHolder(self.test_fillers, self.default_values)))
         self.all_preprocess_order.append(PreprocessNote(preprocess_type, False, True, FillingHolder(self.all_fillers, self.default_values)))
 
     def __set_anomaly_handler_order(self, preprocess_type: PreprocessType):
         self.train_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, True, AnomalyHandlerHolder(self.anomaly_handlers)))
-        # self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
-        # self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
-        # self.all_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, True, AnomalyHandlerHolder(None)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, True, AnomalyHandlerHolder(None)))
+        self.all_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
 
     @abstractmethod
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:

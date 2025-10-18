@@ -19,6 +19,9 @@ class AnomalyHandlerHolder(Holder):
 
         return self.anomaly_handlers[idx]
 
+    def is_empty(self):
+        return self.anomaly_handlers is None
+
     def create_split_copy(self, split_range: slice) -> "AnomalyHandlerHolder":
 
         split_copy = copy(self)

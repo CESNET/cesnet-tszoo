@@ -142,6 +142,9 @@ class BaseDataset(Dataset, ABC):
     def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, data: np.ndarray, idx: int):
         """Uses anomaly handlers. """
 
+        if anomaly_handler_holder.anomaly_handlers is None:
+            return
+
         anomaly_handler_holder.get_instance(idx).transform_anomalies(data.view())
 
     def _handle_transforming(self, transfomer_holder: TransformerHolder, data: np.ndarray, idx: int) -> np.ndarray:
