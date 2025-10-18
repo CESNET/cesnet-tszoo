@@ -8,7 +8,7 @@ from tqdm import tqdm
 import numpy.typing as npt
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, FillerType, TransformerType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, FillerType, TransformerType, AnomalyHandlerType, PreprocessType
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
@@ -18,6 +18,8 @@ from cesnet_tszoo.pytables_data.time_based_initializer_dataset import TimeBasedI
 from cesnet_tszoo.pytables_data.time_based_splitted_dataset import TimeBasedSplittedDataset
 from cesnet_tszoo.data_models.load_dataset_configs.time_load_config import TimeLoadConfig
 from cesnet_tszoo.data_models.init_dataset_configs.time_init_config import TimeDatasetInitConfig
+from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
+from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 
@@ -350,88 +352,116 @@ class TimeBasedCesnetDataset(CesnetDataset):
         Goes through data to validate time series against `nan_threshold`, fit/partial fit `transformers`, `anomaly handlers` and prepare `fillers`.
         """
 
-        init_config = TimeDatasetInitConfig(self.dataset_config)
-
-        init_dataset = TimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
-
-        sampler = SequentialSampler(init_dataset)
-        dataloader = DataLoader(init_dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=TimeBasedInitializerDataset.worker_init_fn, persistent_workers=False, sampler=sampler)
-
-        if workers == 0:
-            init_dataset.pytables_worker_init()
-
-        ts_ids_to_take = []
-
         self.logger.info("Updating config on train/val/test/all and selected time series.")
-        for i, data in enumerate(tqdm(dataloader, total=len(self.dataset_config.ts_row_ranges))):
-            train_data, train_count_values, val_count_values, test_count_values, all_count_values, val_filler, test_filler, anomaly_handler = data[0]
 
-            missing_train_percentage = 0
-            missing_val_percentage = 0
-            missing_test_percentage = 0
-            missing_all_percentage = 0
+        is_first_cycle = True
 
-            # Filter time series based on missing data threshold
-            if self.dataset_config.has_train():
-                missing_train_percentage = train_count_values[1] / (train_count_values[0] + train_count_values[1])
-            if self.dataset_config.has_val():
-                missing_val_percentage = val_count_values[1] / (val_count_values[0] + val_count_values[1])
-            if self.dataset_config.has_test():
-                missing_test_percentage = test_count_values[1] / (test_count_values[0] + test_count_values[1])
-            if self.dataset_config.has_all():
-                missing_all_percentage = all_count_values[1] / (all_count_values[0] + all_count_values[1])
+        train_groups = self.dataset_config._get_train_preprocess_init_order_groups()
+        val_groups = self.dataset_config._get_val_preprocess_init_order_groups()
+        test_groups = self.dataset_config._get_test_preprocess_init_order_groups()
 
-            if max(missing_train_percentage, missing_val_percentage, missing_test_percentage, missing_all_percentage) <= self.dataset_config.nan_threshold:
-                ts_ids_to_take.append(i)
+        grouped = list(zip(train_groups, val_groups, test_groups))
 
-                # Fit transformers if required
-                if train_data is not None and (not self.dataset_config.transformer_factory.has_already_initialized or self.dataset_config.partial_fit_initialized_transformers):
+        for i, groups in enumerate(grouped):
+            train_group, val_group, test_group = groups
 
-                    if self.dataset_config.transformer_factory.has_already_initialized and self.dataset_config.partial_fit_initialized_transformers:
-                        if self.dataset_config.create_transformer_per_time_series:
-                            self.dataset_config.transformers[i].partial_fit(train_data)
-                        else:
-                            self.dataset_config.transformers.partial_fit(train_data)
-                    else:
-                        if self.dataset_config.create_transformer_per_time_series:
-                            self.dataset_config.transformers[i].fit(train_data)
-                        else:
-                            self.dataset_config.transformers.partial_fit(train_data)
+            self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(grouped))
 
-                # Only update fillers for val/test because train doesnt need to know about previous data
-                if self.dataset_config.has_val():
-                    self.dataset_config.val_fillers[i] = val_filler
-                if self.dataset_config.has_test():
-                    self.dataset_config.test_fillers[i] = test_filler
+            init_config = TimeDatasetInitConfig(self.dataset_config, train_group, val_group, test_group)
+            init_dataset = TimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
-                # Sets fitted anomaly handlers
+            sampler = SequentialSampler(init_dataset)
+            dataloader = DataLoader(init_dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=TimeBasedInitializerDataset.worker_init_fn, persistent_workers=False, sampler=sampler)
+
+            if workers == 0:
+                init_dataset.pytables_worker_init()
+
+            ts_ids_to_take = []
+
+            for ts_id, data in enumerate(tqdm(dataloader, total=len(self.dataset_config.ts_row_ranges))):
+
+                train_return: InitDatasetReturn
+                val_return: InitDatasetReturn
+                test_return: InitDatasetReturn
+                all_return: InitDatasetReturn
+                train_return, val_return, test_return, all_return = data[0]
+
+                if train_return.is_under_nan_threshold and val_return.is_under_nan_threshold and test_return.is_under_nan_threshold and all_return.is_under_nan_threshold:
+                    ts_ids_to_take.append(ts_id)
+
+                    if self.dataset_config.has_train():
+                        self.__update_based_on_train_init_return(train_return, train_group, ts_id)
+
+                    if self.dataset_config.has_val() or self.dataset_config.has_test():
+                        self.__update_based_on_non_fit_returns(val_return, test_return, val_group, test_group, ts_id)
+
+            if workers == 0:
+                init_dataset.cleanup()
+
+            if is_first_cycle:
+
+                if len(ts_ids_to_take) == 0:
+                    raise ValueError("No valid time series left in ts_ids after applying nan_threshold.")
+
+                # Update config based on filtered time series
+                self.dataset_config.ts_row_ranges = self.dataset_config.ts_row_ranges[ts_ids_to_take]
+                self.dataset_config.ts_ids = self.dataset_config.ts_ids[ts_ids_to_take]
+
+                if self.dataset_config.create_transformer_per_time_series:
+                    self.dataset_config.transformers = self.dataset_config.transformers[ts_ids_to_take]
+
                 if self.dataset_config.has_train():
-                    self.dataset_config.anomaly_handlers[i] = anomaly_handler
+                    self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
+                    self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[ts_ids_to_take]
+                if self.dataset_config.has_val():
+                    self.dataset_config.val_fillers = self.dataset_config.val_fillers[ts_ids_to_take]
+                if self.dataset_config.has_test():
+                    self.dataset_config.test_fillers = self.dataset_config.test_fillers[ts_ids_to_take]
+                if self.dataset_config.has_all():
+                    self.dataset_config.all_fillers = self.dataset_config.all_fillers[ts_ids_to_take]
 
-        if workers == 0:
-            init_dataset.cleanup()
+                is_first_cycle = False
 
-        if len(ts_ids_to_take) == 0:
-            raise ValueError("No valid time series left in ts_ids after applying nan_threshold.")
+            self.logger.debug("ts_ids updated: %s time series left.", len(ts_ids_to_take))
 
-        # Update config based on filtered time series
-        self.dataset_config.ts_row_ranges = self.dataset_config.ts_row_ranges[ts_ids_to_take]
-        self.dataset_config.ts_ids = self.dataset_config.ts_ids[ts_ids_to_take]
+    def __update_based_on_train_init_return(self, train_return: InitDatasetReturn, train_group: PreprocessOrderGroup, ts_id: int):
+        fitted_inner_index = 0
+        for inner_preprocess_order in train_group.preprocess_inner_orders:
+            if inner_preprocess_order.should_be_fitted:
+                if inner_preprocess_order.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                    self.dataset_config.anomaly_handlers[ts_id] = train_return.preprocess_fitted_instances[fitted_inner_index].instance
+                elif inner_preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
+                    self.dataset_config.transformers[ts_id] = train_return.preprocess_fitted_instances[fitted_inner_index].instance
 
-        if self.dataset_config.create_transformer_per_time_series:
-            self.dataset_config.transformers = self.dataset_config.transformers[ts_ids_to_take]
+                fitted_inner_index += 1
 
-        if self.dataset_config.has_train():
-            self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
-            self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[ts_ids_to_take]
+        # updates outer preprocessors based on passed train data from InitDataset
+        to_fit_outer_index = 0
+        for outer_preprocess_order in train_group.preprocess_outer_orders:
+            if outer_preprocess_order.should_be_fitted:
+                if outer_preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
+                    self.dataset_config.transformers.partial_fit(train_return.train_data)
+
+                to_fit_outer_index += 1
+
+    def __update_based_on_non_fit_returns(self, val_return: InitDatasetReturn, test_return: InitDatasetReturn, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup, ts_id: int):
+
         if self.dataset_config.has_val():
-            self.dataset_config.val_fillers = self.dataset_config.val_fillers[ts_ids_to_take]
-        if self.dataset_config.has_test():
-            self.dataset_config.test_fillers = self.dataset_config.test_fillers[ts_ids_to_take]
-        if self.dataset_config.has_all():
-            self.dataset_config.all_fillers = self.dataset_config.all_fillers[ts_ids_to_take]
+            fitted_inner_index = 0
+            for inner_preprocess_order in val_group.preprocess_inner_orders:
+                if inner_preprocess_order.should_be_fitted:
+                    if inner_preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
+                        self.dataset_config.val_fillers[ts_id] = val_return.preprocess_fitted_instances[fitted_inner_index].instance
 
-        self.logger.debug("ts_ids updated: %s time series left.", len(ts_ids_to_take))
+                    fitted_inner_index += 1
+
+        fitted_inner_index = 0
+        for inner_preprocess_order in test_group.preprocess_inner_orders:
+            if inner_preprocess_order.should_be_fitted:
+                if inner_preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
+                    self.dataset_config.test_fillers[ts_id] = test_return.preprocess_fitted_instances[fitted_inner_index].instance
+
+                fitted_inner_index += 1
 
     def _update_export_config_copy(self) -> None:
         """

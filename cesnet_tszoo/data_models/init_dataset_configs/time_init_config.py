@@ -10,7 +10,7 @@ from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 class TimeDatasetInitConfig(DatasetInitConfig):
     """For time based init datasets. """
 
-    def __init__(self, config: TimeBasedConfig, train_group: PreprocessOrderGroup, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup, all_group: PreprocessOrderGroup):
+    def __init__(self, config: TimeBasedConfig, train_group: PreprocessOrderGroup, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup):
         self.ts_row_ranges = config.ts_row_ranges
         self.ts_ids = config.ts_ids
 
@@ -22,7 +22,6 @@ class TimeDatasetInitConfig(DatasetInitConfig):
         self.train_preprocess_order_group = deepcopy(train_group)
         self.val_preprocess_order_group = deepcopy(val_group)
         self.test_preprocess_order_group = deepcopy(test_group)
-        self.all_preprocess_order_group = deepcopy(all_group)
 
         super().__init__(config, None)
 
