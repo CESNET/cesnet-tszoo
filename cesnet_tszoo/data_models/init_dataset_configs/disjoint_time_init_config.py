@@ -39,4 +39,5 @@ class DisjointTimeDatasetInitConfig(DatasetInitConfig):
 
     def _init_all(self, config: DisjointTimeBasedConfig):
         """Initializes from all data of config """
+
         raise NotImplementedError()

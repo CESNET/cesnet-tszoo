@@ -8,7 +8,7 @@ import numpy.typing as npt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, TransformerType, FillerType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, TransformerType, FillerType, AnomalyHandlerType, PreprocessType
 from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
@@ -20,6 +20,8 @@ import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.data_models.init_dataset_configs.disjoint_time_init_config import DisjointTimeDatasetInitConfig
 from cesnet_tszoo.data_models.load_dataset_configs.disjoint_time_load_config import DisjointTimeLoadConfig
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
+from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
+from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 
 
 @dataclass
@@ -411,39 +413,126 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         """
 
         if self.dataset_config.has_train():
-            can_fit_transformers = not self.dataset_config.transformer_factory.has_already_initialized or self.dataset_config.partial_fit_initialized_transformers
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TRAIN)
 
-            updated_ts_row_ranges, updated_ts_ids, updated_fillers, updated_anomaly_handlers = self.__initialize_transformers_and_details_for_set(init_config, workers, "train", can_fit_transformers)
+            self.__initialize_config_for_train_set(workers)
 
-            self.dataset_config.train_ts = updated_ts_ids
-            self.dataset_config.train_ts_row_ranges = updated_ts_row_ranges
-            self.dataset_config.train_fillers = updated_fillers
-            self.dataset_config.anomaly_handlers = updated_anomaly_handlers
-
-            self.logger.debug("Train set updated: %s time series left.", len(updated_ts_ids))
+            self.logger.debug("Train set updated: %s time series left.", len(self.dataset_config.train_ts))
 
         if self.dataset_config.has_val():
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.VAL)
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]))
 
-            updated_ts_row_ranges, updated_ts_ids, updated_fillers, _ = self.__initialize_transformers_and_details_for_set(init_config, workers, "val", False)
-            self.dataset_config.val_ts = updated_ts_ids
-            self.dataset_config.val_ts_row_ranges = updated_ts_row_ranges
-            self.dataset_config.val_fillers = updated_fillers
+            ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "val")
+            self.dataset_config.val_ts = self.dataset_config.val_ts[ts_ids_to_take]
+            self.dataset_config.val_ts_row_ranges = self.dataset_config.val_ts_row_ranges[ts_ids_to_take]
+            self.dataset_config.val_fillers = self.dataset_config.val_fillers[ts_ids_to_take]
 
-            self.logger.debug("Val set updated: %s time series left.", len(updated_ts_ids))
+            self.logger.debug("Val set updated: %s time series left.", len(self.dataset_config.val_ts))
 
         if self.dataset_config.has_test():
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TEST)
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TEST, PreprocessOrderGroup([]))
 
-            updated_ts_row_ranges, updated_ts_ids, updated_fillers, _ = self.__initialize_transformers_and_details_for_set(init_config, workers, "test", False)
-            self.dataset_config.test_ts = updated_ts_ids
-            self.dataset_config.test_ts_row_ranges = updated_ts_row_ranges
-            self.dataset_config.test_fillers = updated_fillers
+            ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "test")
+            self.dataset_config.test_ts = self.dataset_config.test_ts[ts_ids_to_take]
+            self.dataset_config.test_ts_row_ranges = self.dataset_config.test_ts_row_ranges[ts_ids_to_take]
+            self.dataset_config.test_fillers = self.dataset_config.test_fillers[ts_ids_to_take]
 
-            self.logger.debug("Test set updated: %s time series left.", len(updated_ts_ids))
+            self.logger.debug("Test set updated: %s time series left.", len(self.dataset_config.test_ts))
 
         self.logger.info("Dataset initialization complete. Configuration updated.")
+
+    def __initialize_config_for_train_set(self, workers: int) -> None:
+        """Initializes config for provided time series. """
+
+        self.logger.info("Updating config for train set and fitting values.")
+
+        is_first_cycle = True
+
+        groups = self.dataset_config._get_train_preprocess_init_order_groups()
+        for ts_id, group in enumerate(groups):
+            self.logger.info("Starting fitting cycle %s/%s.", ts_id + 1, len(groups))
+
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group)
+            init_dataset = DisjointTimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
+
+            sampler = SequentialSampler(init_dataset)
+            dataloader = DataLoader(init_dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=DisjointTimeBasedInitializerDataset.worker_init_fn, persistent_workers=False, sampler=sampler)
+
+            if workers == 0:
+                init_dataset.pytables_worker_init()
+
+            ts_ids_to_take = []
+
+            for ts_id, data in enumerate(tqdm(dataloader, total=len(init_config.ts_row_ranges))):
+                init_dataset_return: InitDatasetReturn = data[0]
+
+                if init_dataset_return.is_under_nan_threshold:
+                    ts_ids_to_take.append(ts_id)
+
+                    # updates inner preprocessors passed from InitDataset
+                    fitted_inner_index = 0
+                    for inner_preprocess_order in group.preprocess_inner_orders:
+                        if inner_preprocess_order.should_be_fitted:
+                            if inner_preprocess_order.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                                self.dataset_config.anomaly_handlers[ts_id] = init_dataset_return.preprocess_fitted_instances[fitted_inner_index].instance
+                            elif inner_preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
+                                self.dataset_config.train_fillers[ts_id] = init_dataset_return.preprocess_fitted_instances[fitted_inner_index].instance
+                            else:
+                                raise NotImplementedError()
+
+                            fitted_inner_index += 1
+
+                    # updates outer preprocessors based on passed train data from InitDataset
+                    to_fit_outer_index = 0
+                    for outer_preprocess_order in group.preprocess_outer_orders:
+                        if outer_preprocess_order.should_be_fitted:
+                            if outer_preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
+                                self.dataset_config.transformers.partial_fit(init_dataset_return.train_data)
+                            else:
+                                raise NotImplementedError()
+
+                            to_fit_outer_index += 1
+
+            if workers == 0:
+                init_dataset.cleanup()
+
+            if len(ts_ids_to_take) == 0:
+                raise ValueError("No valid time series left in train set after applying nan_threshold.")
+
+            # Update config based on filtered time series
+            if is_first_cycle:
+                self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[ts_ids_to_take]
+                self.dataset_config.train_ts = self.dataset_config.train_ts[ts_ids_to_take]
+                self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
+                self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[ts_ids_to_take]
+
+                is_first_cycle = False
+
+    def __initialize_config_for_non_fit_sets(self, init_config: DisjointTimeDatasetInitConfig, workers: int, set_name: str) -> np.ndarray:
+        """Initializes config for provided time series without fitting. """
+        init_dataset = DisjointTimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
+
+        sampler = SequentialSampler(init_dataset)
+        dataloader = DataLoader(init_dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=DisjointTimeBasedInitializerDataset.worker_init_fn, persistent_workers=False, sampler=sampler)
+
+        if workers == 0:
+            init_dataset.pytables_worker_init()
+
+        ts_ids_to_take = []
+
+        self.logger.info("Updating config for %s set.", set_name)
+        for i, data in enumerate(tqdm(dataloader, total=len(init_config.ts_row_ranges))):
+            init_dataset_return: InitDatasetReturn = data[0]
+
+            if init_dataset_return.is_under_nan_threshold:
+                ts_ids_to_take.append(i)
+
+        if workers == 0:
+            init_dataset.cleanup()
+
+        if len(ts_ids_to_take) == 0:
+            raise ValueError(f"No valid time series left in {set_name} set after applying nan_threshold.")
+
+        return ts_ids_to_take
 
     def _update_export_config_copy(self) -> None:
         """
@@ -480,50 +569,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         self.logger.debug("Singular time series dataset initiliazed.")
 
         return dataset
-
-    def __initialize_transformers_and_details_for_set(self, init_config: DisjointTimeDatasetInitConfig, workers, set_name, can_fit_transformer):
-        """Initializes transformers and details for provided time series. """
-        init_dataset = DisjointTimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
-
-        sampler = SequentialSampler(init_dataset)
-        dataloader = DataLoader(init_dataset, num_workers=workers, collate_fn=self._collate_fn, worker_init_fn=DisjointTimeBasedInitializerDataset.worker_init_fn, persistent_workers=False, sampler=sampler)
-
-        if workers == 0:
-            init_dataset.pytables_worker_init()
-
-        ts_ids_to_take = []
-
-        self.logger.info("Updating config for %s set.", set_name)
-        for i, data in enumerate(tqdm(dataloader, total=len(init_config.ts_row_ranges))):
-            data, count_values, anomaly_handler = data[0]
-
-            # Filter time series based on missing data threshold
-            missing_train_percentage = count_values[1] / (count_values[0] + count_values[1])
-
-            if missing_train_percentage <= self.dataset_config.nan_threshold:
-                ts_ids_to_take.append(i)
-
-                # Fit transformers if required
-                if can_fit_transformer:
-                    self.dataset_config.transformers.partial_fit(data)
-
-                # Sets fitted anomaly handlers
-                if init_config.anomaly_handlers is not None:
-                    init_config.anomaly_handlers[i] = anomaly_handler
-
-        if workers == 0:
-            init_dataset.cleanup()
-
-        if len(ts_ids_to_take) == 0:
-            raise ValueError(f"No valid time series left in {set_name} set after applying nan_threshold.")
-
-        # Update config based on filtered time series
-        updated_ts_row_ranges = init_config.ts_row_ranges[ts_ids_to_take]
-        updated_ts_ids = init_config.ts_ids[ts_ids_to_take]
-        updated_fillers = init_config.fillers[ts_ids_to_take]
-        updated_anomaly_handlers = None if init_config.anomaly_handlers is None else init_config.anomaly_handlers[ts_ids_to_take]
-
-        return updated_ts_row_ranges, updated_ts_ids, updated_fillers, updated_anomaly_handlers
 
     def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
         """Dataset type specific retrieval of data. """
