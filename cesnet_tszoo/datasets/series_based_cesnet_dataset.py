@@ -355,8 +355,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         is_first_cycle = True
 
         groups = self.dataset_config._get_train_preprocess_init_order_groups()
-        for ts_id, group in enumerate(groups):
-            self.logger.info("Starting fitting cycle %s/%s.", ts_id + 1, len(groups))
+        for i, group in enumerate(groups):
+            self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(groups))
 
             init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group)
             init_dataset = SeriesBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
