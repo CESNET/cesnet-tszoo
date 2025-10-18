@@ -61,7 +61,7 @@ class SeriesBasedInitializerDataset(InitializerDataset):
         if should_fit:
             anomaly_handler_holder.anomaly_handlers[idx].fit(data)
 
-        anomaly_handler_holder.anomaly_handlers[idx].transform_anomalies(data)
+        anomaly_handler_holder.anomaly_handlers[idx].transform_anomalies(data.view())
 
     def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses transformers. """
