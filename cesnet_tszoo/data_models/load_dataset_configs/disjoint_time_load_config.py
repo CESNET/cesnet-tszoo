@@ -10,33 +10,31 @@ class DisjointTimeLoadConfig(LoadConfig):
     """Base class for dataset configs that are used to pass values to load datasets. """
 
     def __init__(self, config: DisjointTimeBasedConfig, limit_init_to_set: Optional[SplitType]):
-        self.config = config
-
         super().__init__(config, limit_init_to_set)
 
-    def _init_train(self):
+    def _init_train(self, config: DisjointTimeBasedConfig):
         """Initializes from train data of config """
 
-        self.time_period = self.config.train_time_period
-        self.ts_row_ranges = self.config.train_ts_row_ranges
-        self.fillers = deepcopy(self.config.train_fillers)
-        self.anomaly_handlers = self.config.anomaly_handlers
+        self.time_period = config.train_time_period
+        self.ts_row_ranges = config.train_ts_row_ranges
+        self.fillers = deepcopy(config.train_fillers)
+        self.anomaly_handlers = config.anomaly_handlers
 
-    def _init_val(self):
+    def _init_val(self, config: DisjointTimeBasedConfig):
         """Initializes from val data of config """
 
-        self.time_period = self.config.val_time_period
-        self.ts_row_ranges = self.config.val_ts_row_ranges
-        self.fillers = deepcopy(self.config.val_fillers)
+        self.time_period = config.val_time_period
+        self.ts_row_ranges = config.val_ts_row_ranges
+        self.fillers = deepcopy(config.val_fillers)
 
-    def _init_test(self):
+    def _init_test(self, config: DisjointTimeBasedConfig):
         """Initializes from test data of config """
 
-        self.time_period = self.config.test_time_period
-        self.ts_row_ranges = self.config.test_ts_row_ranges
-        self.fillers = deepcopy(self.config.test_fillers)
+        self.time_period = config.test_time_period
+        self.ts_row_ranges = config.test_ts_row_ranges
+        self.fillers = deepcopy(config.test_fillers)
 
-    def _init_all(self):
+    def _init_all(self, config: DisjointTimeBasedConfig):
         """Initializes from all data of config """
 
         raise NotImplementedError()
