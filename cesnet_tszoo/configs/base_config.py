@@ -484,9 +484,9 @@ class DatasetConfig(ABC):
 
     def __set_anomaly_handler_order(self, preprocess_type: PreprocessType):
         self.train_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, True, AnomalyHandlerHolder(self.anomaly_handlers)))
-        self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
-        self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
-        self.all_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
+        # self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
+        # self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
+        # self.all_preprocess_order.append(PreprocessNote(preprocess_type, False, True, AnomalyHandlerHolder(None)))
 
     @abstractmethod
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:

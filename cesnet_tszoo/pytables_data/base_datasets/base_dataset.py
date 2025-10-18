@@ -1,6 +1,6 @@
 import atexit
 from abc import ABC, abstractmethod
-from typing import Optional
+from copy import deepcopy
 
 import numpy as np
 import numpy.lib.recfunctions as rf
@@ -8,10 +8,10 @@ from torch.utils.data import Dataset
 import torch
 
 from cesnet_tszoo.pytables_data.utils.utils import load_database
+from cesnet_tszoo.utils.enums import PreprocessType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, ROW_START, ROW_END
-from cesnet_tszoo.utils.filler import Filler
-from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
+from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder
 from cesnet_tszoo.utils.enums import TimeFormat
 
 
@@ -19,7 +19,8 @@ class BaseDataset(Dataset, ABC):
     """Base class for PyTable wrappers. Used for main data loading... train, val, test etc."""
 
     def __init__(self, database_path: str, table_data_path: str, load_config: LoadConfig):
-        self.load_config = load_config
+        self.load_config = deepcopy(load_config)
+        self.saved_load_config = deepcopy(load_config)
 
         self.database_path = database_path
         self.table_data_path = table_data_path
@@ -57,13 +58,10 @@ class BaseDataset(Dataset, ABC):
 
         self.database.close()
 
-    def load_data_from_table(self, ts_row_ranges_to_take: np.ndarray, time_indices_to_take: np.ndarray,
-                             fillers_to_use: Optional[np.ndarray[Filler]], anomaly_handlers_to_use: Optional[np.ndarray[AnomalyHandler]]) -> np.ndarray:
+    def load_data_from_table(self, ts_row_ranges_to_take: np.ndarray, time_indices_to_take: np.ndarray) -> np.ndarray:
         """Return data from table. Missing values are filled with `fillers_to_use` and `default_values`. Anomalies are handled by `anomaly_handlers_to_use`. """
 
         result = np.full((len(ts_row_ranges_to_take), len(time_indices_to_take), len(self.load_config.features_to_take)), fill_value=np.nan, dtype=np.float64)
-
-        full_missing_indices = np.arange(0, len(time_indices_to_take))
 
         for i, range_data in enumerate(ts_row_ranges_to_take):
 
@@ -76,10 +74,8 @@ class BaseDataset(Dataset, ABC):
 
             # No more existing values
             if start >= end:
-                result[i, :, self.offset_exclude_feature_ids:] = self.load_config.default_values
+                result[i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[i, :, self.offset_exclude_feature_ids:].view(), i)
 
-                fillers_to_use[i].fill(result[i, :, self.offset_exclude_feature_ids:].view(), np.array([]), full_missing_indices, default_values=self.load_config.default_values,
-                                       first_next_existing_values=None, first_next_existing_values_distance=None)
                 continue
 
             # Expected range for times in time series
@@ -111,35 +107,54 @@ class BaseDataset(Dataset, ABC):
             filtered_rows[ID_TIME_COLUMN_NAME] = filtered_rows[ID_TIME_COLUMN_NAME] - first_time_index
             existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
-            missing_values_mask = np.ones(len(time_indices_to_take), dtype=bool)
-            missing_values_mask[existing_indices] = 0
-            missing_indices = np.nonzero(missing_values_mask)[0]
-
             if len(filtered_rows) > 0:
                 result[i, existing_indices] = rf.structured_to_unstructured(filtered_rows[:][self.load_config.features_to_take], dtype=np.float64, copy=False)
                 real_offset = len(filtered_rows)
 
-            first_next_existing_values = None
-            first_next_existing_values_distance = None
-
-            if len(existing_indices) != len(time_indices_to_take):
-                upper_valid_rows = rows[lower_mask].view()
-                if len(upper_valid_rows) != len(existing_indices) and upper_valid_rows[ID_TIME_COLUMN_NAME][len(existing_indices)] <= self.load_config.time_period[ID_TIME_COLUMN_NAME][-1]:
-                    first_next_existing_values = rf.structured_to_unstructured(upper_valid_rows[len(existing_indices)][self.load_config.features_to_take], dtype=np.float64, copy=False)
-                    first_next_existing_values_distance = upper_valid_rows[ID_TIME_COLUMN_NAME][len(existing_indices)]
-
-            if anomaly_handlers_to_use is not None:
-                anomaly_handlers_to_use[i].transform_anomalies(result[i, :, self.offset_exclude_feature_ids:].view())
-
-            result[i, missing_indices, self.offset_exclude_feature_ids:] = self.load_config.default_values
-
-            fillers_to_use[i].fill(result[i, :, self.offset_exclude_feature_ids:].view(), existing_indices, missing_indices, default_values=self.load_config.default_values,
-                                   first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
+            result[i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[i, :, self.offset_exclude_feature_ids:].view(), i)
 
             # Update ranges
             ts_row_ranges_to_take[ROW_START][i] = start + real_offset
 
         return result
+
+    def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
+        for preprocess_note in self.load_config.preprocess_order:
+            if preprocess_note.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                self._handle_anomalies(preprocess_note.holder, data, idx)
+            elif preprocess_note.preprocess_type == PreprocessType.FILLING_GAPS:
+                self._handle_filling(preprocess_note.holder, data, idx)
+            elif preprocess_note.preprocess_type == PreprocessType.TRANSFORMING:
+                data = self._handle_transforming(preprocess_note.holder, data, idx)
+            else:
+                raise NotImplementedError()
+
+        return data
+
+    def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int):
+        """Fills data. """
+
+        mask = np.isnan(data)
+        data[mask] = np.take(filling_holder.default_values, np.nonzero(mask)[1])
+
+        filling_holder.get_instance(idx).fill(data.view(), mask, default_values=filling_holder.default_values)
+
+    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, data: np.ndarray, idx: int):
+        """Uses anomaly handlers. """
+
+        anomaly_handler_holder.get_instance(idx).transform_anomalies(data.view())
+
+    def _handle_transforming(self, transfomer_holder: TransformerHolder, data: np.ndarray, idx: int) -> np.ndarray:
+        """Uses transformers """
+
+        if len(self.load_config.indices_of_features_to_take_no_ids) == 1:
+            data = transfomer_holder.get_instance(idx).transform(data.reshape(-1, 1))
+        elif len(self.load_config.time_period) == 1:
+            data = transfomer_holder.get_instance(idx).transform(data.reshape(1, -1))
+        else:
+            data = transfomer_holder.get_instance(idx).transform(data)
+
+        return data
 
     @staticmethod
     def worker_init_fn(worker_id) -> None:

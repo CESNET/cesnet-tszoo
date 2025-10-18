@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
+from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 from cesnet_tszoo.utils.enums import SplitType
 
 
@@ -24,6 +25,7 @@ class LoadConfig(ABC):
         self.time_format = config.time_format
         self.transformers = config.transformers
         self.anomaly_handlers = None
+        self.preprocess_order: list[PreprocessNote] = None
 
         if limit_init_to_set == SplitType.TRAIN:
             self._init_train()

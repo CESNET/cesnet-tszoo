@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from copy import copy
 
 from cesnet_tszoo.data_models.holders.holder import Holder
 from cesnet_tszoo.utils.transformer import Transformer
@@ -19,3 +20,11 @@ class TransformerHolder(Holder):
             raise ValueError()
 
         return self.transformers[idx] if self.is_transformer_per_time_series else self.transformers
+
+    def create_split_copy(self, split_range: slice) -> "TransformerHolder":
+
+        split_copy = copy(self)
+
+        split_copy.transformers = self.transformers if self.is_transformer_per_time_series else list(self.transformers[split_range])
+
+        return split_copy

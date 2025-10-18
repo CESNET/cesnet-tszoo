@@ -1,5 +1,6 @@
 import atexit
 from abc import ABC, abstractmethod
+from copy import deepcopy
 
 from torch.utils.data import Dataset
 import torch
@@ -20,7 +21,7 @@ class InitializerDataset(Dataset, ABC):
     def __init__(self, database_path: str, table_data_path: str, init_config: DatasetInitConfig):
         self.database_path = database_path
         self.table_data_path = table_data_path
-        self.init_config = init_config
+        self.init_config = deepcopy(init_config)
         self.table = None
         self.worker_id = None
         self.database = None
@@ -114,6 +115,8 @@ class InitializerDataset(Dataset, ABC):
                 self._handle_filling(preprocess_order.holder, data, idx)
             elif preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
                 data = self._handle_transforming(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
+            else:
+                raise NotImplementedError()
 
         return data
 
