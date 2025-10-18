@@ -444,14 +444,11 @@ class DatasetConfig(ABC):
 
         self.default_values = temp_default_values
 
-    def _set_preprocess_order(self):
-        """Validates and converts preprocess order to their enum variant. """
-
-        for i, order in enumerate(self.preprocess_order):
-            if isinstance(order, str):
-                self.preprocess_order[i] = PreprocessType(order)
-            else:
-                raise NotImplementedError("Currenty preprocess order supports only string names")
+    def _update_preprocess_order(self):
+        self.train_preprocess_order = []
+        self.val_preprocess_order = []
+        self.test_preprocess_order = []
+        self.all_preprocess_order = []
 
         for preprocess_type in self.preprocess_order:
 
@@ -463,6 +460,17 @@ class DatasetConfig(ABC):
                 self.__set_anomaly_handler_order(preprocess_type)
             else:
                 raise NotImplementedError()
+
+    def _set_preprocess_order(self):
+        """Validates and converts preprocess order to their enum variant. """
+
+        for i, order in enumerate(self.preprocess_order):
+            if isinstance(order, str):
+                self.preprocess_order[i] = PreprocessType(order)
+            else:
+                raise NotImplementedError("Currenty preprocess order supports only string names")
+
+        self._update_preprocess_order()
 
     def __set_transform_order(self, preprocess_type: PreprocessType):
         needs_fitting = (self.partial_fit_initialized_transformers or not self.transformer_factory.has_already_initialized) and not self.transformer_factory.is_empty_factory

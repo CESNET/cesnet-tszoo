@@ -24,19 +24,20 @@ class SeriesBasedInitializerDataset(InitializerDataset):
         train_data = np.array([])
 
         if is_under_nan_threshold:
-            data = self._handle_data_preprocess(data, idx)
 
-            for preprocess_order in self.init_config.preprocess_order_group.preprocess_inner_orders:
-                if preprocess_order.should_be_fitted:
-                    preprocess_fitted_instances.append(FittedPreprocessInstance(preprocess_order.preprocess_type, preprocess_order.get_from_holder(idx)))
-
-            # Prepare data from current time series for training transformer if needed
+            # Prepare data from current time series for training
             if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
                 train_data = data[: len(self.init_config.time_period), self.offset_exclude_feature_ids:].reshape(-1, 1)
             elif len(self.init_config.time_period) == 1:
                 train_data = data[: len(self.init_config.time_period), self.offset_exclude_feature_ids:].reshape(1, -1)
             else:
                 train_data = data[: len(self.init_config.time_period), self.offset_exclude_feature_ids:]
+
+            train_data = self._handle_data_preprocess(train_data, idx)
+
+            for preprocess_order in self.init_config.preprocess_order_group.preprocess_inner_orders:
+                if preprocess_order.should_be_fitted:
+                    preprocess_fitted_instances.append(FittedPreprocessInstance(preprocess_order.preprocess_type, preprocess_order.get_from_holder(idx)))
 
         return InitDatasetReturn(train_data, is_under_nan_threshold, preprocess_fitted_instances)
 
@@ -49,25 +50,25 @@ class SeriesBasedInitializerDataset(InitializerDataset):
     def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int) -> None:
         """Just fills data. """
 
-        mask = np.isnan(data[:, self.offset_exclude_feature_ids:])
-        data[:, self.offset_exclude_feature_ids:][mask] = np.take(filling_holder.default_values, np.nonzero(mask)[1])
+        mask = np.isnan(data)
+        data[mask] = np.take(filling_holder.default_values, np.nonzero(mask)[1])
 
-        filling_holder.fillers[idx].fill(data[:, self.offset_exclude_feature_ids:].view(), mask, default_values=filling_holder.default_values)
+        filling_holder.fillers[idx].fill(data.view(), mask, default_values=filling_holder.default_values)
 
     def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int):
         """Fits and uses anomaly handlers. """
 
         if should_fit:
-            anomaly_handler_holder.anomaly_handlers[idx].fit(data[:, self.offset_exclude_feature_ids:])
+            anomaly_handler_holder.anomaly_handlers[idx].fit(data)
 
-        anomaly_handler_holder.anomaly_handlers[idx].transform_anomalies(data[:, self.offset_exclude_feature_ids:])
+        anomaly_handler_holder.anomaly_handlers[idx].transform_anomalies(data)
 
     def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses transformers. """
 
         if should_fit and transfomer_holder.should_partial_fit:
-            transfomer_holder.transformers.partial_fit(data[:, self.offset_exclude_feature_ids:])
+            transfomer_holder.transformers.partial_fit(data)
         elif should_fit:
-            transfomer_holder.transformers.fit(data[:, self.offset_exclude_feature_ids:])
+            transfomer_holder.transformers.fit(data)
 
-        return transfomer_holder.transformers.transform(data[:, self.offset_exclude_feature_ids:])
+        return transfomer_holder.transformers.transform(data)
