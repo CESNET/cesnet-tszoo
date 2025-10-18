@@ -36,7 +36,7 @@ class DisjointTimeBasedInitializerDataset(InitializerDataset):
             train_data = self._handle_data_preprocess(train_data, idx)
 
             for preprocess_order in self.init_config.preprocess_order_group.preprocess_inner_orders:
-                if preprocess_order.should_be_fitted:
+                if preprocess_order.should_be_fitted and not preprocess_order.holder.is_empty():
                     preprocess_fitted_instances.append(FittedPreprocessInstance(preprocess_order.preprocess_type, preprocess_order.get_from_holder(idx)))
 
         return InitDatasetReturn(train_data, is_under_nan_threshold, preprocess_fitted_instances)
@@ -57,6 +57,9 @@ class DisjointTimeBasedInitializerDataset(InitializerDataset):
 
     def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int):
         """Fits and uses anomaly handlers. """
+
+        if anomaly_handler_holder.anomaly_handlers is None:
+            return
 
         if should_fit:
             anomaly_handler_holder.anomaly_handlers[idx].fit(data)
