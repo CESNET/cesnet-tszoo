@@ -134,6 +134,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                  train_batch_size: int = 32,
                  val_batch_size: int = 64,
                  test_batch_size: int = 128,
+                 preprocess_order: list[str] = ["handling_anomalies", "filling_gaps", "transforming"],
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
                  transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None = None,
                  handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None = None,
@@ -156,8 +157,8 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
 
         TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, 1, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
         SeriesBasedHandler.__init__(self, self.logger, True, train_ts, val_ts, test_ts)
-        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, 1, fill_missing_with, transform_with, handle_anomalies_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
-                               train_workers, val_workers, test_workers, 1, init_workers, nan_threshold, False, DatasetType.DISJOINT_TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, self.logger)
+        DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, 1, preprocess_order, fill_missing_with, transform_with, handle_anomalies_with, partial_fit_initialized_transformer, include_time, include_ts_id, time_format,
+                               train_workers, val_workers, test_workers, 1, init_workers, nan_threshold, False, DatasetType.DISJOINT_TIME_BASED, DataloaderOrder.SEQUENTIAL, random_state, False, self.logger)
 
     def _validate_construction(self) -> None:
         """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig._dataset_init]. """

@@ -4,14 +4,13 @@ import numpy as np
 
 from cesnet_tszoo.configs import TimeBasedConfig
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
+from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 
 
 class TimeDatasetInitConfig(DatasetInitConfig):
     """For time based init datasets. """
 
-    def __init__(self, config: TimeBasedConfig):
-        self.config = config
-
+    def __init__(self, config: TimeBasedConfig, train_group: PreprocessOrderGroup, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup):
         self.ts_row_ranges = config.ts_row_ranges
         self.ts_ids = config.ts_ids
 
@@ -20,9 +19,9 @@ class TimeDatasetInitConfig(DatasetInitConfig):
         self.test_time_period = None
         self.all_time_period = None
 
-        self.train_fillers = None
-        self.val_fillers = None
-        self.test_fillers = None
+        self.train_preprocess_order_group = deepcopy(train_group)
+        self.val_preprocess_order_group = deepcopy(val_group)
+        self.test_preprocess_order_group = deepcopy(test_group)
 
         super().__init__(config, None)
 
@@ -39,26 +38,22 @@ class TimeDatasetInitConfig(DatasetInitConfig):
         else:
             self.time_period = self.all_time_period
 
-    def _init_train(self):
+    def _init_train(self, config: TimeBasedConfig):
         """Initializes from train data of config """
 
-        self.train_time_period = self.config.train_time_period
-        self.train_fillers = deepcopy(self.config.train_fillers)
-        self.anomaly_handlers = self.config.anomaly_handlers
+        self.train_time_period = config.train_time_period
 
-    def _init_val(self):
+    def _init_val(self, config: TimeBasedConfig):
         """Initializes from val data of config """
 
-        self.val_time_period = self.config.val_time_period
-        self.val_fillers = self.config.val_fillers
+        self.val_time_period = config.val_time_period
 
-    def _init_test(self):
+    def _init_test(self, config: TimeBasedConfig):
         """Initializes from test data of config """
 
-        self.test_time_period = self.config.test_time_period
-        self.test_fillers = self.config.test_fillers
+        self.test_time_period = config.test_time_period
 
-    def _init_all(self):
+    def _init_all(self, config: TimeBasedConfig):
         """Initializes from all data of config """
 
-        self.all_time_period = self.config.all_time_period
+        self.all_time_period = config.all_time_period

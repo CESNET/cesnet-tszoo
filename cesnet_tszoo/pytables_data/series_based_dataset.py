@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.utils.enums import TimeFormat
 from cesnet_tszoo.pytables_data.base_datasets.base_dataset import BaseDataset
@@ -11,10 +13,10 @@ class SeriesBasedDataset(BaseDataset):
     """
 
     def __getitem__(self, batch_idx):
-        fillers = self.load_config.fillers[batch_idx]
-        anomaly_handlers = self.load_config.anomaly_handlers[batch_idx] if self.load_config.anomaly_handlers is not None else None
+        if batch_idx[0] == 0:
+            self.load_config = deepcopy(self.saved_load_config)
 
-        data = self.load_data_from_table(self.load_config.ts_row_ranges[batch_idx], self.load_config.time_period, fillers, anomaly_handlers)
+        data = self.load_data_from_table(self.load_config.ts_row_ranges[batch_idx], self.load_config.time_period)
 
         if self.load_config.include_time:
             if self.load_config.time_format == TimeFormat.ID_TIME:
@@ -24,15 +26,6 @@ class SeriesBasedDataset(BaseDataset):
 
         if self.load_config.include_ts_id:
             data[:, :, self.ts_id_col_index] = self.ts_id_fill[batch_idx]
-
-        # Transform data
-        for i, _ in enumerate(data):
-            if len(self.load_config.indices_of_features_to_take_no_ids) == 1:
-                data[i][:, self.load_config.indices_of_features_to_take_no_ids] = self.load_config.transformers.transform(data[i][:, self.load_config.indices_of_features_to_take_no_ids].reshape(-1, 1))
-            elif len(self.load_config.time_period) == 1:
-                data[i][:, self.load_config.indices_of_features_to_take_no_ids] = self.load_config.transformers.transform(data[i][:, self.load_config.indices_of_features_to_take_no_ids].reshape(1, -1))
-            else:
-                data[i][:, self.load_config.indices_of_features_to_take_no_ids] = self.load_config.transformers.transform(data[i][:, self.load_config.indices_of_features_to_take_no_ids])
 
         if self.load_config.include_time and self.load_config.time_format == TimeFormat.DATETIME:
             return data, self.load_config.time_period[TIME_COLUMN_NAME].copy()

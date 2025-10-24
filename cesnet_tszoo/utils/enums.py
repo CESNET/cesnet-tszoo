@@ -185,6 +185,19 @@ class DatasetType(Enum):
     """This type of dataset is defined by train/val/test time series sets and their respective time period sets. """
 
 
+class PreprocessType(Enum):
+    """Helper enum to decide which preprocess it is. """
+
+    FILLING_GAPS = "filling_gaps"
+    """Represents default_values and Filler preprocess. """
+
+    TRANSFORMING = "transforming"
+    """Represents Transformer preprocess. """
+
+    HANDLING_ANOMALIES = "handling_anomalies"
+    """Represents AnomalyHandler preprocess. """
+
+
 class ScalerType(Enum):
     """Obsolete, dont use. Only for backward compatibility. """
 

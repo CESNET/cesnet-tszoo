@@ -1,7 +1,7 @@
 from typing import Any
 
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
-from cesnet_tszoo.pytables_data.base_dataset import BaseDataset
+from cesnet_tszoo.pytables_data.base_datasets.base_dataset import BaseDataset
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
 from cesnet_tszoo.utils.enums import TimeFormat
 
