@@ -26,41 +26,41 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
         offset = 0
 
+        can_preprocess = True
+
         is_train_under_nan_threshold = True
-        if self.init_config.train_time_period is not None:
+        if self.init_config.train_time_period is not None and can_preprocess:
             in_train = (existing_indices < len(self.init_config.train_time_period)).sum()
             is_train_under_nan_threshold = (in_train - offset) / len(self.init_config.train_time_period) <= self.init_config.nan_threshold
             offset += in_train
+        can_preprocess = can_preprocess and is_train_under_nan_threshold
 
         is_val_under_nan_threshold = True
-        if self.init_config.val_time_period is not None:
+        if self.init_config.val_time_period is not None and can_preprocess:
             in_val = (existing_indices < len(self.init_config.val_time_period)).sum()
             is_val_under_nan_threshold = (in_val - offset) / len(self.init_config.val_time_period) <= self.init_config.nan_threshold
             offset += in_val
+        can_preprocess = can_preprocess and is_val_under_nan_threshold
 
         is_test_under_nan_threshold = True
-        if self.init_config.test_time_period is not None:
+        if self.init_config.test_time_period is not None and can_preprocess:
             in_test = (existing_indices < len(self.init_config.test_time_period)).sum()
             is_test_under_nan_threshold = (in_test - offset) / len(self.init_config.test_time_period) <= self.init_config.nan_threshold
             offset += in_test
-
-        is_test_under_nan_threshold = True
-        if self.init_config.test_time_period is not None:
-            in_test = (existing_indices < len(self.init_config.test_time_period)).sum()
-            is_test_under_nan_threshold = (in_test - offset) / len(self.init_config.test_time_period) <= self.init_config.nan_threshold
-            offset += in_test
+        can_preprocess = can_preprocess and is_test_under_nan_threshold
 
         is_all_under_nan_threshold = True
-        if self.init_config.all_time_period is not None:
+        if self.init_config.all_time_period is not None and can_preprocess:
             in_all = (existing_indices < len(self.init_config.all_time_period)).sum()
             is_all_under_nan_threshold = (in_all - offset) / len(self.init_config.all_time_period) <= self.init_config.nan_threshold
+        can_preprocess = can_preprocess and is_all_under_nan_threshold
 
         train_preprocess_fitted_instances = []
         val_preprocess_fitted_instances = []
         test_preprocess_fitted_instances = []
 
         train_data = np.array([])
-        if is_train_under_nan_threshold and is_val_under_nan_threshold and is_test_under_nan_threshold:
+        if can_preprocess:
 
             # Prepare data from current time series for training
             if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
@@ -96,69 +96,39 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> tuple[np.ndarray, np.ndarray]:
 
-        train_waiting_for_fillers = self.init_config.train_time_period is None
-        val_waiting_for_fillers = self.init_config.val_time_period is None
-        test_waiting_for_fillers = self.init_config.test_time_period is None
-
         train_preprocess_inner_orders = self.init_config.train_preprocess_order_group.preprocess_inner_orders
         val_preprocess_inner_orders = self.init_config.val_preprocess_order_group.preprocess_inner_orders
         test_preprocess_inner_orders = self.init_config.test_preprocess_order_group.preprocess_inner_orders
 
-        train_index = len(train_preprocess_inner_orders) if self.init_config.train_time_period is None else 0
-        val_index = len(val_preprocess_inner_orders) if self.init_config.val_time_period is None else 0
-        test_index = len(test_preprocess_inner_orders) if self.init_config.test_time_period is None else 0
+        for train_preprocess, val_preprocess, test_preprocess in list(zip(train_preprocess_inner_orders, val_preprocess_inner_orders, test_preprocess_inner_orders)):
 
-        if train_waiting_for_fillers and val_waiting_for_fillers and test_waiting_for_fillers:
-            return data
+            if train_preprocess.preprocess_type == PreprocessType.FILLING_GAPS:
+                train_filling_holder = train_preprocess.holder
+                val_filling_holder = val_preprocess.holder
+                test_filling_holder = test_preprocess.holder
 
-        while len(train_preprocess_inner_orders) > train_index or len(val_preprocess_inner_orders) > val_index or len(test_preprocess_inner_orders) > test_index:
+                need_val_fit = val_preprocess.should_be_fitted
+                need_test_fit = test_preprocess.should_be_fitted
+
+                self._handle_filling(train_filling_holder, val_filling_holder, test_filling_holder, need_val_fit, need_test_fit, data, idx)
+                continue
 
             offset = 0
-
-            if not train_waiting_for_fillers and self.init_config.train_time_period is not None:
-                if len(train_preprocess_inner_orders) <= train_index or train_preprocess_inner_orders[train_index].preprocess_type == PreprocessType.FILLING_GAPS:
-                    train_waiting_for_fillers = True
-                else:
-                    data = self._handle_data_preprocess_train_order(train_preprocess_inner_orders[train_index], data, idx)
-                    train_index += 1
-
+            if self.init_config.train_time_period is not None:
+                data = self._handle_data_preprocess_train_order(train_preprocess, data, idx)
                 offset += len(self.init_config.train_time_period)
 
-            if not val_waiting_for_fillers and self.init_config.val_time_period is not None:
-                if len(val_preprocess_inner_orders) <= val_index or val_preprocess_inner_orders[val_index].preprocess_type == PreprocessType.FILLING_GAPS:
-                    val_waiting_for_fillers = True
-                else:
-                    data[offset:len(self.init_config.val_time_period) + offset] = self._handle_data_preprocess_non_fit_order(val_preprocess_inner_orders[val_index], data[offset:len(self.init_config.val_time_period) + offset], idx)
-                    val_index += 1
-
+            if self.init_config.val_time_period is not None:
+                data[offset:len(self.init_config.val_time_period) + offset] = self._handle_data_preprocess_other_order(val_preprocess, data[offset:len(self.init_config.val_time_period) + offset], idx)
                 offset += len(self.init_config.val_time_period)
 
-            if not test_waiting_for_fillers and self.init_config.test_time_period is not None:
-                if len(test_preprocess_inner_orders) <= test_index or test_preprocess_inner_orders[test_index].preprocess_type == PreprocessType.FILLING_GAPS:
-                    test_waiting_for_fillers = True
-                else:
-                    data[offset:len(self.init_config.test_time_period) + offset] = self._handle_data_preprocess_non_fit_order(test_preprocess_inner_orders[test_index], data[offset:len(self.init_config.test_time_period) + offset], idx)
-                    test_index += 1
-
+            if self.init_config.test_time_period is not None:
+                data[offset:len(self.init_config.test_time_period) + offset] = self._handle_data_preprocess_other_order(test_preprocess, data[offset:len(self.init_config.test_time_period) + offset], idx)
                 offset += len(self.init_config.test_time_period)
-
-            if train_waiting_for_fillers and val_waiting_for_fillers and test_waiting_for_fillers:
-                train_filling_holder = None if train_index >= len(train_preprocess_inner_orders) else train_preprocess_inner_orders[train_index].holder
-                val_filling_holder = None if val_index >= len(val_preprocess_inner_orders) else val_preprocess_inner_orders[val_index].holder
-                test_filling_holder = None if test_index >= len(test_preprocess_inner_orders) else test_preprocess_inner_orders[test_index].holder
-
-                self._handle_filling(train_filling_holder, val_filling_holder, test_filling_holder, data, idx)
-                train_waiting_for_fillers = False
-                val_waiting_for_fillers = False
-                test_waiting_for_fillers = False
-
-                train_index += 1
-                val_index += 1
-                test_index += 1
 
         return data
 
-    def _handle_data_preprocess_non_fit_order(self, preprocess_order: PreprocessNote, data: np.ndarray, idx: int) -> np.ndarray:
+    def _handle_data_preprocess_other_order(self, preprocess_order: PreprocessNote, data: np.ndarray, idx: int) -> np.ndarray:
         if preprocess_order.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
             return data
         elif preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
@@ -176,7 +146,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
         return data
 
-    def _handle_filling(self, train_filling_holder: FillingHolder, val_filling_holder: FillingHolder, test_filling_holder: FillingHolder, data: np.ndarray, idx: int):
+    def _handle_filling(self, train_filling_holder: FillingHolder, val_filling_holder: FillingHolder, test_filling_holder: FillingHolder, need_val_fit: bool, need_test_fit: bool, data: np.ndarray, idx: int):
         """Fills data and prepares fillers based on previous times. Order is train (does not need to update train fillers) > val > test."""
 
         offset_start = np.inf
@@ -189,7 +159,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
             first_start_index = offset_start = self.init_config.train_time_period[ID_TIME_COLUMN_NAME][0]
 
         # Missing/existing indices for validation set; Additionally prepares validation fillers based on previous values if needed and fills data
-        if self.init_config.val_time_period is not None:
+        if self.init_config.val_time_period is not None and need_val_fit:
 
             current_start_index = self.init_config.val_time_period[ID_TIME_COLUMN_NAME][0]
             if first_start_index is not None and current_start_index > first_start_index:
@@ -207,7 +177,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
                 first_start_index = current_start_index
 
         # Missing/existing indices for test set; Additionally prepares test fillers based on previous values if needed and fills data
-        if self.init_config.test_time_period is not None:
+        if self.init_config.test_time_period is not None and need_test_fit:
 
             current_start_index = self.init_config.test_time_period[ID_TIME_COLUMN_NAME][0]
 
