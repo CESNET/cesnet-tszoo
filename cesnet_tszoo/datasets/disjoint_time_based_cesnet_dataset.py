@@ -161,7 +161,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                                              train_batch_size: int | Literal["config"] = "config",
                                              val_batch_size: int | Literal["config"] = "config",
                                              test_batch_size: int | Literal["config"] = "config",
-                                             preprocess_order: list[str] | Literal["config"] = "config",
+                                             preprocess_order: list[str, type] | Literal["config"] = "config",
                                              fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"] = "config",
                                              transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
                                              handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"] = "config",

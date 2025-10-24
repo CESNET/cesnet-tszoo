@@ -133,7 +133,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                  val_batch_size: int = 64,
                  test_batch_size: int = 128,
                  all_batch_size: int = 128,
-                 preprocess_order: list[str] = ["handling_anomalies", "filling_gaps", "transforming"],
+                 preprocess_order: list[str, type] = ["handling_anomalies", "filling_gaps", "transforming"],
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
                  transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None = None,
                  handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None = None,

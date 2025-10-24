@@ -1004,7 +1004,7 @@ class CesnetDataset(ABC):
         self.update_dataset_config_and_initialize(default_values=default_values, workers=workers)
         self.logger.info("Default values has been changed successfuly.")
 
-    def set_preprocess_order(self, preprocess_order: list[str] | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
+    def set_preprocess_order(self, preprocess_order: list[str, type] | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating preprocess order.")
 

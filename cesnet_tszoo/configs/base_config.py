@@ -92,7 +92,7 @@ class DatasetConfig(ABC):
                  val_batch_size: int,
                  test_batch_size: int,
                  all_batch_size: int,
-                 preprocess_order: list[str],
+                 preprocess_order: list[str, type],
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None,
                  transform_with: type | TransformerType | list[Transformer] | np.ndarray[Transformer] | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None,
                  handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None,

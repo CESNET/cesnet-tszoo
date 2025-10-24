@@ -25,7 +25,7 @@ class ConfigEditor(ABC):
     val_batch_size: int | Literal["config"]
     test_batch_size: int | Literal["config"]
     all_batch_size: int | Literal["config"]
-    preprocess_order: list[str] | Literal["config"]
+    preprocess_order: list[str, type] | Literal["config"]
     fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"]
     transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"]
     handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"]
