@@ -10,7 +10,7 @@ import numpy.lib.recfunctions as rf
 from cesnet_tszoo.utils.enums import PreprocessType
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
-from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder
+from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME
 from cesnet_tszoo.pytables_data.utils.utils import load_database
 
@@ -115,6 +115,12 @@ class InitializerDataset(Dataset, ABC):
                 self._handle_filling(preprocess_order.holder, data, idx)
             elif preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
                 data = self._handle_transforming(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
+                data = self._handle_per_series_custom_handler(preprocess_order.holder, preprocess_order.should_be_fitted, preprocess_order.can_be_applied, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
+                data = self._handle_all_series_custom_handler(preprocess_order.holder, preprocess_order.should_be_fitted, preprocess_order.can_be_applied, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
+                data = self._handle_no_fit_custom_handler(preprocess_order.holder, preprocess_order.can_be_applied, data, idx)
             else:
                 raise NotImplementedError()
 
@@ -134,6 +140,31 @@ class InitializerDataset(Dataset, ABC):
     def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses transformers """
         ...
+
+    def _handle_per_series_custom_handler(self, handler_holder: PerSeriesCustomHandlerHolder, should_fit: bool, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+
+        if should_fit:
+            handler_holder.get_instance(idx).fit(data)
+
+        if can_apply:
+            data = handler_holder.get_instance(idx).apply(data)
+
+        return data
+
+    def _handle_all_series_custom_handler(self, handler_holder: AllSeriesCustomHandlerHolder, should_fit: bool, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if should_fit:
+            handler_holder.get_instance(idx).partial_fit(data)
+
+        if can_apply:
+            data = handler_holder.get_instance(idx).apply(data)
+
+        return data
+
+    def _handle_no_fit_custom_handler(self, handler_holder: NoFitCustomHandlerHolder, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if can_apply:
+            data = handler_holder.get_instance(idx).apply(data)
+
+        return data
 
     @staticmethod
     def worker_init_fn(worker_id) -> None:
