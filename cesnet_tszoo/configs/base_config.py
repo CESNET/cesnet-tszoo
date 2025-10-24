@@ -206,7 +206,17 @@ class DatasetConfig(ABC):
         assert self.preprocess_order is not None, "preprocess_order must be set."
         assert isinstance(self.preprocess_order, list), "preprocess_order must be list"
         assert MANDATORY_PREPROCESSES_ORDER.issubset(self.preprocess_order) or MANDATORY_PREPROCESSES_ORDER_ENUM.issubset(self.preprocess_order), f"preprocess_order must at least contain order for {list(MANDATORY_PREPROCESSES_ORDER)}"
-        assert len(self.preprocess_order) == 3, f"preprocess_order must not contain duplicate mandatory orders (from {list(MANDATORY_PREPROCESSES_ORDER)})"
+
+        mandatory_count = 0
+        for preprocess in self.preprocess_order:
+            if isinstance(preprocess, (str, PreprocessType)):
+                PreprocessType(preprocess)
+                mandatory_count += 1
+            elif not isinstance(preprocess, type):
+                raise ValueError(f"Values in preprocess_order must be either from {list(MANDATORY_PREPROCESSES_ORDER)} or a type.")
+
+        if mandatory_count != len(MANDATORY_PREPROCESSES_ORDER):
+            raise ValueError(f"preprocess_order must not contain duplicate mandatory preprocesses ({MANDATORY_PREPROCESSES_ORDER}).")
 
         # Validate nan_threshold value
         assert isinstance(self.nan_threshold, Number) and 0 <= self.nan_threshold <= 1, "nan_threshold must be a number between 0 and 1."
