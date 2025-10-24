@@ -455,13 +455,14 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
                     fitted_inner_index += 1
 
-        fitted_inner_index = 0
-        for inner_preprocess_order in test_group.preprocess_inner_orders:
-            if inner_preprocess_order.should_be_fitted:
-                if inner_preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
-                    self.dataset_config.test_fillers[ts_id] = test_return.preprocess_fitted_instances[fitted_inner_index].instance
+        if self.dataset_config.has_test():
+            fitted_inner_index = 0
+            for inner_preprocess_order in test_group.preprocess_inner_orders:
+                if inner_preprocess_order.should_be_fitted:
+                    if inner_preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
+                        self.dataset_config.test_fillers[ts_id] = test_return.preprocess_fitted_instances[fitted_inner_index].instance
 
-                fitted_inner_index += 1
+                    fitted_inner_index += 1
 
     def _update_export_config_copy(self) -> None:
         """
