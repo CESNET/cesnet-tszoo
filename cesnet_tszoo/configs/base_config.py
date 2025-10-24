@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 
 import cesnet_tszoo.version as version
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER, MANDATORY_PREPROCESSES_ORDER_ENUM
 from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType, PreprocessType
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
@@ -205,7 +205,7 @@ class DatasetConfig(ABC):
         # Ensuring that preprocess order contains all required preprocesses
         assert self.preprocess_order is not None, "preprocess_order must be set."
         assert isinstance(self.preprocess_order, list), "preprocess_order must be list"
-        assert MANDATORY_PREPROCESSES_ORDER.issubset(self.preprocess_order), f"preprocess_order must at least contain order for {list(MANDATORY_PREPROCESSES_ORDER)}"
+        assert MANDATORY_PREPROCESSES_ORDER.issubset(self.preprocess_order) or MANDATORY_PREPROCESSES_ORDER_ENUM.issubset(self.preprocess_order), f"preprocess_order must at least contain order for {list(MANDATORY_PREPROCESSES_ORDER)}"
         assert len(self.preprocess_order) == 3, f"preprocess_order must not contain duplicate mandatory orders (from {list(MANDATORY_PREPROCESSES_ORDER)})"
 
         # Validate nan_threshold value

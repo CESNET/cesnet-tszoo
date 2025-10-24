@@ -25,6 +25,7 @@ class ConfigEditor(ABC):
     val_batch_size: int | Literal["config"]
     test_batch_size: int | Literal["config"]
     all_batch_size: int | Literal["config"]
+    preprocess_order: list[str] | Literal["config"]
     fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None | Literal["config"]
     transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None | Literal["config"]
     handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None | Literal["config"]
@@ -42,6 +43,11 @@ class ConfigEditor(ABC):
 
         if self.default_values == "config":
             self.default_values = self.default_config.default_values
+        else:
+            self.requires_init = True
+
+        if self.preprocess_order == "config":
+            self.preprocess_order = self.default_config.preprocess_order
         else:
             self.requires_init = True
 
@@ -106,6 +112,7 @@ class ConfigEditor(ABC):
     @abstractmethod
     def _hard_modify(self, config: DatasetConfig, dataset_metadata: DatasetMetadata):
         config.default_values = self.default_values
+        config.preprocess_order = self.preprocess_order
         config.partial_fit_initialized_transformers = self.partial_fit_initialized_transformers
         config.create_transformer_per_time_series = self.create_transformer_per_time_series
         config.filler_factory = filler_factories.get_filler_factory(self.fill_missing_with)
