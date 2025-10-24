@@ -14,6 +14,9 @@ from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, Da
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
+from cesnet_tszoo.utils.custom_handler.factory import PerSeriesCustomHandlerFactory, NoFitCustomHandlerFactory
+from cesnet_tszoo.data_models.holders import PerSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
+from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 
 
 class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
@@ -343,6 +346,30 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             self.anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.ts_ids])
 
         self.logger.debug("Using anomaly handler %s", self.anomaly_handler_factory.name)
+
+    def _set_per_series_custom_handler(self, factory: PerSeriesCustomHandlerFactory):
+
+        if not self.has_train():
+            raise ValueError("To use PerSeriesCustomHandler you need to use train set.")
+
+        handlers = [factory.create_handler() for _ in self.ts_ids]
+
+        self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, True, factory.can_apply_to_train, True, PerSeriesCustomHandlerHolder(handlers)))
+        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_val, True, PerSeriesCustomHandlerHolder(handlers)))
+        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_test, True, PerSeriesCustomHandlerHolder(handlers)))
+        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_all, True, PerSeriesCustomHandlerHolder(handlers)))
+
+    def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):
+
+        train_handlers = [factory.create_handler() for _ in self.ts_ids]
+        val_handlers = [factory.create_handler() for _ in self.ts_ids]
+        test_handlers = [factory.create_handler() for _ in self.ts_ids]
+        all_handlers = [factory.create_handler() for _ in self.ts_ids]
+
+        self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_train, True, NoFitCustomHandlerHolder(train_handlers)))
+        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_val, True, NoFitCustomHandlerHolder(val_handlers)))
+        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_test, True, NoFitCustomHandlerHolder(test_handlers)))
+        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_all, True, NoFitCustomHandlerHolder(all_handlers)))
 
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos. """

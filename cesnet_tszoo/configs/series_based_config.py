@@ -14,6 +14,9 @@ from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, Da
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
+from cesnet_tszoo.utils.custom_handler.factory import PerSeriesCustomHandlerFactory, NoFitCustomHandlerFactory
+from cesnet_tszoo.data_models.holders import PerSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
+from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 
 
 class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
@@ -269,6 +272,27 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
             self.anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.train_ts])
 
         self.logger.debug("Using anomaly handler %s", self.anomaly_handler_factory.name)
+
+    def _set_per_series_custom_handler(self, factory: PerSeriesCustomHandlerFactory):
+        raise ValueError(f"Cannot use {factory.name} CustomHandler, because PerSeriesCustomHandler is not supported for {self.dataset_type}. Use AllSeriesCustomHandler or NoFitCustomHandler instead. ")
+
+    def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):
+
+        if self.has_train():
+            train_handlers = [factory.create_handler() for _ in self.train_ts]
+            self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_train, True, NoFitCustomHandlerHolder(train_handlers)))
+
+        if self.has_val():
+            val_handlers = [factory.create_handler() for _ in self.val_ts]
+            self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_val, True, NoFitCustomHandlerHolder(val_handlers)))
+
+        if self.has_test():
+            test_handlers = [factory.create_handler() for _ in self.test_ts]
+            self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_test, True, NoFitCustomHandlerHolder(test_handlers)))
+
+        if self.has_all():
+            all_handlers = [factory.create_handler() for _ in self.all_ts]
+            self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_all, True, NoFitCustomHandlerHolder(all_handlers)))
 
     def _validate_finalization(self) -> None:
         """Performs final validation of the configuration. """
