@@ -2,14 +2,14 @@ from dataclasses import dataclass, field
 from copy import copy
 
 from cesnet_tszoo.data_models.holders.holder import Holder
-from cesnet_tszoo.utils.custom_handler.custom_handler import CustomHandler
+from cesnet_tszoo.utils.custom_handler.custom_handler import CustomHandler, PerSeriesCustomHandler, AllSeriesCustomHandler, NoFitCustomHandler
 
 
 @dataclass
 class PerSeriesCustomHandlerHolder(Holder):
     custom_handlers: list[CustomHandler] = field(init=True)
 
-    def get_instance(self, idx: int) -> CustomHandler:
+    def get_instance(self, idx: int) -> PerSeriesCustomHandler:
 
         if self.custom_handlers is None:
             raise ValueError()
@@ -35,7 +35,7 @@ class PerSeriesCustomHandlerHolder(Holder):
 class AllSeriesCustomHandlerHolder(Holder):
     custom_handler: CustomHandler = field(init=True)
 
-    def get_instance(self, idx: int) -> CustomHandler:
+    def get_instance(self, idx: int) -> AllSeriesCustomHandler:
 
         if self.custom_handler is None:
             raise ValueError()
@@ -58,7 +58,7 @@ class AllSeriesCustomHandlerHolder(Holder):
 class NoFitCustomHandlerHolder(Holder):
     custom_handlers: list[CustomHandler] = field(init=True)
 
-    def get_instance(self, idx: int) -> CustomHandler:
+    def get_instance(self, idx: int) -> NoFitCustomHandler:
 
         if self.custom_handlers is None:
             raise ValueError()
