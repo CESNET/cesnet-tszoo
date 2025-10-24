@@ -328,17 +328,14 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
 
     def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):
 
-        if self.has_train():
-            train_handlers = [factory.create_handler() for _ in self.train_ts]
-            self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_train, True, NoFitCustomHandlerHolder(train_handlers)))
+        train_handlers = [factory.create_handler() for _ in self.train_ts] if self.has_train() else None
+        self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_train and self.has_train(), True, NoFitCustomHandlerHolder(train_handlers)))
 
-        if self.has_val():
-            val_handlers = [factory.create_handler() for _ in self.val_ts]
-            self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_val, True, NoFitCustomHandlerHolder(val_handlers)))
+        val_handlers = [factory.create_handler() for _ in self.val_ts] if self.has_val() else None
+        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_val and self.has_val(), True, NoFitCustomHandlerHolder(val_handlers)))
 
-        if self.has_test():
-            test_handlers = [factory.create_handler() for _ in self.test_ts]
-            self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_test, True, NoFitCustomHandlerHolder(test_handlers)))
+        test_handlers = [factory.create_handler() for _ in self.test_ts] if self.has_test() else None
+        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_test and self.has_test(), True, NoFitCustomHandlerHolder(test_handlers)))
 
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos."""

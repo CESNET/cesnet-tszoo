@@ -355,21 +355,23 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         handlers = [factory.create_handler() for _ in self.ts_ids]
 
         self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, True, factory.can_apply_to_train, True, PerSeriesCustomHandlerHolder(handlers)))
-        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_val, True, PerSeriesCustomHandlerHolder(handlers)))
-        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_test, True, PerSeriesCustomHandlerHolder(handlers)))
-        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_all, True, PerSeriesCustomHandlerHolder(handlers)))
+        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_val and self.has_val(), True, PerSeriesCustomHandlerHolder(handlers)))
+        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_test and self.has_test(), True, PerSeriesCustomHandlerHolder(handlers)))
+        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_all and self.has_all(), True, PerSeriesCustomHandlerHolder(handlers)))
 
     def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):
 
-        train_handlers = [factory.create_handler() for _ in self.ts_ids]
-        val_handlers = [factory.create_handler() for _ in self.ts_ids]
-        test_handlers = [factory.create_handler() for _ in self.ts_ids]
-        all_handlers = [factory.create_handler() for _ in self.ts_ids]
+        train_handlers = [factory.create_handler() for _ in self.ts_ids] if self.has_train() else None
+        self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_train and self.has_train(), True, NoFitCustomHandlerHolder(train_handlers)))
 
-        self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_train, True, NoFitCustomHandlerHolder(train_handlers)))
-        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_val, True, NoFitCustomHandlerHolder(val_handlers)))
-        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_test, True, NoFitCustomHandlerHolder(test_handlers)))
-        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_all, True, NoFitCustomHandlerHolder(all_handlers)))
+        val_handlers = [factory.create_handler() for _ in self.ts_ids] if self.has_val() else None
+        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_val and self.has_val(), True, NoFitCustomHandlerHolder(val_handlers)))
+
+        test_handlers = [factory.create_handler() for _ in self.ts_ids] if self.has_test() else None
+        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_test and self.has_test(), True, NoFitCustomHandlerHolder(test_handlers)))
+
+        all_handlers = [factory.create_handler() for _ in self.ts_ids] if self.has_all() else None
+        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_all and self.has_all(), True, NoFitCustomHandlerHolder(all_handlers)))
 
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos. """

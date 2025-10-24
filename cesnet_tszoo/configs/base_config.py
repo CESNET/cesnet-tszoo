@@ -497,24 +497,24 @@ class DatasetConfig(ABC):
         should_partial_fit = (self.transformer_factory.has_already_initialized and self.partial_fit_initialized_transformers) or (not self.transformer_factory.has_already_initialized and not self.create_transformer_per_time_series)
         is_outer = not self.create_transformer_per_time_series and needs_fitting
 
-        self.train_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, True, not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, should_partial_fit)))
-        self.val_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, True, not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
-        self.test_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, True, not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
-        self.all_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, True, not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
+        self.train_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, self.has_train(), not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, should_partial_fit)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_val(), not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_test(), not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
+        self.all_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_all(), not is_outer, TransformerHolder(self.transformers, self.create_transformer_per_time_series, False)))
 
     def __set_filling_order(self, preprocess_type: PreprocessType):
         needs_fitting = self.can_fit_fillers and not self.filler_factory.is_empty_factory
 
-        self.train_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, True, True, FillingHolder(self.train_fillers, self.default_values)))
-        self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, True, True, FillingHolder(self.val_fillers, self.default_values)))
-        self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, True, True, FillingHolder(self.test_fillers, self.default_values)))
-        self.all_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, True, True, FillingHolder(self.all_fillers, self.default_values)))
+        self.train_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_train(), True, FillingHolder(self.train_fillers, self.default_values)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, self.has_val(), True, FillingHolder(self.val_fillers, self.default_values)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, self.has_test(), True, FillingHolder(self.test_fillers, self.default_values)))
+        self.all_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_all(), True, FillingHolder(self.all_fillers, self.default_values)))
 
     def __set_anomaly_handler_order(self, preprocess_type: PreprocessType):
-        self.train_preprocess_order.append(PreprocessNote(preprocess_type, False, not self.anomaly_handler_factory.is_empty_factory, True, True, AnomalyHandlerHolder(self.anomaly_handlers)))
-        self.val_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, False, True, AnomalyHandlerHolder(None)))
-        self.test_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, False, True, AnomalyHandlerHolder(None)))
-        self.all_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, False, True, AnomalyHandlerHolder(None)))
+        self.train_preprocess_order.append(PreprocessNote(preprocess_type, False, not self.anomaly_handler_factory.is_empty_factory, self.has_train(), True, AnomalyHandlerHolder(self.anomaly_handlers)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, self.has_val(), True, AnomalyHandlerHolder(None)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, self.has_test(), True, AnomalyHandlerHolder(None)))
+        self.all_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, self.has_all(), True, AnomalyHandlerHolder(None)))
 
     def __set_custom_handler(self, preprocess_type: type):
         factory = custom_handler_factories.get_custom_handler_factory(preprocess_type)
@@ -540,13 +540,13 @@ class DatasetConfig(ABC):
         handler = factory.create_handler()
 
         self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, True, factory.can_apply_to_train, False, AllSeriesCustomHandlerHolder(handler)))
-        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_val, False, AllSeriesCustomHandlerHolder(handler)))
-        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_test, False, AllSeriesCustomHandlerHolder(handler)))
-        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_all, False, AllSeriesCustomHandlerHolder(handler)))
+        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_val and self.has_val(), False, AllSeriesCustomHandlerHolder(handler)))
+        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_test and self.has_test(), False, AllSeriesCustomHandlerHolder(handler)))
+        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_all and self.has_all(), False, AllSeriesCustomHandlerHolder(handler)))
 
     @abstractmethod
     def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):
-        pass
+        ...
 
     @abstractmethod
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:
