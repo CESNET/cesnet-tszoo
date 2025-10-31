@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 
-from cesnet_tszoo.utils.enums import AgreggationType, SourceType, DatasetType
+from cesnet_tszoo.utils.enums import AgreggationType, SourceType, DatasetType, PreprocessType
 import cesnet_tszoo.version as version
 from packaging.version import Version
 
@@ -20,6 +20,20 @@ def get_abbreviated_list_string(to_abbreviate, max_length: int = 5):
         beggining = str(to_abbreviate[:max_length]).removesuffix(']')
         ending = str(to_abbreviate[-max_length:]).removeprefix('[')
         return f"{beggining} ... {ending}, Length={len(to_abbreviate)}"
+
+
+def normalize_display_list(to_normalize: list[str, type, PreprocessType]) -> list[str]:
+    result = []
+
+    for item in to_normalize:
+        if isinstance(item, str):
+            result.append(item)
+        elif isinstance(item, PreprocessType):
+            result.append(item.value)
+        else:
+            result.append(item.__name__)
+
+    return result
 
 
 def is_config_used_for_dataset(config, dataset_database: str, dataset_source_type: SourceType, dataset_aggregation: AgreggationType) -> bool:

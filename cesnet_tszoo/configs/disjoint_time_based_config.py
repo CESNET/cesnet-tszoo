@@ -9,11 +9,14 @@ import numpy.typing as npt
 from cesnet_tszoo.utils.transformer import Transformer
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
-from cesnet_tszoo.utils.utils import get_abbreviated_list_string
+from cesnet_tszoo.utils.utils import get_abbreviated_list_string, normalize_display_list
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
+from cesnet_tszoo.utils.custom_handler.factory import PerSeriesCustomHandlerFactory, NoFitCustomHandlerFactory
+from cesnet_tszoo.data_models.holders import PerSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
+from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 
 
 class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
@@ -134,7 +137,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                  train_batch_size: int = 32,
                  val_batch_size: int = 64,
                  test_batch_size: int = 128,
-                 preprocess_order: list[str] = ["handling_anomalies", "filling_gaps", "transforming"],
+                 preprocess_order: list[str, type] = ["handling_anomalies", "filling_gaps", "transforming"],
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None = None,
                  transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None = None,
                  handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None = None,
@@ -269,7 +272,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
 
         self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state)
 
-    def _set_feature_transformers(self) -> None:
+    def _get_feature_transformers(self) -> Transformer:
         """Creates transformer with `transformer_factory`. """
 
         if self.transformer_factory.has_already_initialized:
@@ -277,7 +280,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                 self.partial_fit_initialized_transformers = False
                 self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
 
-            self.transformers = self.transformer_factory.get_already_initialized_transformers()
+            transformers = self.transformer_factory.get_already_initialized_transformers()
             self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.name)
 
         else:
@@ -285,40 +288,67 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                 self.transformer_factory = transformer_factories.get_transformer_factory(None, self.create_transformer_per_time_series, self.partial_fit_initialized_transformers)
                 self.logger.warning("No transformer will be used because train set is not used.")
 
-            self.transformers = self.transformer_factory.create_transformer()
+            transformers = self.transformer_factory.create_transformer()
             self.logger.debug("Using transformer %s.", self.transformer_factory.name)
 
-    def _set_fillers(self) -> None:
+        return transformers
+
+    def _get_fillers(self) -> tuple:
         """Creates fillers with `filler_factory`. """
 
+        train_fillers = None
         # Set the fillers for the training set
         if self.has_train():
-            self.train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.train_ts])
+            train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.train_ts])
             self.logger.debug("Fillers for training set are set.")
 
+        val_fillers = None
         # Set the fillers for the validation set
         if self.has_val():
-            self.val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.val_ts])
+            val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.val_ts])
             self.logger.debug("Fillers for validation set are set.")
 
+        test_fillers = None
         # Set the fillers for the test set
         if self.has_test():
-            self.test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.test_ts])
+            test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
 
         self.logger.debug("Using filler %s", self.filler_factory.name)
 
-    def _set_anomaly_handlers(self):
+        return train_fillers, val_fillers, test_fillers, None
+
+    def _get_anomaly_handlers(self) -> np.ndarray:
         """Creates anomaly handlers with `anomaly_handler_factory`. """
 
         if not self.has_train() and not self.anomaly_handler_factory.is_empty_factory:
             self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(None)
             self.logger.warning("No anomaly handler will be used because train set is not used.")
 
+        anomaly_handlers = None
         if self.has_train():
-            self.anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.train_ts])
+            anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.train_ts])
 
         self.logger.debug("Using anomaly handler %s", self.anomaly_handler_factory.name)
+
+        return anomaly_handlers
+
+    def _set_per_series_custom_handler(self, factory: PerSeriesCustomHandlerFactory):
+        raise ValueError(f"Cannot use {factory.name} CustomHandler, because PerSeriesCustomHandler is not supported for {self.dataset_type}. Use AllSeriesCustomHandler or NoFitCustomHandler instead. ")
+
+    def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):
+
+        train_handlers = np.array([factory.create_handler() for _ in self.train_ts]) if self.has_train() else None
+        self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_train and self.has_train(), True, NoFitCustomHandlerHolder(train_handlers)))
+
+        val_handlers = np.array([factory.create_handler() for _ in self.val_ts]) if self.has_val() else None
+        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_val and self.has_val(), True, NoFitCustomHandlerHolder(val_handlers)))
+
+        test_handlers = np.array([factory.create_handler() for _ in self.test_ts]) if self.has_test() else None
+        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_test and self.has_test(), True, NoFitCustomHandlerHolder(test_handlers)))
+
+        all_handlers = np.array([factory.create_handler() for _ in self.all_ts]) if self.has_all() else None
+        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_all and self.has_all(), True, NoFitCustomHandlerHolder(all_handlers)))
 
     def _validate_finalization(self) -> None:
         """ Performs final validation of the configuration. Validates whether `train/val/test` are continuos."""
@@ -380,6 +410,7 @@ Config Details
         Val worker count: {str(self.val_workers)}
         Test worker count: {str(self.test_workers)}
     Other
+        Preprocess order: {normalize_display_list(self.preprocess_order)}
         Nan threshold: {str(self.nan_threshold)}
         Random state: {self.random_state}
         Version: {self.version}

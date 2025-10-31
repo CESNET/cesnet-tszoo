@@ -1,3 +1,4 @@
 from cesnet_tszoo.data_models.holders.anomaly_handler_holder import AnomalyHandlerHolder
 from cesnet_tszoo.data_models.holders.transformer_holder import TransformerHolder
 from cesnet_tszoo.data_models.holders.filling_holder import FillingHolder
+from cesnet_tszoo.data_models.holders.custom_handler_holder import PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder

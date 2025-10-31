@@ -197,6 +197,15 @@ class PreprocessType(Enum):
     HANDLING_ANOMALIES = "handling_anomalies"
     """Represents AnomalyHandler preprocess. """
 
+    PER_SERIES_CUSTOM = "per_series_custom"
+    """Represents PerSeriesCustomHandler preprocess """
+
+    ALL_SERIES_CUSTOM = "all_series_custom"
+    """Represents AllSeriesCustomHandler preprocess """
+
+    NO_FIT_CUSTOM = "no_fit_custom"
+    """Represents NoFitCustomHandler preprocess """
+
 
 class ScalerType(Enum):
     """Obsolete, dont use. Only for backward compatibility. """

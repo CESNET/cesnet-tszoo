@@ -27,7 +27,7 @@ from cesnet_tszoo.annotation import Annotations
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.pytables_data.utils.utils import get_additional_data, load_database
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET, MANDATORY_PREPROCESSES_ORDER
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.utils.enums import SplitType, TimeFormat, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
@@ -162,7 +162,6 @@ class CesnetDataset(ABC):
 
             self.dataset_config._dataset_init(self.metadata)
             self._initialize_transformers_and_details(workers)
-            self.dataset_config._update_preprocess_order()
 
             self.dataset_config.is_initialized = True
             self.logger.info("Config initialized successfully.")
@@ -1004,7 +1003,7 @@ class CesnetDataset(ABC):
         self.update_dataset_config_and_initialize(default_values=default_values, workers=workers)
         self.logger.info("Default values has been changed successfuly.")
 
-    def set_preprocess_order(self, preprocess_order: list[str] | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
+    def set_preprocess_order(self, preprocess_order: list[str, type] | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating preprocess order.")
 
@@ -1501,6 +1500,9 @@ Dataset details:
 
         if not self.dataset_config.transformer_factory.creates_built_in:
             self.logger.warning("You are using a custom transformer. Ensure the config is distributed with the source code of the transformer.")
+
+        if len(self.dataset_config.preprocess_order) != len(MANDATORY_PREPROCESSES_ORDER):
+            self.logger.warning("You are using at least one custom handler. Ensure the config is distributed with the source code of every custom handler.")
 
         pickle_dump(self._export_config_copy, path_pickle)
         self.logger.info("Config pickle saved to %s", path_pickle)
