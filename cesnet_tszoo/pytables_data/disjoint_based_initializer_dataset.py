@@ -47,31 +47,26 @@ class DisjointTimeBasedInitializerDataset(InitializerDataset):
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
         return self._handle_data_preprocess_order_group(self.init_config.preprocess_order_group, data, idx)
 
-    def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int) -> None:
+    def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int) -> np.ndarray:
         """Just fills data. """
 
-        mask = np.isnan(data)
-        data[mask] = np.take(filling_holder.default_values, np.nonzero(mask)[1])
+        return filling_holder.apply(data.view(), idx)
 
-        filling_holder.fillers[idx].fill(data.view(), mask, default_values=filling_holder.default_values)
-
-    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int):
+    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses anomaly handlers. """
 
-        if anomaly_handler_holder.anomaly_handlers is None:
-            return
+        if anomaly_handler_holder.is_empty():
+            return data
 
         if should_fit:
-            anomaly_handler_holder.anomaly_handlers[idx].fit(data)
+            anomaly_handler_holder.fit(data, idx)
 
-        anomaly_handler_holder.anomaly_handlers[idx].transform_anomalies(data.view())
+        return anomaly_handler_holder.apply(data.view(), idx)
 
     def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses transformers. """
 
-        if should_fit and transfomer_holder.should_partial_fit:
-            transfomer_holder.transformers.partial_fit(data)
-        elif should_fit:
-            transfomer_holder.transformers.fit(data)
+        if should_fit:
+            transfomer_holder.fit(data, idx)
 
-        return transfomer_holder.transformers.transform(data)
+        return transfomer_holder.apply(data)

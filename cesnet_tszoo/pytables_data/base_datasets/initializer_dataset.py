@@ -110,15 +110,15 @@ class InitializerDataset(Dataset, ABC):
     def _handle_data_preprocess_order_group(self, preprocess_order_group: PreprocessOrderGroup, data: np.ndarray, idx: int) -> np.ndarray:
         for preprocess_order in preprocess_order_group.preprocess_inner_orders:
             if preprocess_order.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
-                self._handle_anomalies(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
+                data = self._handle_anomalies(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
             elif preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
-                self._handle_filling(preprocess_order.holder, data, idx)
+                data = self._handle_filling(preprocess_order.holder, data, idx)
             elif preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
                 data = self._handle_transforming(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
             elif preprocess_order.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
                 data = self._handle_per_series_custom_handler(preprocess_order.holder, preprocess_order.should_be_fitted, preprocess_order.can_be_applied, data, idx)
             elif preprocess_order.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
-                data = self._handle_all_series_custom_handler(preprocess_order.holder, preprocess_order.should_be_fitted, preprocess_order.can_be_applied, data, idx)
+                data = self._handle_all_series_custom_handler(preprocess_order.holder, preprocess_order.can_be_applied, data, idx)
             elif preprocess_order.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
                 data = self._handle_no_fit_custom_handler(preprocess_order.holder, preprocess_order.can_be_applied, data, idx)
             else:
@@ -127,12 +127,12 @@ class InitializerDataset(Dataset, ABC):
         return data
 
     @abstractmethod
-    def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int):
+    def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int) -> np.ndarray:
         """Fills data. """
         ...
 
     @abstractmethod
-    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int):
+    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses anomaly handlers. """
         ...
 
@@ -144,25 +144,22 @@ class InitializerDataset(Dataset, ABC):
     def _handle_per_series_custom_handler(self, handler_holder: PerSeriesCustomHandlerHolder, should_fit: bool, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
 
         if should_fit:
-            handler_holder.get_instance(idx).fit(data)
+            handler_holder.fit(data, idx)
 
         if can_apply:
-            data = handler_holder.get_instance(idx).apply(data)
+            data = handler_holder.apply(data, idx)
 
         return data
 
-    def _handle_all_series_custom_handler(self, handler_holder: AllSeriesCustomHandlerHolder, should_fit: bool, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
-        if should_fit:
-            handler_holder.get_instance(idx).partial_fit(data)
-
+    def _handle_all_series_custom_handler(self, handler_holder: AllSeriesCustomHandlerHolder, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
         if can_apply:
-            data = handler_holder.get_instance(idx).apply(data)
+            data = handler_holder.apply(data, idx)
 
         return data
 
     def _handle_no_fit_custom_handler(self, handler_holder: NoFitCustomHandlerHolder, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
         if can_apply:
-            data = handler_holder.get_instance(idx).apply(data)
+            data = handler_holder.apply(data, idx)
 
         return data
 
