@@ -8,11 +8,6 @@ from cesnet_tszoo.utils.enums import SplitType
 
 class CustomHandler(ABC):
 
-    def __init__(self, target_sets: set[SplitType] | set[Literal["train", "val", "test", "all"]]):
-        super().__init__()
-
-        self.target_sets = target_sets
-
     @abstractmethod
     def apply(self, data: np.ndarray) -> np.ndarray:
         ...
