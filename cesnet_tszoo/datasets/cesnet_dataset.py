@@ -27,7 +27,7 @@ from cesnet_tszoo.annotation import Annotations
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.pytables_data.utils.utils import get_additional_data, load_database
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET, MANDATORY_PREPROCESSES_ORDER
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.utils.enums import SplitType, TimeFormat, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
@@ -1500,6 +1500,9 @@ Dataset details:
 
         if not self.dataset_config.transformer_factory.creates_built_in:
             self.logger.warning("You are using a custom transformer. Ensure the config is distributed with the source code of the transformer.")
+
+        if len(self.dataset_config.preprocess_order) != len(MANDATORY_PREPROCESSES_ORDER):
+            self.logger.warning("You are using at least one custom handler. Ensure the config is distributed with the source code of every custom handler.")
 
         pickle_dump(self._export_config_copy, path_pickle)
         self.logger.info("Config pickle saved to %s", path_pickle)
