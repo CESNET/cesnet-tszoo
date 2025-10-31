@@ -11,7 +11,7 @@ from cesnet_tszoo.pytables_data.utils.utils import load_database
 from cesnet_tszoo.utils.enums import PreprocessType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, ROW_START, ROW_END
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
-from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder
+from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.utils.enums import TimeFormat
 
 
@@ -121,11 +121,17 @@ class BaseDataset(Dataset, ABC):
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
         for preprocess_note in self.load_config.preprocess_order:
             if preprocess_note.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
-                self._handle_anomalies(preprocess_note.holder, data, idx)
+                data = self._handle_anomalies(preprocess_note.holder, data, idx)
             elif preprocess_note.preprocess_type == PreprocessType.FILLING_GAPS:
-                self._handle_filling(preprocess_note.holder, data, idx)
+                data = self._handle_filling(preprocess_note.holder, data, idx)
             elif preprocess_note.preprocess_type == PreprocessType.TRANSFORMING:
                 data = self._handle_transforming(preprocess_note.holder, data, idx)
+            elif preprocess_note.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
+                data = self._handle_per_series_custom_handler(preprocess_note.holder, preprocess_note.can_be_applied, data, idx)
+            elif preprocess_note.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
+                data = self._handle_all_series_custom_handler(preprocess_note.holder, preprocess_note.can_be_applied, data, idx)
+            elif preprocess_note.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
+                data = self._handle_no_fit_custom_handler(preprocess_note.holder, preprocess_note.can_be_applied, data, idx)
             else:
                 raise NotImplementedError()
 
@@ -134,28 +140,43 @@ class BaseDataset(Dataset, ABC):
     def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int):
         """Fills data. """
 
-        mask = np.isnan(data)
-        data[mask] = np.take(filling_holder.default_values, np.nonzero(mask)[1])
+        return filling_holder.apply(data, idx)
 
-        filling_holder.get_instance(idx).fill(data.view(), mask, default_values=filling_holder.default_values)
-
-    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, data: np.ndarray, idx: int):
+    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, data: np.ndarray, idx: int) -> np.ndarray:
         """Uses anomaly handlers. """
 
-        if anomaly_handler_holder.anomaly_handlers is None:
-            return
+        if anomaly_handler_holder.is_empty():
+            return data
 
-        anomaly_handler_holder.get_instance(idx).transform_anomalies(data.view())
+        return anomaly_handler_holder.apply(data.view(), idx)
 
     def _handle_transforming(self, transfomer_holder: TransformerHolder, data: np.ndarray, idx: int) -> np.ndarray:
         """Uses transformers """
 
         if len(self.load_config.indices_of_features_to_take_no_ids) == 1:
-            data = transfomer_holder.get_instance(idx).transform(data.reshape(-1, 1))
+            data = transfomer_holder.apply(data.reshape(-1, 1), idx)
         elif len(self.load_config.time_period) == 1:
-            data = transfomer_holder.get_instance(idx).transform(data.reshape(1, -1))
+            data = transfomer_holder.apply(data.reshape(1, -1), idx)
         else:
-            data = transfomer_holder.get_instance(idx).transform(data)
+            data = transfomer_holder.apply(data, idx)
+
+        return data
+
+    def _handle_per_series_custom_handler(self, handler_holder: PerSeriesCustomHandlerHolder, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if can_apply:
+            data = handler_holder.apply(data, idx)
+
+        return data
+
+    def _handle_all_series_custom_handler(self, handler_holder: AllSeriesCustomHandlerHolder, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if can_apply:
+            data = handler_holder.apply(data, idx)
+
+        return data
+
+    def _handle_no_fit_custom_handler(self, handler_holder: NoFitCustomHandlerHolder, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if can_apply:
+            data = handler_holder.apply(data, idx)
 
         return data
 
