@@ -162,7 +162,6 @@ class CesnetDataset(ABC):
 
             self.dataset_config._dataset_init(self.metadata)
             self._initialize_transformers_and_details(workers)
-            self.dataset_config._update_preprocess_order()
 
             self.dataset_config.is_initialized = True
             self.logger.info("Config initialized successfully.")

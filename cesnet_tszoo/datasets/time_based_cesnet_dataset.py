@@ -409,18 +409,14 @@ class TimeBasedCesnetDataset(CesnetDataset):
                 self.dataset_config.ts_row_ranges = self.dataset_config.ts_row_ranges[ts_ids_to_take]
                 self.dataset_config.ts_ids = self.dataset_config.ts_ids[ts_ids_to_take]
 
-                if self.dataset_config.create_transformer_per_time_series:
-                    self.dataset_config.transformers = self.dataset_config.transformers[ts_ids_to_take]
-
                 if self.dataset_config.has_train():
-                    self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
-                    self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[ts_ids_to_take]
+                    self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
                 if self.dataset_config.has_val():
-                    self.dataset_config.val_fillers = self.dataset_config.val_fillers[ts_ids_to_take]
+                    self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.val_preprocess_order, ts_ids_to_take)
                 if self.dataset_config.has_test():
-                    self.dataset_config.test_fillers = self.dataset_config.test_fillers[ts_ids_to_take]
+                    self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.test_preprocess_order, ts_ids_to_take)
                 if self.dataset_config.has_all():
-                    self.dataset_config.all_fillers = self.dataset_config.all_fillers[ts_ids_to_take]
+                    self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.all_preprocess_order, ts_ids_to_take)
 
                 is_first_cycle = False
 
@@ -430,20 +426,14 @@ class TimeBasedCesnetDataset(CesnetDataset):
         fitted_inner_index = 0
         for inner_preprocess_order in train_group.preprocess_inner_orders:
             if inner_preprocess_order.should_be_fitted:
-                if inner_preprocess_order.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
-                    self.dataset_config.anomaly_handlers[ts_id] = train_return.preprocess_fitted_instances[fitted_inner_index].instance
-                elif inner_preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
-                    self.dataset_config.transformers[ts_id] = train_return.preprocess_fitted_instances[fitted_inner_index].instance
-
+                inner_preprocess_order.holder.update_instance(train_return.preprocess_fitted_instances[fitted_inner_index].instance, ts_id)
                 fitted_inner_index += 1
 
         # updates outer preprocessors based on passed train data from InitDataset
         to_fit_outer_index = 0
         for outer_preprocess_order in train_group.preprocess_outer_orders:
             if outer_preprocess_order.should_be_fitted:
-                if outer_preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
-                    self.dataset_config.transformers.partial_fit(train_return.train_data)
-
+                outer_preprocess_order.holder.fit(train_return.train_data, ts_id)
                 to_fit_outer_index += 1
 
     def __update_based_on_non_fit_returns(self, val_return: InitDatasetReturn, test_return: InitDatasetReturn, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup, ts_id: int):
@@ -452,18 +442,14 @@ class TimeBasedCesnetDataset(CesnetDataset):
             fitted_inner_index = 0
             for inner_preprocess_order in val_group.preprocess_inner_orders:
                 if inner_preprocess_order.should_be_fitted:
-                    if inner_preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
-                        self.dataset_config.val_fillers[ts_id] = val_return.preprocess_fitted_instances[fitted_inner_index].instance
-
+                    inner_preprocess_order.holder.update_instance(val_return.preprocess_fitted_instances[fitted_inner_index].instance, ts_id)
                     fitted_inner_index += 1
 
         if self.dataset_config.has_test():
             fitted_inner_index = 0
             for inner_preprocess_order in test_group.preprocess_inner_orders:
                 if inner_preprocess_order.should_be_fitted:
-                    if inner_preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
-                        self.dataset_config.test_fillers[ts_id] = test_return.preprocess_fitted_instances[fitted_inner_index].instance
-
+                    inner_preprocess_order.holder.update_instance(test_return.preprocess_fitted_instances[fitted_inner_index].instance, ts_id)
                     fitted_inner_index += 1
 
     def _update_export_config_copy(self) -> None:

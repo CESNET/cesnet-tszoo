@@ -311,13 +311,16 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
             self.logger.debug("Train set updated: %s time series left.", len(self.dataset_config.train_ts))
 
+        ts_ids_to_take_for_all = np.array([])
+
         if self.dataset_config.has_val():
             init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]))
 
             ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "val")
             self.dataset_config.val_ts = self.dataset_config.val_ts[ts_ids_to_take]
             self.dataset_config.val_ts_row_ranges = self.dataset_config.val_ts_row_ranges[ts_ids_to_take]
-            self.dataset_config.val_fillers = self.dataset_config.val_fillers[ts_ids_to_take]
+            self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.val_preprocess_order, ts_ids_to_take)
+            ts_ids_to_take_for_all = try_concatenate(ts_ids_to_take_for_all, np.array(ts_ids_to_take))
 
             self.logger.debug("Val set updated: %s time series left.", len(self.dataset_config.val_ts))
 
@@ -327,7 +330,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "test")
             self.dataset_config.test_ts = self.dataset_config.test_ts[ts_ids_to_take]
             self.dataset_config.test_ts_row_ranges = self.dataset_config.test_ts_row_ranges[ts_ids_to_take]
-            self.dataset_config.test_fillers = self.dataset_config.test_fillers[ts_ids_to_take]
+            self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.test_preprocess_order, ts_ids_to_take)
+            ts_ids_to_take_for_all = try_concatenate(ts_ids_to_take_for_all, np.array(ts_ids_to_take))
 
             self.logger.debug("Test set updated: %s time series left.", len(self.dataset_config.test_ts))
 
@@ -339,11 +343,11 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "all")
                 self.dataset_config.all_ts = self.dataset_config.all_ts[ts_ids_to_take]
                 self.dataset_config.all_ts_row_ranges = self.dataset_config.all_ts_row_ranges[ts_ids_to_take]
-                self.dataset_config.all_fillers = self.dataset_config.all_fillers[ts_ids_to_take]
+                self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.all_preprocess_order, ts_ids_to_take)
             else:
                 self.dataset_config.all_ts = try_concatenate(self.dataset_config.train_ts, self.dataset_config.val_ts, self.dataset_config.test_ts)
                 self.dataset_config.all_ts_row_ranges = try_concatenate(self.dataset_config.train_ts_row_ranges, self.dataset_config.val_ts_row_ranges, self.dataset_config.test_ts_row_ranges)
-                self.dataset_config.all_fillers = try_concatenate(self.dataset_config.train_fillers, self.dataset_config.val_fillers, self.dataset_config.test_fillers)
+                self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.all_preprocess_order, ts_ids_to_take_for_all)
 
             self.logger.debug("All set updated: %s time series left.", len(self.dataset_config.all_ts))
 
@@ -381,24 +385,14 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                     fitted_inner_index = 0
                     for inner_preprocess_order in group.preprocess_inner_orders:
                         if inner_preprocess_order.should_be_fitted:
-                            if inner_preprocess_order.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
-                                self.dataset_config.anomaly_handlers[ts_id] = init_dataset_return.preprocess_fitted_instances[fitted_inner_index].instance
-                            elif inner_preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
-                                self.dataset_config.train_fillers[ts_id] = init_dataset_return.preprocess_fitted_instances[fitted_inner_index].instance
-                            else:
-                                raise NotImplementedError()
-
+                            inner_preprocess_order.holder.update_instance(init_dataset_return.preprocess_fitted_instances[fitted_inner_index].instance, ts_id)
                             fitted_inner_index += 1
 
                     # updates outer preprocessors based on passed train data from InitDataset
                     to_fit_outer_index = 0
                     for outer_preprocess_order in group.preprocess_outer_orders:
                         if outer_preprocess_order.should_be_fitted:
-                            if outer_preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
-                                self.dataset_config.transformers.partial_fit(init_dataset_return.train_data)
-                            else:
-                                raise NotImplementedError()
-
+                            outer_preprocess_order.holder.fit(init_dataset_return.train_data, ts_id)
                             to_fit_outer_index += 1
 
             if workers == 0:
@@ -411,8 +405,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             if is_first_cycle:
                 self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[ts_ids_to_take]
                 self.dataset_config.train_ts = self.dataset_config.train_ts[ts_ids_to_take]
-                self.dataset_config.train_fillers = self.dataset_config.train_fillers[ts_ids_to_take]
-                self.dataset_config.anomaly_handlers = self.dataset_config.anomaly_handlers[ts_ids_to_take]
+                self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
 
                 is_first_cycle = False
 
