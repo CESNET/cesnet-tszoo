@@ -9,7 +9,7 @@ import numpy.typing as npt
 from cesnet_tszoo.utils.transformer import Transformer
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
-from cesnet_tszoo.utils.utils import get_abbreviated_list_string
+from cesnet_tszoo.utils.utils import get_abbreviated_list_string, normalize_display_list
 from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, DataloaderOrder, DatasetType, AnomalyHandlerType
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
@@ -357,6 +357,7 @@ Config Details:
         All worker count: {str(self.all_workers)}
         Init worker count: {str(self.init_workers)}
     Other
+        Preprocess order: {normalize_display_list(self.preprocess_order)}
         Nan threshold: {str(self.nan_threshold)}
         Random state: {self.random_state}
         Train dataloader order: {str(self.train_dataloader_order)}
