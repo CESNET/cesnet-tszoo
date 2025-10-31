@@ -282,7 +282,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             self.ts_ids, self.ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.ts_ids, random_indices, self.logger, self.ts_id_name, self.random_state)
             self.logger.debug("Random ts_ids set with %s time series.", self.ts_ids)
 
-    def _set_feature_transformers(self) -> None:
+    def _get_feature_transformers(self) -> np.ndarray[Transformer] | Transformer:
         """Creates transformer/s with `transformer_factory`. """
 
         if self.transformer_factory.has_already_initialized:
@@ -290,12 +290,12 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                 self.partial_fit_initialized_transformers = False
                 self.logger.warning("partial_fit_initialized_transformers will be ignored because train set is not used.")
 
-            self.transformers = self.transformer_factory.get_already_initialized_transformers()
+            transformers = self.transformer_factory.get_already_initialized_transformers()
 
             if self.transformer_factory.has_single_initialized:
                 self.logger.debug("Using already initialized transformer %s.", self.transformer_factory.name)
             else:
-                assert len(self.transformers) == len(self.ts_ids), "Number of time series in ts_ids does not match with number of provided transformers."
+                assert len(transformers) == len(self.ts_ids), "Number of time series in ts_ids does not match with number of provided transformers."
                 self.create_transformer_per_time_series = True
                 self.logger.debug("Using list of initialized transformers of %s", self.transformer_factory.name)
         else:
@@ -304,55 +304,66 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                 self.logger.warning("No transformer will be used because train set is not used.")
 
             if self.create_transformer_per_time_series:
-                self.transformers = np.array([self.transformer_factory.create_transformer() for _ in self.ts_ids])
+                transformers = np.array([self.transformer_factory.create_transformer() for _ in self.ts_ids])
                 self.logger.debug("Using list of transformers of %s", self.transformer_factory.name)
             else:
-                self.transformers = self.transformer_factory.create_transformer()
+                transformers = self.transformer_factory.create_transformer()
                 self.logger.debug("Using transformer %s", self.transformer_factory.name)
 
-    def _set_fillers(self) -> None:
+        return transformers
+
+    def _get_fillers(self) -> tuple:
         """Creates fillers with `filler_factory`. """
 
+        train_fillers = None
         # Set the fillers for the training set
         if self.has_train():
-            self.train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
+            train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for training set are set.")
 
+        val_fillers = None
         # Set the fillers for the validation set
         if self.has_val():
-            self.val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
+            val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for validation set are set.")
 
+        test_fillers = None
         # Set the fillers for the test set
         if self.has_test():
-            self.test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
+            test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for test set are set.")
 
+        all_fillers = None
         # Set the fillers for the all set
         if self.has_all():
-            self.all_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
+            all_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
             self.logger.debug("Fillers for all set are set.")
 
         self.logger.debug("Using filler %s", self.filler_factory.name)
 
-    def _set_anomaly_handlers(self):
+        return train_fillers, val_fillers, test_fillers, all_fillers
+
+    def _get_anomaly_handlers(self) -> np.ndarray:
         """Creates anomaly handlers with `anomaly_handler_factory`. """
 
         if not self.has_train() and not self.anomaly_handler_factory.is_empty_factory:
             self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(None)
             self.logger.warning("No anomaly handler will be used because train set is not used.")
 
+        anomaly_handlers = np.array([])
         if self.has_train():
-            self.anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.ts_ids])
+            anomaly_handlers = np.array([self.anomaly_handler_factory.create_anomaly_handler() for _ in self.ts_ids])
 
         self.logger.debug("Using anomaly handler %s", self.anomaly_handler_factory.name)
+
+        return anomaly_handlers
 
     def _set_per_series_custom_handler(self, factory: PerSeriesCustomHandlerFactory):
 
         if not self.has_train():
             raise ValueError("To use PerSeriesCustomHandler you need to use train set.")
 
-        handlers = [factory.create_handler() for _ in self.ts_ids]
+        handlers = np.array([factory.create_handler() for _ in self.ts_ids])
 
         self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, True, factory.can_apply_to_train, True, PerSeriesCustomHandlerHolder(handlers)))
         self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_val and self.has_val(), True, PerSeriesCustomHandlerHolder(handlers)))
@@ -361,16 +372,16 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
     def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):
 
-        train_handlers = [factory.create_handler() for _ in self.ts_ids] if self.has_train() else None
+        train_handlers = np.array([factory.create_handler() for _ in self.ts_ids]) if self.has_train() else None
         self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_train and self.has_train(), True, NoFitCustomHandlerHolder(train_handlers)))
 
-        val_handlers = [factory.create_handler() for _ in self.ts_ids] if self.has_val() else None
+        val_handlers = np.array([factory.create_handler() for _ in self.ts_ids]) if self.has_val() else None
         self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_val and self.has_val(), True, NoFitCustomHandlerHolder(val_handlers)))
 
-        test_handlers = [factory.create_handler() for _ in self.ts_ids] if self.has_test() else None
+        test_handlers = np.array([factory.create_handler() for _ in self.ts_ids]) if self.has_test() else None
         self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_test and self.has_test(), True, NoFitCustomHandlerHolder(test_handlers)))
 
-        all_handlers = [factory.create_handler() for _ in self.ts_ids] if self.has_all() else None
+        all_handlers = np.array([factory.create_handler() for _ in self.ts_ids]) if self.has_all() else None
         self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, False, factory.can_apply_to_all and self.has_all(), True, NoFitCustomHandlerHolder(all_handlers)))
 
     def _validate_finalization(self) -> None:
