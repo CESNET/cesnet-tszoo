@@ -17,10 +17,7 @@ from torch.utils.data import DataLoader, Dataset
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.files.utils import get_annotations_path_and_whether_it_is_built_in, exists_built_in_annotations, exists_built_in_benchmark, exists_built_in_config
-import cesnet_tszoo.utils.filler.factory as filler_factories
 from cesnet_tszoo.pytables_data.dataloader_factory import DataloaderFactory
-import cesnet_tszoo.utils.transformer.factory as transformer_factories
-import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.configs.config_editors.config_editor import ConfigEditor
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.annotation import Annotations
@@ -29,12 +26,12 @@ from cesnet_tszoo.pytables_data.utils.utils import get_additional_data, load_dat
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET, MANDATORY_PREPROCESSES_ORDER
 from cesnet_tszoo.utils.transformer import Transformer
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType, PreprocessType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
-from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
 from cesnet_tszoo.utils.download import resumable_download
 from cesnet_tszoo.configs.config_loading import load_config
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
+import cesnet_tszoo.utils.css_styles.utils as css_utils
 
 
 @dataclass
@@ -1090,6 +1087,81 @@ Dataset details:
         '''
 
         print(to_display)
+
+    def summary(self) -> None:
+
+        if self.dataset_config is None or not self.dataset_config.is_initialized:
+            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to display summary.")
+
+        steps = self._create_summary_steps()
+
+        css_utils.display_summary_diagram(steps)
+
+    def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
+        preprocess_order_types: list[type, PreprocessType] = self.dataset_config.preprocess_order
+        train_order = self.dataset_config.train_preprocess_order
+        val_order = self.dataset_config.val_preprocess_order
+        test_order = self.dataset_config.test_preprocess_order
+        all_order = self.dataset_config.all_preprocess_order
+
+        steps = []
+
+        filter_ts_step = css_utils.SummaryDiagramStep("Filter time series", None)
+        steps.append(filter_ts_step)
+
+        filter_metrics_step = css_utils.SummaryDiagramStep("Filter time series metrics", {"Chosen metrics": self.dataset_config.features_to_take_without_ids,
+                                                                                          "Includes ts id": self.dataset_config.include_ts_id, "Includes time": self.dataset_config.include_time,
+                                                                                          "Time format": self.dataset_config.time_format})
+        steps.append(filter_metrics_step)
+
+        for preprocess_type, train_pr, val_pr, test_pr, all_pr in list(zip(preprocess_order_types, train_order, val_order, test_order, all_order)):
+            preprocess_title = None
+            is_per_time_series = train_pr.is_inner_preprocess
+            target_sets = []
+            requires_fitting = False
+            if train_pr.can_be_applied:
+                target_sets.append("train")
+                requires_fitting = train_pr.should_be_fitted
+            if val_pr.can_be_applied:
+                target_sets.append("val")
+            if test_pr.can_be_applied:
+                target_sets.append("test")
+            if all_pr.can_be_applied:
+                target_sets.append("all")
+
+            if len(target_sets) == 0:
+                continue
+
+            if train_pr.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                preprocess_title = self.dataset_config.anomaly_handler_factory.anomaly_handler_type.__name__
+
+                if self.dataset_config.anomaly_handler_factory.is_empty_factory:
+                    continue
+
+            elif train_pr.preprocess_type == PreprocessType.FILLING_GAPS:
+                preprocess_title = f"{self.dataset_config.filler_factory.filler_type.__name__}"
+                steps.append(css_utils.SummaryDiagramStep("Pre-filling with default values", {"Default values": self.dataset_config.default_values}))
+
+                if self.dataset_config.filler_factory.is_empty_factory:
+                    continue
+
+            elif train_pr.preprocess_type == PreprocessType.TRANSFORMING:
+                preprocess_title = self.dataset_config.transformer_factory.transformer_type.__name__
+                if self.dataset_config.transformer_factory.is_empty_factory:
+                    continue
+
+                is_per_time_series = self.dataset_config.create_transformer_per_time_series
+            elif train_pr.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
+                preprocess_title = preprocess_type.__name__
+            elif train_pr.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
+                preprocess_title = preprocess_type.__name__
+            elif train_pr.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
+                preprocess_title = preprocess_type.__name__
+
+            step = css_utils.SummaryDiagramStep(preprocess_title, {"Requires fitting": requires_fitting, "Is per time series": is_per_time_series, "Target sets": target_sets})
+            steps.append(step)
+
+        return steps
 
     def display_config(self) -> None:
         """Displays the values of the initialized configuration. """
