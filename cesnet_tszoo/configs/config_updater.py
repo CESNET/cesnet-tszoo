@@ -101,9 +101,17 @@ class ConfigUpdater:
         delattr(self.config_to_update, "used_times")
         delattr(self.config_to_update, "used_ts_ids")
         delattr(self.config_to_update, "used_ts_row_ranges")
+        delattr(self.config_to_update, "transformers")
+        delattr(self.config_to_update, "train_fillers")
+        delattr(self.config_to_update, "val_fillers")
+        delattr(self.config_to_update, "test_fillers")
+        delattr(self.config_to_update, "all_fillers")
 
         if hasattr(self.config_to_update, "allow_ts_id_overlap"):
             delattr(self.config_to_update, "allow_ts_id_overlap")
+
+        if hasattr(self.config_to_update, "anomaly_handlers"):
+            delattr(self.config_to_update, "anomaly_handlers")
 
     def __default_version_update(self, update_version: str):
         if Version(self.config_to_update.version) < Version(update_version):
