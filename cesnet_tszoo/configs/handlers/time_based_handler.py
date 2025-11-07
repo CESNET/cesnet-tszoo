@@ -210,20 +210,20 @@ class TimeBasedHandler(ABC):
             if sliding_window_step <= 0:
                 raise ValueError("sliding_window_step must be greater or equal to 1.")
 
+            total_window_size = sliding_window_size + sliding_window_prediction_size
+
             if set_shared_size == self.set_shared_size:
-                if has_train and len(self.train_time_period) < sliding_window_size + sliding_window_prediction_size:
+                if has_train and self.__get_time_count_in_period(self.train_time_period, len(all_time_ids)) < total_window_size:
                     raise ValueError("New sliding window size + prediction size is larger than the number of times in train_time_period.")
 
-                if has_val and len(self.val_time_period) < sliding_window_size + sliding_window_prediction_size:
+                if has_val and self.__get_time_count_in_period(self.val_time_period, len(all_time_ids)) < total_window_size:
                     raise ValueError("New sliding window size + prediction size is larger than the number of times in val_time_period.")
 
-                if has_test and len(self.test_time_period) < sliding_window_size + sliding_window_prediction_size:
+                if has_test and self.__get_time_count_in_period(self.test_time_period, len(all_time_ids)) < total_window_size:
                     raise ValueError("New sliding window size + prediction size is larger than the number of times in test_time_period.")
 
-                if self.uses_all_time_period and has_all and len(self.all_time_period) < sliding_window_size + sliding_window_prediction_size:
+                if has_all and self.uses_all_time_period and self.__get_time_count_in_period(self.all_time_period, len(all_time_ids)) < total_window_size:
                     raise ValueError("New sliding window size + prediction size is larger than the number of times in all_time_period.")
-
-            total_window_size = sliding_window_size + sliding_window_prediction_size
 
             if total_window_size > self.train_batch_size:
                 self.train_batch_size = sliding_window_size + sliding_window_prediction_size
@@ -248,6 +248,16 @@ class TimeBasedHandler(ABC):
             assert self.set_shared_size >= 0 and self.set_shared_size <= 1, "set_shared_size float value must be between or equal to 0 and 1."
 
         assert self.set_shared_size >= 0, "set_shared_size must be of positive value."
+
+    def __get_time_count_in_period(self, time_period: int | float | np.ndarray, all_time_ids_count: int) -> int:
+        if isinstance(time_period, int):
+            count = time_period
+        elif isinstance(time_period, float):
+            count = int(all_time_ids_count * time_period)
+        else:
+            count = len(time_period)
+
+        return count
 
     def _validate_sliding_window_init(self):
 

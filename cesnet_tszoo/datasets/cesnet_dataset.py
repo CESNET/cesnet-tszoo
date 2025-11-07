@@ -31,6 +31,7 @@ from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmar
 from cesnet_tszoo.utils.download import resumable_download
 from cesnet_tszoo.configs.config_loading import load_config
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
+from cesnet_tszoo.data_models.holders import TransformerHolder
 import cesnet_tszoo.utils.css_styles.utils as css_utils
 
 
@@ -1685,7 +1686,12 @@ Dataset details:
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting get transformers.")
 
-        return self.dataset_config.transformers
+        for i, preprocess_type in enumerate(self.dataset_config.preprocess_order):
+            if preprocess_type == PreprocessType.TRANSFORMING:
+                holder: TransformerHolder = self.dataset_config.train_preprocess_order[i].holder
+                return holder.transformers
+
+        return None
 
     def check_errors(self) -> None:
         """
