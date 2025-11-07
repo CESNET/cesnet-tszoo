@@ -23,6 +23,7 @@ from cesnet_tszoo.data_models.load_dataset_configs.series_load_config import Ser
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
+import cesnet_tszoo.utils.css_styles.utils as css_utils
 
 
 @dataclass
@@ -501,6 +502,14 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         self.logger.debug("Singular time series dataset initiliazed.")
 
         return dataset
+
+    def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
+        steps = super()._create_summary_steps()
+
+        format_step = css_utils.SummaryDiagramStep("Transform into specific format", None)
+        steps.append(format_step)
+
+        return steps
 
     def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
         """Dataset type specific retrieval of data. """

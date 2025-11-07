@@ -22,6 +22,7 @@ from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
+import cesnet_tszoo.utils.css_styles.utils as css_utils
 
 
 @dataclass
@@ -421,6 +422,18 @@ class TimeBasedCesnetDataset(CesnetDataset):
                 is_first_cycle = False
 
             self.logger.debug("ts_ids updated: %s time series left.", len(ts_ids_to_take))
+
+    def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
+        steps = super()._create_summary_steps()
+
+        if self.dataset_config.sliding_window_size is not None:
+            window_step = css_utils.SummaryDiagramStep("Apply sliding window", {"Window size": self.dataset_config.sliding_window_size, "Prediction size": self.dataset_config.sliding_window_prediction_size, "Step": self.dataset_config.sliding_window_step})
+            steps.append(window_step)
+
+        format_step = css_utils.SummaryDiagramStep("Transform into specific format", None)
+        steps.append(format_step)
+
+        return steps
 
     def __update_based_on_train_init_return(self, train_return: InitDatasetReturn, train_group: PreprocessOrderGroup, ts_id: int):
         fitted_inner_index = 0
