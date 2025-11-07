@@ -6,6 +6,6 @@ config_identifier: 5d9e6e63cbf0
 database_name: CESNET-TimeSeries24
 dataset_type: time_based
 description: null
-related_results_identifier: 5d9e6e63cbf0
+related_results_identifier: null
 source_type: institution_subnets
-version: 2.0.0
+version: 2.0.1
