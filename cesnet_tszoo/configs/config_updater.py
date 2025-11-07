@@ -4,6 +4,7 @@ from copy import deepcopy
 from packaging.version import Version
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
+from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
 import cesnet_tszoo.utils.filler.factory as filler_factories
 import cesnet_tszoo.utils.transformer.factory as transformer_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
@@ -53,6 +54,7 @@ class ConfigUpdater:
             self.__anomaly_handler_refactoring()
             self.__transformer_refactoring()
             self.__remove_unnecessary_attributes()
+            self.__preprocess_order()
 
             self.config_to_update.export_update_needed = True
             self.config_to_update.version = version.VERSION_2_0_1
@@ -112,6 +114,14 @@ class ConfigUpdater:
 
         if hasattr(self.config_to_update, "anomaly_handlers"):
             delattr(self.config_to_update, "anomaly_handlers")
+
+    def __preprocess_order(self):
+        self.config_to_update.preprocess_order = ["filling_gaps", "handling_anomalies", "transforming"]
+        self.config_to_update.train_preprocess_order = []
+        self.config_to_update.val_preprocess_order = []
+        self.config_to_update.test_preprocess_order = []
+        self.config_to_update.all_preprocess_order = []
+        self.config_to_update.can_fit_fillers = isinstance(self.config_to_update, TimeBasedConfig)
 
     def __default_version_update(self, update_version: str):
         if Version(self.config_to_update.version) < Version(update_version):

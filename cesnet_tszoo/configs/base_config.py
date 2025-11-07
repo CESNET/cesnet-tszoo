@@ -160,15 +160,12 @@ class DatasetConfig(ABC):
         self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
         self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
         self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
-
-        # new
         self.preprocess_order = list(preprocess_order)
         self.train_preprocess_order: list[PreprocessNote] = []
         self.val_preprocess_order: list[PreprocessNote] = []
         self.test_preprocess_order: list[PreprocessNote] = []
         self.all_preprocess_order: list[PreprocessNote] = []
         self.can_fit_fillers = can_fit_fillers
-        # new
 
         self._validate_construction()
 
