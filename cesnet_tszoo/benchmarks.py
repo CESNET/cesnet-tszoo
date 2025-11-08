@@ -179,7 +179,10 @@ def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBased
 
     factory = database_factory.get_database_factory(export_benchmark.database_name)
 
-    return factory.create_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
+    dataset = factory.create_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
+    dataset.related_to = export_benchmark.related_results_identifier
+
+    return dataset
 
 
 def _get_built_in_benchmark(identifier: str, data_root: str) -> Benchmark:

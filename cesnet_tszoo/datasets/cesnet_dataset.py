@@ -110,6 +110,8 @@ class CesnetDataset(ABC):
 
     dataset_type: Optional[DatasetType] = field(default=None, init=False)
 
+    related_to: Optional[str] = field(default=None, init=False)
+
     _collate_fn: Optional[Callable] = field(default=None, init=False)
     _export_config_copy: Optional[DatasetConfig] = field(default=None, init=False)
 
@@ -1640,6 +1642,7 @@ Dataset details:
                                            annotations_ts_name,
                                            annotations_time_name,
                                            annotations_both_name,
+                                           related_results_identifier=self.related_to,
                                            version=version.current_version)
 
         # If the config was not imported, save it
