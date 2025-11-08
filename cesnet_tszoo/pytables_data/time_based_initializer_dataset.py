@@ -25,6 +25,22 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
         offset = 0
         period_offset = 0
+        shared_offset = 0
+        active_sets = 0
+
+        total = 0
+        if self.init_config.train_time_period is not None:
+            total += len(self.init_config.train_time_period)
+            active_sets += 1
+        if self.init_config.val_time_period is not None:
+            total += len(self.init_config.val_time_period)
+            active_sets += 1
+        if self.init_config.test_time_period is not None:
+            total += len(self.init_config.test_time_period)
+            active_sets += 1
+
+        if active_sets > 0:
+            shared_offset = int((total - len(self.init_config.all_time_period)) / (active_sets - 1))
 
         can_preprocess = True
 
@@ -33,7 +49,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
             in_train = (existing_indices < len(self.init_config.train_time_period)).sum()
             is_train_under_nan_threshold = 1 - (in_train - offset) / len(self.init_config.train_time_period) <= self.init_config.nan_threshold
             offset += in_train
-            period_offset += len(self.init_config.train_time_period)
+            period_offset += len(self.init_config.train_time_period) - shared_offset
         can_preprocess = can_preprocess and is_train_under_nan_threshold
 
         is_val_under_nan_threshold = True
@@ -41,7 +57,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
             in_val = (existing_indices < period_offset + len(self.init_config.val_time_period)).sum()
             is_val_under_nan_threshold = 1 - (in_val - offset) / len(self.init_config.val_time_period) <= self.init_config.nan_threshold
             offset += in_val
-            period_offset += len(self.init_config.val_time_period)
+            period_offset += len(self.init_config.val_time_period) - shared_offset
         can_preprocess = can_preprocess and is_val_under_nan_threshold
 
         is_test_under_nan_threshold = True
