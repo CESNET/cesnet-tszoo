@@ -37,7 +37,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
             total += len(self.init_config.test_time_period)
             active_sets += 1
 
-        if active_sets > 0:
+        if active_sets > 1:
             shared_offset = int((total - len(self.init_config.all_time_period)) / (active_sets - 1))
 
         can_preprocess = True
