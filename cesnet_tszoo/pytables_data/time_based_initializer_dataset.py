@@ -152,7 +152,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
                 previous_offset = current_start_index - first_start_index
 
                 train_should_fill = False
-                data = val_filling_holder.apply(data[:current_start_index - first_start_index].view(), idx)
+                data[:current_start_index - first_start_index] = val_filling_holder.apply(data[:current_start_index - first_start_index].view(), idx)
 
             offset_start = min(offset_start, self.init_config.val_time_period[ID_TIME_COLUMN_NAME][0])
 
@@ -170,7 +170,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
                     test_filling_holder.fillers[idx] = deepcopy(val_filling_holder.get_instance(idx))
 
                 train_should_fill = False
-                data = test_filling_holder.apply(data[previous_offset:current_start_index - first_start_index].view(), idx)
+                data[previous_offset:current_start_index - first_start_index] = test_filling_holder.apply(data[previous_offset:current_start_index - first_start_index].view(), idx)
 
             offset_start = min(offset_start, self.init_config.test_time_period[ID_TIME_COLUMN_NAME][0])
 
