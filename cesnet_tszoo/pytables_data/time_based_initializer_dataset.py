@@ -51,7 +51,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
         is_all_under_nan_threshold = True
         if self.init_config.all_time_period is not None and can_preprocess:
             in_all = (existing_indices < len(self.init_config.all_time_period)).sum()
-            is_all_under_nan_threshold = 1 - (in_all - offset) / len(self.init_config.all_time_period) <= self.init_config.nan_threshold
+            is_all_under_nan_threshold = 1 - in_all / len(self.init_config.all_time_period) <= self.init_config.nan_threshold
         can_preprocess = can_preprocess and is_all_under_nan_threshold
 
         train_preprocess_fitted_instances = []
