@@ -31,11 +31,6 @@ class SummaryDiagramStep:
 
         for key in self.additional_data:
 
-            if isinstance(self.additional_data[key], list):
-                print(self.additional_data[key])
-
-            print(key)
-
             row = f"""
                     <tr>
                         <td>{str(key)}</td>
