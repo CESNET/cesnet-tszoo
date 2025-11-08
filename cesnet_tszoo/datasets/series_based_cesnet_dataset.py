@@ -306,13 +306,14 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         Goes through data to validate time series against `nan_threshold`, partial fit `transformers`, fit `anomaly handlers` and prepare `fillers`.
         """
 
+        ts_ids_to_take_for_all = np.array([])
+
         if self.dataset_config.has_train():
 
-            self.__initialize_config_for_train_set(workers)
+            ts_ids_to_take = self.__initialize_config_for_train_set(workers)
+            ts_ids_to_take_for_all = try_concatenate(ts_ids_to_take_for_all, np.array(ts_ids_to_take))
 
             self.logger.debug("Train set updated: %s time series left.", len(self.dataset_config.train_ts))
-
-        ts_ids_to_take_for_all = np.array([])
 
         if self.dataset_config.has_val():
             init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]))
@@ -354,12 +355,14 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         self.logger.info("Dataset initialization complete. Configuration updated.")
 
-    def __initialize_config_for_train_set(self, workers: int) -> None:
+    def __initialize_config_for_train_set(self, workers: int) -> list[int]:
         """Initializes config for provided time series. """
 
         self.logger.info("Updating config for train set and fitting values.")
 
         is_first_cycle = True
+
+        ts_ids_to_take = []
 
         groups = self.dataset_config._get_train_preprocess_init_order_groups()
         for i, group in enumerate(groups):
@@ -410,6 +413,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                 self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
 
                 is_first_cycle = False
+
+        return ts_ids_to_take
 
     def __initialize_config_for_non_fit_sets(self, init_config: SeriesDatasetInitConfig, workers: int, set_name: str) -> np.ndarray:
         """Initializes config for provided time series without fitting. """
