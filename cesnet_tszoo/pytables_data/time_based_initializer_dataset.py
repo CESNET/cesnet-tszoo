@@ -23,8 +23,6 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
         data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
 
-        offset = 0
-        period_offset = 0
         shared_offset = 0
         active_sets = 0
 
@@ -47,24 +45,24 @@ class TimeBasedInitializerDataset(InitializerDataset):
         is_train_under_nan_threshold = True
         if self.init_config.train_time_period is not None and can_preprocess:
             in_train = (existing_indices < len(self.init_config.train_time_period)).sum()
-            is_train_under_nan_threshold = 1 - (in_train - offset) / len(self.init_config.train_time_period) <= self.init_config.nan_threshold
-            offset += in_train
-            period_offset += len(self.init_config.train_time_period) - shared_offset
+            is_train_under_nan_threshold = 1 - (in_train) / len(self.init_config.train_time_period) <= self.init_config.nan_threshold
+            existing_indices -= len(self.init_config.train_time_period) - shared_offset
+            existing_indices = existing_indices[existing_indices >= 0]
+
         can_preprocess = can_preprocess and is_train_under_nan_threshold
 
         is_val_under_nan_threshold = True
         if self.init_config.val_time_period is not None and can_preprocess:
-            in_val = (existing_indices < period_offset + len(self.init_config.val_time_period)).sum()
-            is_val_under_nan_threshold = 1 - (in_val - offset) / len(self.init_config.val_time_period) <= self.init_config.nan_threshold
-            offset += in_val
-            period_offset += len(self.init_config.val_time_period) - shared_offset
+            in_val = (existing_indices < len(self.init_config.val_time_period)).sum()
+            is_val_under_nan_threshold = 1 - (in_val) / len(self.init_config.val_time_period) <= self.init_config.nan_threshold
+            existing_indices -= len(self.init_config.val_time_period) - shared_offset
+            existing_indices = existing_indices[existing_indices >= 0]
         can_preprocess = can_preprocess and is_val_under_nan_threshold
 
         is_test_under_nan_threshold = True
         if self.init_config.test_time_period is not None and can_preprocess:
-            in_test = (existing_indices < period_offset + len(self.init_config.test_time_period)).sum()
-            is_test_under_nan_threshold = 1 - (in_test - offset) / len(self.init_config.test_time_period) <= self.init_config.nan_threshold
-            offset += in_test
+            in_test = (existing_indices < len(self.init_config.test_time_period)).sum()
+            is_test_under_nan_threshold = 1 - (in_test) / len(self.init_config.test_time_period) <= self.init_config.nan_threshold
         can_preprocess = can_preprocess and is_test_under_nan_threshold
 
         is_all_under_nan_threshold = True
