@@ -125,6 +125,7 @@ summary::-webkit-details-marker {
     border-collapse: separate;
     border-spacing: 0;
     border: 1px solid #888;
+    margin: 0px auto;
     border-radius: 8px;
     overflow: hidden;
 }
