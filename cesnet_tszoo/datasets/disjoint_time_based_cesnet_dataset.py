@@ -8,7 +8,7 @@ import numpy.typing as npt
 from tqdm import tqdm
 from torch.utils.data import DataLoader, SequentialSampler
 
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, TransformerType, FillerType, AnomalyHandlerType, PreprocessType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, DatasetType, TransformerType, FillerType, AnomalyHandlerType
 from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
@@ -479,11 +479,12 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                             fitted_inner_index += 1
 
                     # updates outer preprocessors based on passed train data from InitDataset
-                    to_fit_outer_index = 0
                     for outer_preprocess_order in group.preprocess_outer_orders:
                         if outer_preprocess_order.should_be_fitted:
                             outer_preprocess_order.holder.fit(init_dataset_return.train_data, ts_id)
-                            to_fit_outer_index += 1
+
+                        if outer_preprocess_order.can_be_applied:
+                            init_dataset_return.train_data = outer_preprocess_order.holder.apply(init_dataset_return.train_data, ts_id)
 
             if workers == 0:
                 init_dataset.cleanup()

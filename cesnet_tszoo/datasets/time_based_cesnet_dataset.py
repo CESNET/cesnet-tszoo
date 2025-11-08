@@ -443,11 +443,12 @@ class TimeBasedCesnetDataset(CesnetDataset):
                 fitted_inner_index += 1
 
         # updates outer preprocessors based on passed train data from InitDataset
-        to_fit_outer_index = 0
         for outer_preprocess_order in train_group.preprocess_outer_orders:
             if outer_preprocess_order.should_be_fitted:
                 outer_preprocess_order.holder.fit(train_return.train_data, ts_id)
-                to_fit_outer_index += 1
+
+            if outer_preprocess_order.can_be_applied:
+                train_return.train_data = outer_preprocess_order.holder.apply(train_return.train_data, ts_id)
 
     def __update_based_on_non_fit_returns(self, val_return: InitDatasetReturn, test_return: InitDatasetReturn, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup, ts_id: int):
 
