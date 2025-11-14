@@ -429,18 +429,6 @@ class TimeBasedCesnetDataset(CesnetDataset):
         if self.dataset_config.has_all():
             self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.all_preprocess_order, ts_ids_to_take)
 
-    def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
-        steps = super()._create_summary_steps()
-
-        if self.dataset_config.sliding_window_size is not None:
-            window_step = css_utils.SummaryDiagramStep("Apply sliding window", {"Window size": self.dataset_config.sliding_window_size, "Prediction size": self.dataset_config.sliding_window_prediction_size, "Step": self.dataset_config.sliding_window_step})
-            steps.append(window_step)
-
-        format_step = css_utils.SummaryDiagramStep("Transform into specific format", None)
-        steps.append(format_step)
-
-        return steps
-
     def __update_based_on_train_init_return(self, train_return: InitDatasetReturn, train_group: PreprocessOrderGroup, ts_id: int):
         fitted_inner_index = 0
         for inner_preprocess_order in train_group.preprocess_inner_orders:

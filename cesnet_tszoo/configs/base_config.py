@@ -19,6 +19,7 @@ import cesnet_tszoo.utils.filler.factory as filler_factories
 import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 import cesnet_tszoo.utils.custom_handler.factory as custom_handler_factories
 from cesnet_tszoo.utils.custom_handler.factory import PerSeriesCustomHandlerFactory, AllSeriesCustomHandlerFactory, NoFitCustomHandlerFactory
+import cesnet_tszoo.utils.css_styles.utils as css_utils
 from cesnet_tszoo.data_models.holders import FillingHolder, AnomalyHandlerHolder, TransformerHolder, PerSeriesCustomHandlerHolder, NoFitCustomHandlerHolder, AllSeriesCustomHandlerHolder
 
 
@@ -534,6 +535,104 @@ class DatasetConfig(ABC):
         self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_val and self.has_val(), False, AllSeriesCustomHandlerHolder(handler)))
         self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_test and self.has_test(), False, AllSeriesCustomHandlerHolder(handler)))
         self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_all and self.has_all(), False, AllSeriesCustomHandlerHolder(handler)))
+
+    def _get_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
+        steps = []
+
+        steps.append(self._get_summary_dataset())
+        steps.append(self._get_summary_filter_time_series())
+        steps.append(self._get_summary_filter_features())
+        steps += self._get_summary_preprocessing()
+        steps += self._get_summary_loader()
+
+        return steps
+
+    def _get_summary_dataset(self) -> css_utils.SummaryDiagramStep:
+        attributes = [css_utils.StepAttribute("Database", self.database_name),
+                      css_utils.StepAttribute("Aggregation", self.aggregation),
+                      css_utils.StepAttribute("Source", self.source_type)]
+
+        return css_utils.SummaryDiagramStep("Load from dataset", attributes)
+
+    @abstractmethod
+    def _get_summary_filter_time_series(self) -> css_utils.SummaryDiagramStep:
+        ...
+
+    def _get_summary_filter_features(self) -> css_utils.SummaryDiagramStep:
+        attributes = [css_utils.StepAttribute("Taken features", self.features_to_take_without_ids),
+                      css_utils.StepAttribute("Time series ID included", self.include_ts_id),
+                      css_utils.StepAttribute("Time included", self.include_time),
+                      css_utils.StepAttribute("Time format", self.time_format)]
+
+        return css_utils.SummaryDiagramStep("Filter features", attributes)
+
+    def _get_summary_preprocessing(self) -> list[css_utils.SummaryDiagramStep]:
+        steps = []
+
+        for preprocess_type, train_pr, val_pr, test_pr, all_pr in list(zip(self.preprocess_order, self.train_preprocess_order, self.val_preprocess_order, self.test_preprocess_order, self.all_preprocess_order)):
+            preprocess_title = None
+            preprocess_type_name = None
+            is_per_time_series = train_pr.is_inner_preprocess
+            target_sets = []
+            requires_fitting = False
+            if train_pr.can_be_applied:
+                target_sets.append("train")
+                requires_fitting = train_pr.should_be_fitted
+            if val_pr.can_be_applied:
+                target_sets.append("val")
+            if test_pr.can_be_applied:
+                target_sets.append("test")
+            if all_pr.can_be_applied:
+                target_sets.append("all")
+
+            if len(target_sets) == 0:
+                continue
+
+            if train_pr.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                preprocess_title = "Handle anomalies"
+                preprocess_type_name = self.anomaly_handler_factory.anomaly_handler_type.__name__
+
+                if self.anomaly_handler_factory.is_empty_factory:
+                    continue
+
+            elif train_pr.preprocess_type == PreprocessType.FILLING_GAPS:
+                preprocess_title = "Handle missing values"
+                preprocess_type_name = f"{self.filler_factory.filler_type.__name__}"
+
+                steps.append(css_utils.SummaryDiagramStep("Pre-fill with default values", [css_utils.StepAttribute("Default values", self.default_values)]))
+
+                if self.filler_factory.is_empty_factory:
+                    continue
+
+            elif train_pr.preprocess_type == PreprocessType.TRANSFORMING:
+                preprocess_title = "Apply transformer"
+                preprocess_type_name = self.transformer_factory.transformer_type.__name__
+
+                if self.transformer_factory.is_empty_factory:
+                    continue
+
+                is_per_time_series = self.create_transformer_per_time_series
+            elif train_pr.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
+            elif train_pr.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
+            elif train_pr.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
+
+            step = css_utils.SummaryDiagramStep(preprocess_title, [css_utils.StepAttribute("Type", preprocess_type_name),
+                                                                   css_utils.StepAttribute("Requires fitting", requires_fitting),
+                                                                   css_utils.StepAttribute("Is per time series", is_per_time_series),
+                                                                   css_utils.StepAttribute("Target sets", target_sets)])
+            steps.append(step)
+
+        return steps
+
+    @abstractmethod
+    def _get_summary_loader(self) -> list[css_utils.SummaryDiagramStep]:
+        ...
 
     @abstractmethod
     def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):

@@ -162,6 +162,11 @@ class AnnotationType(Enum):
     """Represents annotations for time in time series. """
 
 
+class DisplayType(Enum):
+    TEXT = "text"
+    DIAGRAM = "diagram"
+
+
 class DataloaderOrder(Enum):
     """Order for loading data with PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader). """
 

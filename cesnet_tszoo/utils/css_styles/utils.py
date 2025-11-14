@@ -20,28 +20,36 @@ def __get_css_styles(identifier: str) -> str:
 
 
 @dataclass
+class StepAttribute:
+    name: str
+    value: object
+
+    def get_css_body(self) -> str:
+        return f"""
+                <tr>
+                    <td>{self.name}</td>
+                    <td>{", ".join(self.value) if isinstance(self.value, list) else str(self.value)}</td>
+                </tr>       
+                """
+
+
+@dataclass
 class SummaryDiagramStep:
     title: str
-    additional_data: dict[str, object]
+    attributes: list[StepAttribute]
     table_rows: str = field(init=False, default_factory=lambda: "")
 
     def __post_init__(self):
-        if self.additional_data is None:
+        if self.attributes is None or len(self.attributes) == 0:
+            self.attributes = None
             return
 
-        for key in self.additional_data:
-
-            row = f"""
-                    <tr>
-                        <td>{str(key)}</td>
-                        <td>{", ".join(self.additional_data[key]) if isinstance(self.additional_data[key], list) else self.additional_data[key]}</td>
-                    </tr>          
-            """
-            self.table_rows = self.table_rows + " " + row
+        for attribute in self.attributes:
+            self.table_rows = self.table_rows + " " + attribute.get_css_body()
 
     def get_css_body(self) -> str:
 
-        if self.additional_data is None:
+        if self.attributes is None:
             body = f"""
             <div class="pipe-step">
                 <details class="dropdown">
@@ -67,7 +75,7 @@ class SummaryDiagramStep:
         return body
 
 
-def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
+def get_summary_diagram(steps: list[SummaryDiagramStep]) -> str:
     styles = __get_css_styles("summary_diagram")
 
     fallback_msg = (
@@ -87,5 +95,12 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
 
     html.append("</div>")
     html = "".join(html)
+
+    return html
+
+
+def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
+
+    html = get_summary_diagram(steps)
 
     display(HTML(html))

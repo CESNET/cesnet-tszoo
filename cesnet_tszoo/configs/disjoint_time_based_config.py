@@ -14,6 +14,7 @@ from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, Da
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
+import cesnet_tszoo.utils.css_styles.utils as css_utils
 from cesnet_tszoo.utils.custom_handler.factory import PerSeriesCustomHandlerFactory, NoFitCustomHandlerFactory
 from cesnet_tszoo.data_models.holders import PerSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
@@ -355,6 +356,38 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
 
         self._validate_time_periods_overlap()
         self._validate_ts_overlap()
+
+    def _get_summary_filter_time_series(self) -> css_utils.SummaryDiagramStep:
+        attributes = [css_utils.StepAttribute("Train time series IDs", get_abbreviated_list_string(self.train_ts)),
+                      css_utils.StepAttribute("Val time series IDs", get_abbreviated_list_string(self.val_ts)),
+                      css_utils.StepAttribute("Test time series IDs", get_abbreviated_list_string(self.test_ts)),
+                      css_utils.StepAttribute("Train time periods", self.display_train_time_period),
+                      css_utils.StepAttribute("Val time periods", self.display_val_time_period),
+                      css_utils.StepAttribute("Test time periods", self.display_test_time_period),
+                      css_utils.StepAttribute("Nan threshold", self.nan_threshold)]
+
+        return css_utils.SummaryDiagramStep("Filter time series", attributes)
+
+    def _get_summary_loader(self) -> list[css_utils.SummaryDiagramStep]:
+
+        steps = []
+
+        if self.sliding_window_size is not None:
+            attributes = [
+                css_utils.StepAttribute("Window size", self.sliding_window_size),
+                css_utils.StepAttribute("Prediction size", self.sliding_window_prediction_size),
+                css_utils.StepAttribute("Step", self.sliding_window_step)
+            ]
+
+            steps.append(css_utils.SummaryDiagramStep("Apply sliding window", attributes))
+
+        attributes = [css_utils.StepAttribute("Train batch size", self.train_batch_size),
+                      css_utils.StepAttribute("Val batch size", self.val_batch_size),
+                      css_utils.StepAttribute("Test batch size", self.test_batch_size)]
+
+        steps.append(css_utils.SummaryDiagramStep("Transform into specific format", attributes))
+
+        return steps
 
     def __str__(self) -> str:
 

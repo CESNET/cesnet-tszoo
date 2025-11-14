@@ -511,14 +511,6 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         return dataset
 
-    def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
-        steps = super()._create_summary_steps()
-
-        format_step = css_utils.SummaryDiagramStep("Transform into specific format", None)
-        steps.append(format_step)
-
-        return steps
-
     def _get_data_for_plot(self, ts_id: int, feature_indices: np.ndarray[int], time_format: TimeFormat) -> tuple[np.ndarray, np.ndarray]:
         """Dataset type specific retrieval of data. """
 

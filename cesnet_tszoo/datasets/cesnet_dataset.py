@@ -26,7 +26,7 @@ from cesnet_tszoo.pytables_data.utils.utils import get_additional_data, load_dat
 from cesnet_tszoo.utils.file_utils import pickle_dump, yaml_dump
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, LOADING_WARNING_THRESHOLD, ANNOTATIONS_DOWNLOAD_BUCKET, MANDATORY_PREPROCESSES_ORDER
 from cesnet_tszoo.utils.transformer import Transformer
-from cesnet_tszoo.utils.enums import SplitType, TimeFormat, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType, PreprocessType
+from cesnet_tszoo.utils.enums import SplitType, TimeFormat, AnnotationType, FillerType, TransformerType, DatasetType, AnomalyHandlerType, PreprocessType, DisplayType
 from cesnet_tszoo.utils.utils import get_abbreviated_list_string, ExportBenchmark
 from cesnet_tszoo.utils.download import resumable_download
 from cesnet_tszoo.configs.config_loading import load_config
@@ -126,7 +126,7 @@ class CesnetDataset(ABC):
         self.imported_annotations_time_identifier = None
         self.imported_annotations_both_identifier = None
 
-    def set_dataset_config_and_initialize(self, dataset_config: DatasetConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
+    def set_dataset_config_and_initialize(self, dataset_config: DatasetConfig, display_config_details: Optional[Literal["text", "diagram"]] = "text", workers: int | Literal["config"] = "config") -> None:
         """
         Initialize training set, validation set, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.base_config.DatasetConfig].
 
@@ -143,6 +143,8 @@ class CesnetDataset(ABC):
             display_config_details: Flag indicating whether to display the configuration values after initialization. `Default: True`  
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
+        if display_config_details is not None:
+            display_config_details = DisplayType(display_config_details)
 
         self._clear()
         self.dataset_config = dataset_config
@@ -175,8 +177,8 @@ class CesnetDataset(ABC):
         self._update_export_config_copy()
         self.logger.debug("Export config copy updated with the latest dataset configuration.")
 
-        if display_config_details:
-            self.display_config()
+        if display_config_details is not None:
+            self.summary(display_config_details)
 
     def get_train_dataloader(self, ts_id: int | None = None, workers: int | Literal["config"] = "config", **kwargs) -> DataLoader:
         """
@@ -848,11 +850,14 @@ class CesnetDataset(ABC):
         dataloader = self.get_all_dataloader(workers=workers, take_all=should_take_all, cache_loader=False)
         return self._get_numpy(dataloader, ts_ids, time_period)
 
-    def _update_dataset_config_and_initialize(self, config_editor: ConfigEditor, workers: int | Literal["config"] = "config", display_config_details: bool = False):
+    def _update_dataset_config_and_initialize(self, config_editor: ConfigEditor, workers: int | Literal["config"] = "config", display_config_details: Optional[Literal["test", "diagram"]] = None):
         """Updates config via passed config editor. """
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating dataset configuration.")
+
+        if display_config_details is not None:
+            display_config_details = DisplayType(display_config_details)
 
         original_config = deepcopy(self.dataset_config)
         original_export_config = deepcopy(self._export_config_copy)
@@ -897,8 +902,8 @@ class CesnetDataset(ABC):
 
         self.logger.info("Configuration has been changed successfuly.")
 
-        if display_config_details:
-            self.display_config()
+        if display_config_details is not None:
+            self.summary(display_config_details)
 
     @abstractmethod
     def update_dataset_config_and_initialize(self, **kwargs):
@@ -1091,87 +1096,30 @@ Dataset details:
 
         print(to_display)
 
-    def summary(self) -> None:
+    def summary(self, display_type: Literal["text", "diagram"]) -> None:
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to display summary.")
 
-        steps = self._create_summary_steps()
+        display_type = DisplayType(display_type)
 
-        css_utils.display_summary_diagram(steps)
+        if display_type == DisplayType.TEXT:
+            print(self.dataset_config)
+        elif display_type == DisplayType.DIAGRAM:
+            steps = self.dataset_config._get_summary_steps()
+            return css_utils.display_summary_diagram(steps)
+        else:
+            raise NotImplementedError()
 
-    def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
-        preprocess_order_types: list[type, PreprocessType] = self.dataset_config.preprocess_order
-        train_order = self.dataset_config.train_preprocess_order
-        val_order = self.dataset_config.val_preprocess_order
-        test_order = self.dataset_config.test_preprocess_order
-        all_order = self.dataset_config.all_preprocess_order
-
-        steps = []
-
-        filter_ts_step = css_utils.SummaryDiagramStep("Filter time series", None)
-        steps.append(filter_ts_step)
-
-        filter_metrics_step = css_utils.SummaryDiagramStep("Filter time series metrics", {"Chosen metrics": self.dataset_config.features_to_take_without_ids,
-                                                                                          "Includes ts id": self.dataset_config.include_ts_id, "Includes time": self.dataset_config.include_time,
-                                                                                          "Time format": self.dataset_config.time_format})
-        steps.append(filter_metrics_step)
-
-        for preprocess_type, train_pr, val_pr, test_pr, all_pr in list(zip(preprocess_order_types, train_order, val_order, test_order, all_order)):
-            preprocess_title = None
-            is_per_time_series = train_pr.is_inner_preprocess
-            target_sets = []
-            requires_fitting = False
-            if train_pr.can_be_applied:
-                target_sets.append("train")
-                requires_fitting = train_pr.should_be_fitted
-            if val_pr.can_be_applied:
-                target_sets.append("val")
-            if test_pr.can_be_applied:
-                target_sets.append("test")
-            if all_pr.can_be_applied:
-                target_sets.append("all")
-
-            if len(target_sets) == 0:
-                continue
-
-            if train_pr.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
-                preprocess_title = self.dataset_config.anomaly_handler_factory.anomaly_handler_type.__name__
-
-                if self.dataset_config.anomaly_handler_factory.is_empty_factory:
-                    continue
-
-            elif train_pr.preprocess_type == PreprocessType.FILLING_GAPS:
-                preprocess_title = f"{self.dataset_config.filler_factory.filler_type.__name__}"
-                steps.append(css_utils.SummaryDiagramStep("Pre-filling with default values", {"Default values": self.dataset_config.default_values}))
-
-                if self.dataset_config.filler_factory.is_empty_factory:
-                    continue
-
-            elif train_pr.preprocess_type == PreprocessType.TRANSFORMING:
-                preprocess_title = self.dataset_config.transformer_factory.transformer_type.__name__
-                if self.dataset_config.transformer_factory.is_empty_factory:
-                    continue
-
-                is_per_time_series = self.dataset_config.create_transformer_per_time_series
-            elif train_pr.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
-                preprocess_title = preprocess_type.__name__
-            elif train_pr.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
-                preprocess_title = preprocess_type.__name__
-            elif train_pr.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
-                preprocess_title = preprocess_type.__name__
-
-            step = css_utils.SummaryDiagramStep(preprocess_title, {"Requires fitting": requires_fitting, "Is per time series": is_per_time_series, "Target sets": target_sets})
-            steps.append(step)
-
-        return steps
-
-    def display_config(self) -> None:
-        """Displays the values of the initialized configuration. """
+    def save_summary_diagram_as_html(self, path: str):
         if self.dataset_config is None or not self.dataset_config.is_initialized:
-            raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before displaying config.")
+            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to save summary diagram.")
 
-        print(self.dataset_config)
+        steps = self.dataset_config._get_summary_steps()
+        html = css_utils.get_summary_diagram(steps)
+
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
 
     def get_feature_names(self) -> list[str]:
         """Returns a list of all available feature names in the dataset. """
@@ -1460,7 +1408,7 @@ Dataset details:
         self._update_annotations_imported_status(on, identifier)
         self.logger.info("Successfully imported annotations from %s", annotations_file_path)
 
-    def import_config(self, identifier: str, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
+    def import_config(self, identifier: str, display_config_details: Optional[Literal["text", "diagram"]] = "text", workers: int | Literal["config"] = "config") -> None:
         """ 
         Import the dataset_config from a pickle file and initializes the dataset. Config type must correspond to dataset type.
 
@@ -1481,6 +1429,9 @@ Dataset details:
             display_config_details: Flag indicating whether to display the configuration values after initialization. `Default: True` 
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
+
+        if display_config_details is not None:
+            display_config_details = DisplayType(display_config_details)
 
         # Load config
         config = load_config(identifier, self.metadata.configs_root, self.metadata.database_name, self.metadata.source_type, self.metadata.aggregation, self.logger)
