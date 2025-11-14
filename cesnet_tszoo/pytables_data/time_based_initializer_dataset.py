@@ -21,6 +21,9 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
     def __getitem__(self, idx):
 
+        if self.init_config.ts_ids_ignore[idx]:
+            return None
+
         data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
 
         shared_offset = 0
