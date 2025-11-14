@@ -77,7 +77,7 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
         " with nbviewer.org."
     )
 
-    html = [styles, '<div class="pipe-container">', '<div class="pipe-title">Preprocessing sequence</div>']
+    html = [styles, '<div class="pipe-container" hidden>', '<div class="pipe-title">Preprocessing sequence</div>']
 
     for i, step in enumerate(steps):
         html.append(step.get_css_body())
@@ -88,7 +88,4 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
     html.append("</div>")
     html = "".join(html)
 
-    try:
-        display(HTML(html))
-    except Exception:
-        display(HTML(f"<p>{fallback_msg}</p>"))
+    display(HTML(html))
