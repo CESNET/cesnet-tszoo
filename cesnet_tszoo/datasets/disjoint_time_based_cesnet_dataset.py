@@ -601,18 +601,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         return data, time_period
 
-    def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
-        steps = super()._create_summary_steps()
-
-        if self.dataset_config.sliding_window_size is not None:
-            window_step = css_utils.SummaryDiagramStep("Apply sliding window", {"Window size": self.dataset_config.sliding_window_size, "Prediction size": self.dataset_config.sliding_window_prediction_size, "Step": self.dataset_config.sliding_window_step})
-            steps.append(window_step)
-
-        format_step = css_utils.SummaryDiagramStep("Transform into specific format", None)
-        steps.append(format_step)
-
-        return steps
-
     def __get_ts_data_for_plot(self, dataset: DisjointTimeBasedSplittedDataset, ts_id: int, feature_indices: list[int]):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
 

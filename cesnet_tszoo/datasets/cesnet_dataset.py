@@ -1106,76 +1106,10 @@ Dataset details:
         if display_type == DisplayType.TEXT:
             print(self.dataset_config)
         elif display_type == DisplayType.DIAGRAM:
-            steps = self._create_summary_steps()
+            steps = self.dataset_config._get_summary_steps()
             css_utils.display_summary_diagram(steps)
         else:
             raise NotImplementedError()
-
-    def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
-        preprocess_order_types: list[type, PreprocessType] = self.dataset_config.preprocess_order
-        train_order = self.dataset_config.train_preprocess_order
-        val_order = self.dataset_config.val_preprocess_order
-        test_order = self.dataset_config.test_preprocess_order
-        all_order = self.dataset_config.all_preprocess_order
-
-        steps = []
-
-        filter_ts_step = css_utils.SummaryDiagramStep("Filter time series", None)
-        steps.append(filter_ts_step)
-
-        filter_metrics_step = css_utils.SummaryDiagramStep("Filter time series metrics", {"Chosen metrics": self.dataset_config.features_to_take_without_ids,
-                                                                                          "Includes ts id": self.dataset_config.include_ts_id, "Includes time": self.dataset_config.include_time,
-                                                                                          "Time format": self.dataset_config.time_format})
-        steps.append(filter_metrics_step)
-
-        for preprocess_type, train_pr, val_pr, test_pr, all_pr in list(zip(preprocess_order_types, train_order, val_order, test_order, all_order)):
-            preprocess_title = None
-            is_per_time_series = train_pr.is_inner_preprocess
-            target_sets = []
-            requires_fitting = False
-            if train_pr.can_be_applied:
-                target_sets.append("train")
-                requires_fitting = train_pr.should_be_fitted
-            if val_pr.can_be_applied:
-                target_sets.append("val")
-            if test_pr.can_be_applied:
-                target_sets.append("test")
-            if all_pr.can_be_applied:
-                target_sets.append("all")
-
-            if len(target_sets) == 0:
-                continue
-
-            if train_pr.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
-                preprocess_title = self.dataset_config.anomaly_handler_factory.anomaly_handler_type.__name__
-
-                if self.dataset_config.anomaly_handler_factory.is_empty_factory:
-                    continue
-
-            elif train_pr.preprocess_type == PreprocessType.FILLING_GAPS:
-                preprocess_title = f"{self.dataset_config.filler_factory.filler_type.__name__}"
-                steps.append(css_utils.SummaryDiagramStep("Pre-filling with default values", {"Default values": self.dataset_config.default_values}))
-
-                if self.dataset_config.filler_factory.is_empty_factory:
-                    continue
-
-            elif train_pr.preprocess_type == PreprocessType.TRANSFORMING:
-                preprocess_title = self.dataset_config.transformer_factory.transformer_type.__name__
-                if self.dataset_config.transformer_factory.is_empty_factory:
-                    continue
-
-                is_per_time_series = self.dataset_config.create_transformer_per_time_series
-            elif train_pr.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
-                preprocess_title = preprocess_type.__name__
-            elif train_pr.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
-                preprocess_title = preprocess_type.__name__
-            elif train_pr.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
-                preprocess_title = preprocess_type.__name__
-
-            step = css_utils.SummaryDiagramStep(preprocess_title, {"Requires fitting": requires_fitting, "Is per time series": is_per_time_series, "Target sets": target_sets})
-            steps.append(step)
-
-        return steps
 
     def get_feature_names(self) -> list[str]:
         """Returns a list of all available feature names in the dataset. """

@@ -8,18 +8,25 @@ import cesnet_tszoo.version as version
 from packaging.version import Version
 
 
-def get_abbreviated_list_string(to_abbreviate, max_length: int = 5):
+def get_abbreviated_list_string(to_abbreviate, max_length: int = 5, include_length: bool = True):
     """Returns visual shortend version of possibly big list. """
 
     if to_abbreviate is None:
         return None
 
+    result = None
+
     if len(to_abbreviate) <= max_length * 2:
-        return f"{to_abbreviate}, Length={len(to_abbreviate)}"
+        result = f"{to_abbreviate}"
     else:
         beggining = str(to_abbreviate[:max_length]).removesuffix(']')
         ending = str(to_abbreviate[-max_length:]).removeprefix('[')
-        return f"{beggining} ... {ending}, Length={len(to_abbreviate)}"
+        result = f"{beggining} ... {ending}"
+
+    if include_length:
+        result += f", Length={len(to_abbreviate)}"
+
+    return result
 
 
 def normalize_display_list(to_normalize: list[str, type, PreprocessType]) -> list[str]:

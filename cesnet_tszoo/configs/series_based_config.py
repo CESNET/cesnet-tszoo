@@ -14,6 +14,7 @@ from cesnet_tszoo.utils.enums import FillerType, TransformerType, TimeFormat, Da
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.configs.handlers.series_based_handler import SeriesBasedHandler
 from cesnet_tszoo.configs.handlers.time_based_handler import TimeBasedHandler
+import cesnet_tszoo.utils.css_styles.utils as css_utils
 from cesnet_tszoo.utils.custom_handler.factory import PerSeriesCustomHandlerFactory, NoFitCustomHandlerFactory
 from cesnet_tszoo.data_models.holders import PerSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
@@ -300,6 +301,30 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
 
     def _set_per_series_custom_handler(self, factory: PerSeriesCustomHandlerFactory):
         raise ValueError(f"Cannot use {factory.name} CustomHandler, because PerSeriesCustomHandler is not supported for {self.dataset_type}. Use AllSeriesCustomHandler or NoFitCustomHandler instead. ")
+
+    def _get_summary_filter_time_series(self) -> css_utils.SummaryDiagramStep:
+        attributes = [css_utils.StepAttribute("Train time series IDs", get_abbreviated_list_string(self.train_ts)),
+                      css_utils.StepAttribute("Val time series IDs", get_abbreviated_list_string(self.val_ts)),
+                      css_utils.StepAttribute("Test time series IDs", get_abbreviated_list_string(self.test_ts)),
+                      css_utils.StepAttribute("All time series IDs", get_abbreviated_list_string(self.all_ts)),
+                      css_utils.StepAttribute("Time periods", self.display_time_period),
+                      css_utils.StepAttribute("Nan threshold", self.nan_threshold)]
+
+        return css_utils.SummaryDiagramStep("Filter time series", attributes)
+
+    def _get_summary_loader(self) -> list[css_utils.SummaryDiagramStep]:
+
+        steps = []
+
+        attributes = [css_utils.StepAttribute("Train batch size", self.train_batch_size),
+                      css_utils.StepAttribute("Val batch size", self.val_batch_size),
+                      css_utils.StepAttribute("Test batch size", self.test_batch_size),
+                      css_utils.StepAttribute("All batch size", self.all_batch_size),
+                      css_utils.StepAttribute("Train dataloader order", self.train_dataloader_order),]
+
+        steps.append(css_utils.SummaryDiagramStep("Transform into specific format", attributes))
+
+        return steps
 
     def _validate_finalization(self) -> None:
         """Performs final validation of the configuration. """
