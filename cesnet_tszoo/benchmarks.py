@@ -179,7 +179,10 @@ def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBased
 
     factory = database_factory.get_database_factory(export_benchmark.database_name)
 
-    return factory.create_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
+    dataset = factory.create_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
+    dataset.related_to = export_benchmark.related_results_identifier
+
+    return dataset
 
 
 def _get_built_in_benchmark(identifier: str, data_root: str) -> Benchmark:
@@ -243,6 +246,7 @@ def _get_custom_benchmark(identifier: str, data_root: str) -> Benchmark:
 
     logger = logging.getLogger("benchmark")
 
+    path_for_related_results = os.path.join(get_path_to_files_folder(), "related_results")
     benchmark_file_path = os.path.join(data_root, "tszoo", "benchmarks", f"{identifier}.yaml")
     logger.debug("Looking for benchmark configuration file at '%s'.", benchmark_file_path)
 
@@ -281,11 +285,17 @@ def _get_custom_benchmark(identifier: str, data_root: str) -> Benchmark:
     else:
         logger.info("No %s annotations found.", AnnotationType.BOTH)
 
-    # Since the benchmark is custom, related results are None
-    logger.info("As benchmark '%s' is custom, related results cant be loaded.", identifier)
-
     logger.debug("Creating benchmark with description '%s'.", export_benchmark.description)
     result_benchmark = Benchmark(config, dataset, export_benchmark.description)
+
+    # Load related results if available
+    if export_benchmark.related_results_identifier is not None:
+        related_results_file_path = os.path.join(path_for_related_results, f"{export_benchmark.related_results_identifier}.csv")
+        logger.debug("Loading related results from '%s'.", related_results_file_path)
+        result_benchmark.related_results = pd.read_csv(related_results_file_path)
+        logger.info("Related results found and loaded.")
+    else:
+        logger.info("No related results found for benchmark '%s'.", identifier)
 
     logger.info("Custom benchmark '%s' successfully prepared and ready for use.", identifier)
 

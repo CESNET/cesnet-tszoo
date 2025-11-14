@@ -34,7 +34,7 @@ class DisjointTimeBasedConfigEditor(ConfigEditor):
 
         super().__post_init__()
 
-        self.logger = logging.getLogger("time_based_config_editor")
+        self.logger = logging.getLogger("disjoint_time_based_config_editor")
 
     def _hard_modify(self, config: DisjointTimeBasedConfig, dataset_metadata: DatasetMetadata):
         super()._hard_modify(config, dataset_metadata)

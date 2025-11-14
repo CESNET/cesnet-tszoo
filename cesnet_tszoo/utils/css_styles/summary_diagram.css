@@ -4,7 +4,7 @@
     align-items: center;
     background: white;
     border: 1px dashed #555;
-    row-gap: 15px;
+    row-gap: 0px;
     border-radius: 8px;
     padding: 10px 20px;
     font-family: "Segoe UI", sans-serif;
@@ -18,7 +18,7 @@
 .pipe-title {
     font-weight: bold;
     font-size: 16px;
-    margin-bottom: 5px;
+    margin-bottom: 20px;
     color: black;
 }
 
@@ -38,6 +38,10 @@
     margin: 0 auto;
     border-radius: 2px;
     flex-shrink: 0;
+}
+
+.text-fallback {
+    display: none;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -125,6 +129,7 @@ summary::-webkit-details-marker {
     border-collapse: separate;
     border-spacing: 0;
     border: 1px solid #888;
+    margin: 0px auto;
     border-radius: 8px;
     overflow: hidden;
 }

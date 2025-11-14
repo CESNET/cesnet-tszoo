@@ -21,37 +21,54 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
     def __getitem__(self, idx):
 
+        if self.init_config.ts_ids_ignore[idx]:
+            return None
+
         data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
 
-        offset = 0
+        shared_offset = 0
+        active_sets = 0
+
+        total = 0
+        if self.init_config.train_time_period is not None:
+            total += len(self.init_config.train_time_period)
+            active_sets += 1
+        if self.init_config.val_time_period is not None:
+            total += len(self.init_config.val_time_period)
+            active_sets += 1
+        if self.init_config.test_time_period is not None:
+            total += len(self.init_config.test_time_period)
+            active_sets += 1
+
+        if active_sets > 1:
+            shared_offset = int((total - len(self.init_config.all_time_period)) / (active_sets - 1))
 
         can_preprocess = True
 
         is_train_under_nan_threshold = True
         if self.init_config.train_time_period is not None and can_preprocess:
             in_train = (existing_indices < len(self.init_config.train_time_period)).sum()
-            is_train_under_nan_threshold = (in_train - offset) / len(self.init_config.train_time_period) <= self.init_config.nan_threshold
-            offset += in_train
+            is_train_under_nan_threshold = 1 - (in_train) / len(self.init_config.train_time_period) <= self.init_config.nan_threshold
+            existing_indices -= len(self.init_config.train_time_period) - shared_offset
+            existing_indices = existing_indices[existing_indices >= 0]
+
         can_preprocess = can_preprocess and is_train_under_nan_threshold
 
         is_val_under_nan_threshold = True
         if self.init_config.val_time_period is not None and can_preprocess:
             in_val = (existing_indices < len(self.init_config.val_time_period)).sum()
-            is_val_under_nan_threshold = (in_val - offset) / len(self.init_config.val_time_period) <= self.init_config.nan_threshold
-            offset += in_val
+            is_val_under_nan_threshold = 1 - (in_val) / len(self.init_config.val_time_period) <= self.init_config.nan_threshold
+            existing_indices -= len(self.init_config.val_time_period) - shared_offset
+            existing_indices = existing_indices[existing_indices >= 0]
         can_preprocess = can_preprocess and is_val_under_nan_threshold
 
         is_test_under_nan_threshold = True
         if self.init_config.test_time_period is not None and can_preprocess:
             in_test = (existing_indices < len(self.init_config.test_time_period)).sum()
-            is_test_under_nan_threshold = (in_test - offset) / len(self.init_config.test_time_period) <= self.init_config.nan_threshold
-            offset += in_test
+            is_test_under_nan_threshold = 1 - (in_test) / len(self.init_config.test_time_period) <= self.init_config.nan_threshold
         can_preprocess = can_preprocess and is_test_under_nan_threshold
 
         is_all_under_nan_threshold = True
-        if self.init_config.all_time_period is not None and can_preprocess:
-            in_all = (existing_indices < len(self.init_config.all_time_period)).sum()
-            is_all_under_nan_threshold = (in_all - offset) / len(self.init_config.all_time_period) <= self.init_config.nan_threshold
         can_preprocess = can_preprocess and is_all_under_nan_threshold
 
         train_preprocess_fitted_instances = []
@@ -149,7 +166,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
                 previous_offset = current_start_index - first_start_index
 
                 train_should_fill = False
-                data = val_filling_holder.apply(data[:current_start_index - first_start_index].view(), idx)
+                data[:current_start_index - first_start_index] = val_filling_holder.apply(data[:current_start_index - first_start_index].view(), idx)
 
             offset_start = min(offset_start, self.init_config.val_time_period[ID_TIME_COLUMN_NAME][0])
 
@@ -167,7 +184,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
                     test_filling_holder.fillers[idx] = deepcopy(val_filling_holder.get_instance(idx))
 
                 train_should_fill = False
-                data = test_filling_holder.apply(data[previous_offset:current_start_index - first_start_index].view(), idx)
+                data[previous_offset:current_start_index - first_start_index] = test_filling_holder.apply(data[previous_offset:current_start_index - first_start_index].view(), idx)
 
             offset_start = min(offset_start, self.init_config.test_time_period[ID_TIME_COLUMN_NAME][0])
 
@@ -202,7 +219,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
     def _handle_per_series_custom_handler(self, handler_holder: PerSeriesCustomHandlerHolder, should_fit: bool, can_train_apply: bool, can_val_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
         if should_fit:
-            handler_holder.fit(data[:len(self.init_config.train_time_period())], idx)
+            handler_holder.fit(data[:len(self.init_config.train_time_period)], idx)
 
         if can_train_apply or can_val_apply:
             start = 0 if can_train_apply else len(self.init_config.train_time_period)

@@ -306,13 +306,14 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         Goes through data to validate time series against `nan_threshold`, partial fit `transformers`, fit `anomaly handlers` and prepare `fillers`.
         """
 
+        ts_ids_to_take_for_all = np.array([])
+
         if self.dataset_config.has_train():
 
-            self.__initialize_config_for_train_set(workers)
+            ts_ids_to_take = self.__initialize_config_for_train_set(workers)
+            ts_ids_to_take_for_all = try_concatenate(ts_ids_to_take_for_all, np.array(ts_ids_to_take))
 
             self.logger.debug("Train set updated: %s time series left.", len(self.dataset_config.train_ts))
-
-        ts_ids_to_take_for_all = np.array([])
 
         if self.dataset_config.has_val():
             init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]))
@@ -354,18 +355,22 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         self.logger.info("Dataset initialization complete. Configuration updated.")
 
-    def __initialize_config_for_train_set(self, workers: int) -> None:
+    def __initialize_config_for_train_set(self, workers: int) -> list[int]:
         """Initializes config for provided time series. """
 
         self.logger.info("Updating config for train set and fitting values.")
 
         is_first_cycle = True
 
+        ts_ids_ignore = np.zeros_like(self.dataset_config.train_ts_row_ranges, dtype=np.bool)
+        ts_ids_to_take = []
+
         groups = self.dataset_config._get_train_preprocess_init_order_groups()
         for i, group in enumerate(groups):
+            ts_ids_to_take = []
             self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(groups))
 
-            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group)
+            init_config = SeriesDatasetInitConfig(self.dataset_config, ts_ids_ignore, SplitType.TRAIN, group)
             init_dataset = SeriesBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
             sampler = SequentialSampler(init_dataset)
@@ -374,9 +379,11 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             if workers == 0:
                 init_dataset.pytables_worker_init()
 
-            ts_ids_to_take = []
-
             for ts_id, data in enumerate(tqdm(dataloader, total=len(init_config.ts_row_ranges))):
+
+                if ts_ids_ignore[ts_id]:
+                    continue
+
                 init_dataset_return: InitDatasetReturn = data[0]
 
                 if init_dataset_return.is_under_nan_threshold:
@@ -390,25 +397,33 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                             fitted_inner_index += 1
 
                     # updates outer preprocessors based on passed train data from InitDataset
-                    to_fit_outer_index = 0
                     for outer_preprocess_order in group.preprocess_outer_orders:
                         if outer_preprocess_order.should_be_fitted:
                             outer_preprocess_order.holder.fit(init_dataset_return.train_data, ts_id)
-                            to_fit_outer_index += 1
+
+                        if outer_preprocess_order.can_be_applied:
+                            init_dataset_return.train_data = outer_preprocess_order.holder.apply(init_dataset_return.train_data, ts_id)
 
             if workers == 0:
                 init_dataset.cleanup()
 
-            if len(ts_ids_to_take) == 0:
-                raise ValueError("No valid time series left in train set after applying nan_threshold.")
-
             # Update config based on filtered time series
             if is_first_cycle:
-                self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[ts_ids_to_take]
-                self.dataset_config.train_ts = self.dataset_config.train_ts[ts_ids_to_take]
-                self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
+
+                if len(ts_ids_to_take) == 0:
+                    raise ValueError("No valid time series left in train set after applying nan_threshold.")
+
+                ts_ids_ignore = np.ones_like(self.dataset_config.train_ts_row_ranges, dtype=np.bool)
+                ts_ids_ignore[ts_ids_to_take] = False
+                self.logger.debug("invalid ts_ids flagged: %s time series left.", len(ts_ids_to_take))
 
                 is_first_cycle = False
+
+        self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[ts_ids_to_take]
+        self.dataset_config.train_ts = self.dataset_config.train_ts[ts_ids_to_take]
+        self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
+
+        return ts_ids_to_take
 
     def __initialize_config_for_non_fit_sets(self, init_config: SeriesDatasetInitConfig, workers: int, set_name: str) -> np.ndarray:
         """Initializes config for provided time series without fitting. """

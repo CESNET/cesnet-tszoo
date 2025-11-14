@@ -167,6 +167,9 @@ class DatasetConfig(ABC):
         self.all_preprocess_order: list[PreprocessNote] = []
         self.can_fit_fillers = can_fit_fillers
 
+        if self.random_state is not None:
+            np.random.seed(random_state)
+
         self._validate_construction()
 
         self.logger.info("Quick validation succeeded.")

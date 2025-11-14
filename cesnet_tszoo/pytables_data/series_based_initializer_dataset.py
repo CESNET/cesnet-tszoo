@@ -17,8 +17,11 @@ class SeriesBasedInitializerDataset(InitializerDataset):
 
     def __getitem__(self, idx) -> InitDatasetReturn:
 
+        if self.init_config.ts_ids_ignore[idx]:
+            return None
+
         data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
-        is_under_nan_threshold = len(existing_indices) / len(self.init_config.time_period) <= self.init_config.nan_threshold
+        is_under_nan_threshold = 1 - len(existing_indices) / len(self.init_config.time_period) <= self.init_config.nan_threshold
 
         preprocess_fitted_instances = []
         train_data = np.array([])

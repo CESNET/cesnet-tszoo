@@ -364,13 +364,16 @@ class TimeBasedCesnetDataset(CesnetDataset):
         test_groups = self.dataset_config._get_test_preprocess_init_order_groups()
 
         grouped = list(zip(train_groups, val_groups, test_groups))
+        ts_ids_ignore = np.zeros_like(self.dataset_config.ts_row_ranges, dtype=np.bool)
+        ts_ids_to_take = []
 
         for i, groups in enumerate(grouped):
+            ts_ids_to_take = []
             train_group, val_group, test_group = groups
 
             self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(grouped))
 
-            init_config = TimeDatasetInitConfig(self.dataset_config, train_group, val_group, test_group)
+            init_config = TimeDatasetInitConfig(self.dataset_config, ts_ids_ignore, train_group, val_group, test_group)
             init_dataset = TimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
             sampler = SequentialSampler(init_dataset)
@@ -379,9 +382,10 @@ class TimeBasedCesnetDataset(CesnetDataset):
             if workers == 0:
                 init_dataset.pytables_worker_init()
 
-            ts_ids_to_take = []
-
             for ts_id, data in enumerate(tqdm(dataloader, total=len(self.dataset_config.ts_row_ranges))):
+
+                if ts_ids_ignore[ts_id]:
+                    continue
 
                 train_return: InitDatasetReturn
                 val_return: InitDatasetReturn
@@ -406,22 +410,24 @@ class TimeBasedCesnetDataset(CesnetDataset):
                 if len(ts_ids_to_take) == 0:
                     raise ValueError("No valid time series left in ts_ids after applying nan_threshold.")
 
-                # Update config based on filtered time series
-                self.dataset_config.ts_row_ranges = self.dataset_config.ts_row_ranges[ts_ids_to_take]
-                self.dataset_config.ts_ids = self.dataset_config.ts_ids[ts_ids_to_take]
-
-                if self.dataset_config.has_train():
-                    self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
-                if self.dataset_config.has_val():
-                    self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.val_preprocess_order, ts_ids_to_take)
-                if self.dataset_config.has_test():
-                    self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.test_preprocess_order, ts_ids_to_take)
-                if self.dataset_config.has_all():
-                    self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.all_preprocess_order, ts_ids_to_take)
+                ts_ids_ignore = np.ones_like(self.dataset_config.ts_row_ranges, dtype=np.bool)
+                ts_ids_ignore[ts_ids_to_take] = False
+                self.logger.debug("invalid ts_ids flagged: %s time series left.", len(ts_ids_to_take))
 
                 is_first_cycle = False
 
-            self.logger.debug("ts_ids updated: %s time series left.", len(ts_ids_to_take))
+        # Update config based on filtered time series
+        self.dataset_config.ts_row_ranges = self.dataset_config.ts_row_ranges[ts_ids_to_take]
+        self.dataset_config.ts_ids = self.dataset_config.ts_ids[ts_ids_to_take]
+
+        if self.dataset_config.has_train():
+            self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
+        if self.dataset_config.has_val():
+            self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.val_preprocess_order, ts_ids_to_take)
+        if self.dataset_config.has_test():
+            self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.test_preprocess_order, ts_ids_to_take)
+        if self.dataset_config.has_all():
+            self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.all_preprocess_order, ts_ids_to_take)
 
     def _create_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
         steps = super()._create_summary_steps()
@@ -443,11 +449,12 @@ class TimeBasedCesnetDataset(CesnetDataset):
                 fitted_inner_index += 1
 
         # updates outer preprocessors based on passed train data from InitDataset
-        to_fit_outer_index = 0
         for outer_preprocess_order in train_group.preprocess_outer_orders:
             if outer_preprocess_order.should_be_fitted:
                 outer_preprocess_order.holder.fit(train_return.train_data, ts_id)
-                to_fit_outer_index += 1
+
+            if outer_preprocess_order.can_be_applied:
+                train_return.train_data = outer_preprocess_order.holder.apply(train_return.train_data, ts_id)
 
     def __update_based_on_non_fit_returns(self, val_return: InitDatasetReturn, test_return: InitDatasetReturn, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup, ts_id: int):
 

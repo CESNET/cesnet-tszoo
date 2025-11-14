@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+import numpy as np
+
 from cesnet_tszoo.configs import DisjointTimeBasedConfig
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 from cesnet_tszoo.utils.enums import SplitType
@@ -9,12 +11,12 @@ from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 class DisjointTimeDatasetInitConfig(DatasetInitConfig):
     """For disjoint time based init datasets. """
 
-    def __init__(self, config: DisjointTimeBasedConfig, limit_init_to_set: SplitType, group: PreprocessOrderGroup):
+    def __init__(self, config: DisjointTimeBasedConfig, ts_ids_ignore: np.ndarray, limit_init_to_set: SplitType, group: PreprocessOrderGroup):
         self.ts_row_ranges = None
         self.ts_ids = None
         self.preprocess_order_group = deepcopy(group)
 
-        super().__init__(config, limit_init_to_set)
+        super().__init__(config, ts_ids_ignore, limit_init_to_set)
 
     def _init_train(self, config: DisjointTimeBasedConfig):
         """Initializes from train data of config """

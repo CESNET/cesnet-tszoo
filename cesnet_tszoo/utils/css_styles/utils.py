@@ -31,11 +31,6 @@ class SummaryDiagramStep:
 
         for key in self.additional_data:
 
-            if isinstance(self.additional_data[key], list):
-                print(self.additional_data[key])
-
-            print(key)
-
             row = f"""
                     <tr>
                         <td>{str(key)}</td>
@@ -52,7 +47,7 @@ class SummaryDiagramStep:
                 <details class="dropdown">
                     <summary class="empty-dropbtn">{self.title}</summary>
                 </details>
-            <div>
+            </div>
             """
         else:
 
@@ -66,7 +61,7 @@ class SummaryDiagramStep:
                         </table>
                     </div>
                 </details>
-            <div>
+            </div>
             """
 
         return body
@@ -75,7 +70,14 @@ class SummaryDiagramStep:
 def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
     styles = __get_css_styles("summary_diagram")
 
-    html = [styles, '<div class="pipe-container">', '<div class="pipe-title">Preprocessing sequence</div>']
+    fallback_msg = (
+        """
+    In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. 
+    <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.
+    """
+    )
+
+    html = [styles, f'<div class="text-fallback">{fallback_msg}</div>', '<div class="pipe-container" hidden>', '<div class="pipe-title">Preprocessing sequence</div>']
 
     for i, step in enumerate(steps):
         html.append(step.get_css_body())
