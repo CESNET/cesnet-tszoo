@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 import os
 import logging
 
@@ -16,7 +16,7 @@ from cesnet_tszoo.datasets.databases import CesnetDatabase
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
 from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
-from cesnet_tszoo.utils.enums import AnnotationType, SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import AnnotationType, SourceType, AgreggationType, DisplayType
 from cesnet_tszoo.utils.file_utils import yaml_load
 from cesnet_tszoo.utils.utils import ExportBenchmark
 from cesnet_tszoo.configs.config_loading import load_config
@@ -73,7 +73,7 @@ class Benchmark:
 
         return self.config
 
-    def get_initialized_dataset(self, display_config_details: bool = True, check_errors: bool = False, workers: Literal["config"] | int = "config") -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
+    def get_initialized_dataset(self, display_config_details: Optional[Literal["text", "diagram"]] = "text", check_errors: bool = False, workers: Literal["config"] | int = "config") -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
         """
         Returns dataset with intialized sets, transformers, fillers etc..
 
@@ -93,6 +93,9 @@ class Benchmark:
         Returns:
             Returns initialized dataset.
         """
+
+        if display_config_details is not None:
+            display_config_details = DisplayType(display_config_details)
 
         if check_errors:
             self.dataset.check_errors()

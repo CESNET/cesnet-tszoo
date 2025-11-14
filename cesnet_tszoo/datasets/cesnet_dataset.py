@@ -866,7 +866,7 @@ class CesnetDataset(ABC):
             if config_editor.requires_init:
                 self.logger.info("Re-initialization is required.")
                 config_editor.modify_dataset_config(self._export_config_copy, self.metadata)
-                self.set_dataset_config_and_initialize(self._export_config_copy, False, workers)
+                self.set_dataset_config_and_initialize(self._export_config_copy, None, workers)
 
             else:
                 config_editor.modify_dataset_config(self.dataset_config, self.metadata)
