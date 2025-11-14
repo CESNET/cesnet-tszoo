@@ -70,6 +70,13 @@ class SummaryDiagramStep:
 def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
     styles = __get_css_styles("summary_diagram")
 
+    fallback_msg = (
+        "In a Jupyter environment, please rerun this cell to show the HTML"
+        " representation or trust the notebook. <br />On GitHub, the"
+        " HTML representation is unable to render, please try loading this page"
+        " with nbviewer.org."
+    )
+
     html = [styles, '<div class="pipe-container">', '<div class="pipe-title">Preprocessing sequence</div>']
 
     for i, step in enumerate(steps):
@@ -81,4 +88,7 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
     html.append("</div>")
     html = "".join(html)
 
-    display(HTML(html))
+    try:
+        display(HTML(html))
+    except Exception:
+        display(HTML(f"<p>{fallback_msg}</p>"))
