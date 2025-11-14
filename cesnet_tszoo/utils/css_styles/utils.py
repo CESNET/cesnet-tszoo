@@ -86,6 +86,7 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
             html.append('<div class="pipe-connector"></div>')
 
     html.append("</div>")
+    html.append(f'<div class="text-fallback">{fallback_msg}</div>')
     html = "".join(html)
 
     display(HTML(html))

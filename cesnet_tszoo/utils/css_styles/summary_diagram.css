@@ -40,6 +40,10 @@
     flex-shrink: 0;
 }
 
+.text-fallback {
+    display: none;
+}
+
 @media (prefers-color-scheme: dark) {
     .pipe-connector {
         background: white;
