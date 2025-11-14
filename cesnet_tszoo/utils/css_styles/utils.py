@@ -47,7 +47,7 @@ class SummaryDiagramStep:
                 <details class="dropdown">
                     <summary class="empty-dropbtn">{self.title}</summary>
                 </details>
-            <div>
+            </div>
             """
         else:
 
@@ -61,7 +61,7 @@ class SummaryDiagramStep:
                         </table>
                     </div>
                 </details>
-            <div>
+            </div>
             """
 
         return body
@@ -76,7 +76,7 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
         " HTML representation is unable to render."
     )
 
-    html = [styles, '<body class="nothing2-test">', '<div class="nothing-test">', f'<div class="text-fallback">{fallback_msg}</div>', '<div class="pipe-container" visibility: hidden>', '<div class="pipe-title">Preprocessing sequence</div>']
+    html = [styles, f'<div class="text-fallback">{fallback_msg}</div>', '<div class="pipe-container">', '<div class="pipe-title">Preprocessing sequence</div>']
 
     for i, step in enumerate(steps):
         html.append(step.get_css_body())
@@ -85,8 +85,6 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
             html.append('<div class="pipe-connector"></div>')
 
     html.append("</div>")
-    html.append("</div>")
-    html.append("</body>")
     html = "".join(html)
 
     display(HTML(html))

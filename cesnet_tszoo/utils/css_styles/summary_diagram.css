@@ -4,7 +4,7 @@
     align-items: center;
     background: white;
     border: 1px dashed #555;
-    row-gap: 15px;
+    row-gap: 0px;
     border-radius: 8px;
     padding: 10px 20px;
     font-family: "Segoe UI", sans-serif;
@@ -18,7 +18,7 @@
 .pipe-title {
     font-weight: bold;
     font-size: 16px;
-    margin-bottom: 5px;
+    margin-bottom: 20px;
     color: black;
 }
 
