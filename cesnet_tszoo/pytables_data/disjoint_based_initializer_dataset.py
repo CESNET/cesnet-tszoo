@@ -69,4 +69,4 @@ class DisjointTimeBasedInitializerDataset(InitializerDataset):
         if should_fit:
             transfomer_holder.fit(data, idx)
 
-        return transfomer_holder.apply(data)
+        return transfomer_holder.apply(data, idx)
