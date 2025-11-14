@@ -104,7 +104,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         self.logger.info("Dataset is disjoint_time_based. Use cesnet_tszoo.configs.DisjointTimeBasedConfig")
 
-    def set_dataset_config_and_initialize(self, dataset_config: DisjointTimeBasedConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
+    def set_dataset_config_and_initialize(self, dataset_config: DisjointTimeBasedConfig, display_config_details: Optional[Literal["text", "diagram"]] = "text", workers: int | Literal["config"] = "config") -> None:
         """
         Initialize training set, validation est, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig].
 
@@ -172,7 +172,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                                              test_workers: int | Literal["config"] = "config",
                                              init_workers: int | Literal["config"] = "config",
                                              workers: int | Literal["config"] = "config",
-                                             display_config_details: bool = False):
+                                             display_config_details: Optional[Literal["text", "diagram"]] = None):
         """Used for updating selected configurations set in config.
 
         Set parameter to `config` to keep it as it is config.

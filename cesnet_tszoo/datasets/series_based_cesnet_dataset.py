@@ -110,7 +110,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         self.logger.info("Dataset is series-based. Use cesnet_tszoo.configs.SeriesBasedConfig")
 
-    def set_dataset_config_and_initialize(self, dataset_config: SeriesBasedConfig, display_config_details: bool = True, workers: int | Literal["config"] = "config") -> None:
+    def set_dataset_config_and_initialize(self, dataset_config: SeriesBasedConfig, display_config_details: Optional[Literal["text", "diagram"]] = "text", workers: int | Literal["config"] = "config") -> None:
         """
         Initialize training set, validation est, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig].
 
@@ -150,7 +150,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                              all_workers: int | Literal["config"] = "config",
                                              init_workers: int | Literal["config"] = "config",
                                              workers: int | Literal["config"] = "config",
-                                             display_config_details: bool = False):
+                                             display_config_details: Optional[Literal["text", "diagram"]] = None):
         """Used for updating selected configurations set in config.
 
         Set parameter to `config` to keep it as it is config.
