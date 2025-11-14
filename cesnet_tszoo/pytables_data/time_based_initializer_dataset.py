@@ -216,7 +216,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
 
     def _handle_per_series_custom_handler(self, handler_holder: PerSeriesCustomHandlerHolder, should_fit: bool, can_train_apply: bool, can_val_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
         if should_fit:
-            handler_holder.fit(data[:len(self.init_config.train_time_period())], idx)
+            handler_holder.fit(data[:len(self.init_config.train_time_period)], idx)
 
         if can_train_apply or can_val_apply:
             start = 0 if can_train_apply else len(self.init_config.train_time_period)
