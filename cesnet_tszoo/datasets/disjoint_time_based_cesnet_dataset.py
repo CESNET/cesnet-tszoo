@@ -450,7 +450,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         is_first_cycle = True
 
-        ts_ids_ignore = np.zeros_like(self.dataset_config.train_ts_row_ranges, dtype=np.bool)
         ts_ids_to_take = []
 
         groups = self.dataset_config._get_train_preprocess_init_order_groups()
@@ -458,7 +457,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             ts_ids_to_take = []
             self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(groups))
 
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, ts_ids_ignore, SplitType.TRAIN, group)
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group)
             init_dataset = DisjointTimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
             sampler = SequentialSampler(init_dataset)
@@ -468,9 +467,6 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                 init_dataset.pytables_worker_init()
 
             for ts_id, data in enumerate(tqdm(dataloader, total=len(init_config.ts_row_ranges))):
-
-                if ts_ids_ignore[ts_id]:
-                    continue
 
                 init_dataset_return: InitDatasetReturn = data[0]
 
@@ -501,15 +497,12 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
                 if len(ts_ids_to_take) == 0:
                     raise ValueError("No valid time series left in train set after applying nan_threshold.")
 
-                ts_ids_ignore = np.ones_like(self.dataset_config.train_ts_row_ranges, dtype=np.bool)
-                ts_ids_ignore[ts_ids_to_take] = False
-                self.logger.debug("invalid ts_ids flagged: %s time series left.", len(ts_ids_to_take))
+                self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[ts_ids_to_take]
+                self.dataset_config.train_ts = self.dataset_config.train_ts[ts_ids_to_take]
+                self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
+                self.logger.debug("invalid ts_ids removed: %s time series left.", len(ts_ids_to_take))
 
                 is_first_cycle = False
-
-        self.dataset_config.train_ts_row_ranges = self.dataset_config.train_ts_row_ranges[ts_ids_to_take]
-        self.dataset_config.train_ts = self.dataset_config.train_ts[ts_ids_to_take]
-        self.dataset_config._update_preprocess_order_supported_ids(self.dataset_config.train_preprocess_order, ts_ids_to_take)
 
     def __initialize_config_for_non_fit_sets(self, init_config: DisjointTimeDatasetInitConfig, workers: int, set_name: str) -> np.ndarray:
         """Initializes config for provided time series without fitting. """

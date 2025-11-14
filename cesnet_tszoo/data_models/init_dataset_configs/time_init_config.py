@@ -18,12 +18,13 @@ class TimeDatasetInitConfig(DatasetInitConfig):
         self.val_time_period = None
         self.test_time_period = None
         self.all_time_period = None
+        self.ts_ids_ignore = ts_ids_ignore
 
         self.train_preprocess_order_group = deepcopy(train_group)
         self.val_preprocess_order_group = deepcopy(val_group)
         self.test_preprocess_order_group = deepcopy(test_group)
 
-        super().__init__(config, ts_ids_ignore, None)
+        super().__init__(config, None)
 
         if self.all_time_period is None:
             for temp_time_period in [self.train_time_period, self.val_time_period, self.test_time_period]:
