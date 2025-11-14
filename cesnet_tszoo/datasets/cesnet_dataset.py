@@ -1107,9 +1107,19 @@ Dataset details:
             print(self.dataset_config)
         elif display_type == DisplayType.DIAGRAM:
             steps = self.dataset_config._get_summary_steps()
-            css_utils.display_summary_diagram(steps)
+            return css_utils.display_summary_diagram(steps)
         else:
             raise NotImplementedError()
+
+    def save_summary_diagram_as_html(self, path: str):
+        if self.dataset_config is None or not self.dataset_config.is_initialized:
+            raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to save summary diagram.")
+
+        steps = self.dataset_config._get_summary_steps()
+        html = css_utils.get_summary_diagram(steps)
+
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
 
     def get_feature_names(self) -> list[str]:
         """Returns a list of all available feature names in the dataset. """

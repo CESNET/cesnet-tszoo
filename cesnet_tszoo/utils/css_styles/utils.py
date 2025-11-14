@@ -75,7 +75,7 @@ class SummaryDiagramStep:
         return body
 
 
-def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
+def get_summary_diagram(steps: list[SummaryDiagramStep]) -> str:
     styles = __get_css_styles("summary_diagram")
 
     fallback_msg = (
@@ -95,5 +95,12 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
 
     html.append("</div>")
     html = "".join(html)
+
+    return html
+
+
+def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
+
+    html = get_summary_diagram(steps)
 
     display(HTML(html))
