@@ -76,7 +76,7 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
         " HTML representation is unable to render."
     )
 
-    html = [styles, f'<div class="text-fallback">{fallback_msg}</div>', '<div class="pipe-container" style="display:none;>', '<div class="pipe-title">Preprocessing sequence</div>']
+    html = [styles, "<div>", f'<div class="text-fallback">{fallback_msg}</div>', '<div class="pipe-container" hidden>', '<div class="pipe-title">Preprocessing sequence</div>']
 
     for i, step in enumerate(steps):
         html.append(step.get_css_body())
@@ -84,6 +84,7 @@ def display_summary_diagram(steps: list[SummaryDiagramStep]) -> None:
         if i < len(steps) - 1:
             html.append('<div class="pipe-connector"></div>')
 
+    html.append("</div>")
     html.append("</div>")
     html = "".join(html)
 
