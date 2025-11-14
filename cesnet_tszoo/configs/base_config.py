@@ -552,7 +552,7 @@ class DatasetConfig(ABC):
                       css_utils.StepAttribute("Aggregation", self.aggregation),
                       css_utils.StepAttribute("Source", self.source_type)]
 
-        return css_utils.SummaryDiagramStep("Get from dataset", attributes)
+        return css_utils.SummaryDiagramStep("Load from dataset", attributes)
 
     @abstractmethod
     def _get_summary_filter_time_series(self) -> css_utils.SummaryDiagramStep:
@@ -571,6 +571,7 @@ class DatasetConfig(ABC):
 
         for preprocess_type, train_pr, val_pr, test_pr, all_pr in list(zip(self.preprocess_order, self.train_preprocess_order, self.val_preprocess_order, self.test_preprocess_order, self.all_preprocess_order)):
             preprocess_title = None
+            preprocess_type_name = None
             is_per_time_series = train_pr.is_inner_preprocess
             target_sets = []
             requires_fitting = False
@@ -588,32 +589,43 @@ class DatasetConfig(ABC):
                 continue
 
             if train_pr.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
-                preprocess_title = self.anomaly_handler_factory.anomaly_handler_type.__name__
+                preprocess_title = "Handle anomalies"
+                preprocess_type_name = self.anomaly_handler_factory.anomaly_handler_type.__name__
 
                 if self.anomaly_handler_factory.is_empty_factory:
                     continue
 
             elif train_pr.preprocess_type == PreprocessType.FILLING_GAPS:
-                preprocess_title = f"{self.filler_factory.filler_type.__name__}"
-                steps.append(css_utils.SummaryDiagramStep("Pre-filling with default values", [css_utils.StepAttribute("Default values", self.default_values)]))
+                preprocess_title = "Handle missing values"
+                preprocess_type_name = f"{self.filler_factory.filler_type.__name__}"
+
+                steps.append(css_utils.SummaryDiagramStep("Pre-fill with default values", [css_utils.StepAttribute("Default values", self.default_values)]))
 
                 if self.filler_factory.is_empty_factory:
                     continue
 
             elif train_pr.preprocess_type == PreprocessType.TRANSFORMING:
-                preprocess_title = self.transformer_factory.transformer_type.__name__
+                preprocess_title = "Apply transformer"
+                preprocess_type_name = self.transformer_factory.transformer_type.__name__
+
                 if self.transformer_factory.is_empty_factory:
                     continue
 
                 is_per_time_series = self.create_transformer_per_time_series
             elif train_pr.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
-                preprocess_title = preprocess_type.__name__
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
             elif train_pr.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
-                preprocess_title = preprocess_type.__name__
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
             elif train_pr.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
-                preprocess_title = preprocess_type.__name__
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
 
-            step = css_utils.SummaryDiagramStep(preprocess_title, [css_utils.StepAttribute("Requires fitting", requires_fitting), css_utils.StepAttribute("Is per time series", is_per_time_series), css_utils.StepAttribute("Target sets", target_sets)])
+            step = css_utils.SummaryDiagramStep(preprocess_title, [css_utils.StepAttribute("Type", preprocess_type_name),
+                                                                   css_utils.StepAttribute("Requires fitting", requires_fitting),
+                                                                   css_utils.StepAttribute("Is per time series", is_per_time_series),
+                                                                   css_utils.StepAttribute("Target sets", target_sets)])
             steps.append(step)
 
         return steps
