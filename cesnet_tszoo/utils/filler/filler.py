@@ -21,14 +21,11 @@ class Filler(ABC):
 
                 self.last_values = None
 
-            def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs) -> None:
-                if len(missing_indices) > 0 and missing_indices[0] == 0 and self.last_values is not None:
-                    batch_values[0] = self.last_values
-                    missing_indices = missing_indices[1:]
+            def fill(self, batch_values: np.ndarray, missing_mask: np.ndarray, **kwargs) -> None:
+                if self.last_values is not None and np.any(missing_mask[0]):
+                    batch_values[0, missing_mask[0]] = self.last_values[missing_mask[0]]
 
-                mask = np.zeros_like(batch_values, dtype=bool)
-                mask[missing_indices] = True
-                mask = mask.T
+                mask = missing_mask.T
 
                 idx = np.where(~mask, np.arange(mask.shape[1]), 0)
                 np.maximum.accumulate(idx, axis=1, out=idx)
@@ -38,7 +35,7 @@ class Filler(ABC):
                 batch_values = batch_values.T
 
                 self.last_values = np.copy(batch_values[-1])
-    """
+            """
 
     def __init__(self, features):
         super().__init__()
