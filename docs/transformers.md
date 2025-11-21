@@ -9,7 +9,7 @@ The `cesnet_tszoo` package comes with multiple built-in transformers. Not all of
 It is possible to create and use own transformers. It is recommended to use built-in base class [`Transformer`][cesnet_tszoo.utils.transformer.transformer.Transformer].
 
 ## Using transformers on time-based dataset
-Related config parameters in [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig]:
+Related config parameters in [`TimeBasedConfig`][cesnet_tszoo.references.configs.TimeBasedConfig]:
 
 - `transform_with`:  Defines the transformer(s) to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
 - `create_transformer_per_time_series`: Whether to create a separate transformer for each time series or create one transformer for all time series.
@@ -20,7 +20,7 @@ Related config parameters in [`TimeBasedConfig`][cesnet_tszoo.configs.time_based
 
 ## Using transformers on disjoint-time-based dataset
 Disjoint-time-based dataset always uses `create_transformer_per_time_series` = `False`.
-Related config parameters in [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig]:
+Related config parameters in [`DisjointTimeBasedConfig`][cesnet_tszoo.references.configs.DisjointTimeBasedConfig]:
 
 - `transform_with`:  Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer.
 - `partial_fit_initialized_transformers`: Whether to `partial_fit` already fitted transformer.
@@ -30,7 +30,7 @@ Related config parameters in [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.di
 
 ## Using transformers on series-based dataset
 Series-based dataset always uses `create_transformer_per_time_series` = `False`.
-Related config parameters in [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig]:
+Related config parameters in [`SeriesBasedConfig`][cesnet_tszoo.references.configs.SeriesBasedConfig]:
 
 - `transform_with`:  Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer.
 - `partial_fit_initialized_transformers`: Whether to `partial_fit` already fitted transformer.

@@ -2,7 +2,7 @@
 
 The `cesnet_tszoo` package supports adding custom way of handling data. It is possible to create custom handler for per time series, custom handler for all time series by subclassing from [`custom handlers`][cesnet_tszoo.utils.custom_handler.custom_handler]. They also support applying only to specified sets.
 
-Related config parameters in [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig], [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig] and [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig]:
+Related config parameters in [`TimeBasedConfig`][cesnet_tszoo.references.configs.TimeBasedConfig], [`DisjointTimeBasedConfig`][cesnet_tszoo.references.configs.DisjointTimeBasedConfig] and [`SeriesBasedConfig`][cesnet_tszoo.references.configs.SeriesBasedConfig]:
 
 - `preprocess_order`: Mainly used for changing order of preprocesses. Is also used as a way of adding custom handlers by adding type their type between the preprocesses.
 

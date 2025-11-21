@@ -59,7 +59,7 @@ config = TimeBasedConfig(
     features_to_take=["n_flows", "n_packets"])
 dataset.set_dataset_config_and_initialize(config)
 ```
-Time-based datasets are configured with [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig].
+Time-based datasets are configured with [`TimeBasedConfig`][cesnet_tszoo.references.configs.TimeBasedConfig].
 Can load data using:
 
 - [`get_train_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_dataloader], [`get_val_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_dataloader], [`get_test_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader], [`get_all_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_all_dataloader]
@@ -85,7 +85,7 @@ config = TimeBasedConfig(
     features_to_take=["n_flows", "n_packets"])
 dataset.set_dataset_config_and_initialize(config)
 ```
-Disjoint-time-based datasets are configured with [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig].
+Disjoint-time-based datasets are configured with [`DisjointTimeBasedConfig`][cesnet_tszoo.references.configs.DisjointTimeBasedConfig].
 Can load data using:
 
 - [`get_train_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader], [`get_val_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_dataloader], [`get_test_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader]
@@ -109,7 +109,7 @@ config = SeriesBasedConfig(
     features_to_take=["n_flows", "n_packets"])
 dataset.set_dataset_config_and_initialize(config)
 ```
-Series-based datasets are configured with [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig].
+Series-based datasets are configured with [`SeriesBasedConfig`][cesnet_tszoo.references.configs.SeriesBasedConfig].
 Can load data using:
 
 - [`get_train_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader], [`get_val_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader], [`get_test_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader], [`get_all_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_all_dataloader]

@@ -2,7 +2,7 @@
 
 The `cesnet_tszoo` package supports various ways of using anomaly handlers to handle anomalies. Anomaly handlers can be created and fitted (on train set) when initializing dataset with config and each time series has its own anomaly handler instance.
 
-Possible config parameters in [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig], [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig] and [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig]:
+Possible config parameters in [`TimeBasedConfig`][cesnet_tszoo.references.configs.TimeBasedConfig], [`DisjointTimeBasedConfig`][cesnet_tszoo.references.configs.DisjointTimeBasedConfig] and [`SeriesBasedConfig`][cesnet_tszoo.references.configs.SeriesBasedConfig]:
 
 - `handle_anomalies_with`:  Defines the anomaly handlers to handle anomalies in the train set. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or pass a type of custom anomaly handler.
 

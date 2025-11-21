@@ -27,8 +27,6 @@ class DatasetConfig(ABC):
     """
     Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as TimeBasedConfig, DisjointTimeBasedConfig or SeriesBasedConfig.
 
-    For available configuration options, refer to [here][cesnet_tszoo.configs.base_config.DatasetConfig--configuration-options].
-
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
         used_val_workers: Tracks the number of validation workers in use. Helps determine if the validation dataloader should be recreated based on worker changes.
@@ -40,10 +38,6 @@ class DatasetConfig(ABC):
         transformer_factory: Represents factory used to create passed Transformer type.
         can_fit_fillers: Whether fillers in this config, can be fitted.
         logger: Logger for displaying information. 
-
-    The following attributes are initialized when CesnetDataset.set_dataset_config_and_initialize is called:
-
-    Attributes:
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
@@ -61,10 +55,6 @@ class DatasetConfig(ABC):
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
         version: Version of cesnet-tszoo this config was made in.
         export_update_needed: Whether config was updated to newer version and should be exported.
-
-    # Configuration options
-
-    Attributes:
         features_to_take: Defines which features are used.
         default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
         train_batch_size: Batch size for the train dataloader, when window size is None.
@@ -72,9 +62,6 @@ class DatasetConfig(ABC):
         test_batch_size: Batch size for the test dataloader, when window size is None.
         all_batch_size: Batch size for the all dataloader, when window size is None.
         preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of PerSeriesCustomHandler, AllSeriesCustomHandler or NoFitCustomHandler.
-        fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.filler.Filler] base class.
-        transform_with: Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
-        handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler.
         partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
         include_time: If `True`, time data is included in the returned values.
         include_ts_id: If `True`, time series IDs are included in the returned values.
@@ -88,7 +75,8 @@ class DatasetConfig(ABC):
         create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
         dataset_type: Type of a dataset this config is used for.
         train_dataloader_order: Defines the order of data returned by the training dataloader.
-        random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
+        random_state: Fixes randomness for reproducibility during configuration and dataset initialization.            
+
     """
 
     def __init__(self,
@@ -118,6 +106,33 @@ class DatasetConfig(ABC):
                  random_state: int | None,
                  can_fit_fillers: bool,
                  logger: logging.Logger):
+        """           
+        Parameters:
+            features_to_take: Defines which features are used.
+            default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
+            train_batch_size: Batch size for the train dataloader, when window size is None.
+            val_batch_size: Batch size for the validation dataloader, when window size is None.
+            test_batch_size: Batch size for the test dataloader, when window size is None.
+            all_batch_size: Batch size for the all dataloader, when window size is None.
+            preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of PerSeriesCustomHandler, AllSeriesCustomHandler or NoFitCustomHandler.
+            fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum `FillerType` for built-in filler or pass a type of custom filler that must derive from `Filler` base class.
+            transform_with: Defines the transformer to transform the dataset. Can pass enum `TransformerType` for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
+            handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum `AnomalyHandlerType` for built-in anomaly handler or a type of custom anomaly handler.
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
+            include_time: If `True`, time data is included in the returned values.
+            include_ts_id: If `True`, time series IDs are included in the returned values.
+            time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values.
+            train_workers: Number of workers for loading training data. `0` means that the data will be loaded in the main process.
+            val_workers: Number of workers for loading validation data. `0` means that the data will be loaded in the main process.
+            test_workers: Number of workers for loading test data. `0` means that the data will be loaded in the main process.
+            all_workers: Number of workers for loading all data. `0` means that the data will be loaded in the main process.
+            init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process.
+            nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately.
+            create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
+            dataset_type: Type of a dataset this config is used for.
+            train_dataloader_order: Defines the order of data returned by the training dataloader.
+            random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
+        """
 
         self.used_train_workers = None
         self.used_val_workers = None

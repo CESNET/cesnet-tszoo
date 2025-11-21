@@ -22,33 +22,7 @@ from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 
 class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
     """
-    This class is used for configuring the [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset].
-
-    Used to configure the following:
-
-    - Train, validation, test, all sets (time period, sizes, features, window size)
-    - Handling missing values (default values, [`fillers`][cesnet_tszoo.utils.filler.filler])
-    - Handling anomalies ([`anomaly handlers`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler])
-    - Data transformation using [`transformers`][cesnet_tszoo.utils.transformer.transformer]
-    - Applying custom handlers ([`custom handlers`][cesnet_tszoo.utils.custom_handler.custom_handler])
-    - Changing order of preprocesses
-    - Dataloader options (train/val/test/all/init workers, batch sizes)
-    - Plotting
-
-    **Important Notes:**
-
-    - Custom fillers must inherit from the [`fillers`][cesnet_tszoo.utils.filler.filler.Filler] base class.
-    - Custom anomaly handlers must inherit from the [`anomaly handlers`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler] base class.
-    - Selected anomaly handler is only used for train set.
-    - It is recommended to use the [`transformers`][cesnet_tszoo.utils.transformer.transformer.Transformer] base class, though this is not mandatory as long as it meets the required methods.
-        - If a transformer is already initialized and `partial_fit_initialized_transformers` is `False`, the transformer does not require `partial_fit`.
-        - Otherwise, the transformer must support `partial_fit`.
-        - Transformers must implement `transform` method.
-        - Both `partial_fit` and `transform` methods must accept an input of type `np.ndarray` with shape `(times, features)`.
-    - Custom handlers must be derived from one of the built-in [`custom handler`][cesnet_tszoo.utils.custom_handler.custom_handler] classes 
-    - `train_time_period`, `val_time_period`, `test_time_period` can overlap, but they should keep order of `train_time_period` < `val_time_period` < `test_time_period`
-
-    For available configuration options, refer to [here][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig--configuration-options].
+    This class is used for configuring the `DisjointTimeBasedCesnetDataset`.
 
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
@@ -62,10 +36,6 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         transformer_factory: Represents factory used to create passed Transformer type.
         can_fit_fillers: Whether fillers in this config, can be fitted.        
         logger: Logger for displaying information.     
-
-    The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize] is called:
-
-    Attributes:
         display_train_time_period: Used to display the configured value of `train_time_period`.
         display_val_time_period: Used to display the configured value of `val_time_period`.
         display_test_time_period: Used to display the configured value of `test_time_period`.
@@ -75,7 +45,6 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         all_time_period: Contains total used time period.
         all_ts: Contains all used time series.
         all_ts_row_ranges: Contains time series IDs in all set with their respective time ID ranges.
-
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
@@ -91,40 +60,33 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
         version: Version of cesnet-tszoo this config was made in.
         export_update_needed: Whether config was updated to newer version and should be exported.     
-
-    # Configuration options
-
-    Attributes:
         train_ts: Defines which time series IDs are used in the training set. Can be a list of IDs, or an integer/float to specify a random selection. An `int` specifies the number of random time series, and a `float` specifies the proportion of available time series. 
                   `int` and `float` must be greater than 0, and a float should be smaller or equal to 1.0. Using `int` or `float` guarantees that no time series from other sets will be used. Must be used with `train_time_period`.
         val_ts: Defines which time series IDs are used in the validation set. Same as `train_ts` but for the validation set. Must be used with `val_time_period`.
         test_ts: Defines which time series IDs are used in the test set. Same as `train_ts` but for the test set. Must be used with `test_time_period`.
-        train_time_period: Defines the time period for training set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. Must be used with `train_ts`. `Default: None`
-        val_time_period: Defines the time period for validation set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. Must be used with `val_ts`. `Default: None`
-        test_time_period: Defines the time period for test set. Can be a range of time IDs or a tuple of datetime objects. Must be used with `test_ts`. `Default: None`
-        features_to_take: Defines which features are used. `Default: "all"`                  
-        default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature. `Default: "default"`
-        sliding_window_size: Number of times in one window. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows. `Default: None`
-        sliding_window_prediction_size: Number of times to predict from sliding_window_size. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows. `Default: None`
-        sliding_window_step: Number of times to move by after each window. `Default: 1`
-        set_shared_size: How much times should time periods share. Order of sharing is training set < validation set < test set. Only in effect if sets share less values than set_shared_size. Use float value for percentage of total times or int for count. `Default: 0`
-        train_batch_size: Batch size for the train dataloader. Affects number of returned times in one batch. `Default: 32`
-        val_batch_size: Batch size for the validation dataloader. Affects number of returned times in one batch. `Default: 64`
-        test_batch_size: Batch size for the test dataloader. Affects number of returned times in one batch. `Default: 128`
-        preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of [`AllSeriesCustomHandler`][cesnet_tszoo.utils.custom_handler.AllSeriesCustomHandler] or [`NoFitCustomHandler`][cesnet_tszoo.utils.custom_handler.NoFitCustomHandler]. `Default: ["handling_anomalies", "filling_gaps", "transforming"]`
-        fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.filler.Filler] base class. `Default: None`        
-        transform_with: Defines the transformer used to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s). `Default: None`
-        handle_anomalies_with: Defines the anomaly handler for handling anomalies in the train set. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler. `Default: None`
-        partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Default: False`
-        include_time: If `True`, time data is included in the returned values. `Default: True`
-        include_ts_id: If `True`, time series IDs are included in the returned values. `Default: True`
-        time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values. `Default: TimeFormat.ID_TIME`
-        train_workers: Number of workers for loading training data. `0` means that the data will be loaded in the main process. `Default: 4`
-        val_workers: Number of workers for loading validation data. `0` means that the data will be loaded in the main process. `Default: 3`
-        test_workers: Number of workers for loading test. `0` means that the data will be loaded in the main process. `Default: 2`
-        init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process. `Default: 4`
-        nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately. `Default: 1.0`
-        random_state: Fixes randomness for reproducibility during configuration and dataset initialization. `Default: None`                   
+        train_time_period: Defines the time period for training set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. Must be used with `train_ts`.
+        val_time_period: Defines the time period for validation set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. Must be used with `val_ts`.
+        test_time_period: Defines the time period for test set. Can be a range of time IDs or a tuple of datetime objects. Must be used with `test_ts`.
+        features_to_take: Defines which features are used.           
+        default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
+        sliding_window_size: Number of times in one window. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows.
+        sliding_window_prediction_size: Number of times to predict from sliding_window_size. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows.
+        sliding_window_step: Number of times to move by after each window.
+        set_shared_size: How much times should time periods share. Order of sharing is training set < validation set < test set. Only in effect if sets share less values than set_shared_size. Use float value for percentage of total times or int for count.
+        train_batch_size: Batch size for the train dataloader. Affects number of returned times in one batch.
+        val_batch_size: Batch size for the validation dataloader. Affects number of returned times in one batch.
+        test_batch_size: Batch size for the test dataloader. Affects number of returned times in one batch.
+        preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of `AllSeriesCustomHandler` or `NoFitCustomHandler`.
+        partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
+        include_time: If `True`, time data is included in the returned values.
+        include_ts_id: If `True`, time series IDs are included in the returned values.
+        time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values.
+        train_workers: Number of workers for loading training data. `0` means that the data will be loaded in the main process.
+        val_workers: Number of workers for loading validation data. `0` means that the data will be loaded in the main process.
+        test_workers: Number of workers for loading test. `0` means that the data will be loaded in the main process.
+        init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process.
+        nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately.
+        random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
     """
 
     def __init__(self,
@@ -157,6 +119,39 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
                  init_workers: int = 4,
                  nan_threshold: float = 1.0,
                  random_state: int | None = None):
+        """
+        Parameters:
+            train_ts: Defines which time series IDs are used in the training set. Can be a list of IDs, or an integer/float to specify a random selection. An `int` specifies the number of random time series, and a `float` specifies the proportion of available time series. 
+                    `int` and `float` must be greater than 0, and a float should be smaller or equal to 1.0. Using `int` or `float` guarantees that no time series from other sets will be used. Must be used with `train_time_period`.
+            val_ts: Defines which time series IDs are used in the validation set. Same as `train_ts` but for the validation set. Must be used with `val_time_period`.
+            test_ts: Defines which time series IDs are used in the test set. Same as `train_ts` but for the test set. Must be used with `test_time_period`.
+            train_time_period: Defines the time period for training set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. Must be used with `train_ts`. `Default: None`
+            val_time_period: Defines the time period for validation set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. Must be used with `val_ts`. `Default: None`
+            test_time_period: Defines the time period for test set. Can be a range of time IDs or a tuple of datetime objects. Must be used with `test_ts`. `Default: None`
+            features_to_take: Defines which features are used. `Default: "all"`                  
+            default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature. `Default: "default"`
+            sliding_window_size: Number of times in one window. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows. `Default: None`
+            sliding_window_prediction_size: Number of times to predict from sliding_window_size. Impacts dataloader behavior. Batch sizes affects how much data will be cached for creating windows. `Default: None`
+            sliding_window_step: Number of times to move by after each window. `Default: 1`
+            set_shared_size: How much times should time periods share. Order of sharing is training set < validation set < test set. Only in effect if sets share less values than set_shared_size. Use float value for percentage of total times or int for count. `Default: 0`
+            train_batch_size: Batch size for the train dataloader. Affects number of returned times in one batch. `Default: 32`
+            val_batch_size: Batch size for the validation dataloader. Affects number of returned times in one batch. `Default: 64`
+            test_batch_size: Batch size for the test dataloader. Affects number of returned times in one batch. `Default: 128`
+            preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of `AllSeriesCustomHandler` or `NoFitCustomHandler`. `Default: ["handling_anomalies", "filling_gaps", "transforming"]`
+            fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum `FillerType` for built-in filler or pass a type of custom filler that must derive from `Filler` base class. `Default: None`        
+            transform_with: Defines the transformer used to transform the dataset. Can pass enum `TransformerType`, pass a type of custom transformer or instance of already fitted transformer(s). `Default: None`
+            handle_anomalies_with: Defines the anomaly handler for handling anomalies in the train set. Can pass enum `AnomalyHandlerType` for built-in anomaly handler or a type of custom anomaly handler. `Default: None`
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Default: False`
+            include_time: If `True`, time data is included in the returned values. `Default: True`
+            include_ts_id: If `True`, time series IDs are included in the returned values. `Default: True`
+            time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values. `Default: TimeFormat.ID_TIME`
+            train_workers: Number of workers for loading training data. `0` means that the data will be loaded in the main process. `Default: 4`
+            val_workers: Number of workers for loading validation data. `0` means that the data will be loaded in the main process. `Default: 3`
+            test_workers: Number of workers for loading test. `0` means that the data will be loaded in the main process. `Default: 2`
+            init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process. `Default: 4`
+            nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately. `Default: 1.0`
+            random_state: Fixes randomness for reproducibility during configuration and dataset initialization. `Default: None`   
+        """
 
         self.logger = logging.getLogger("disjoint_time_based_config")
 
