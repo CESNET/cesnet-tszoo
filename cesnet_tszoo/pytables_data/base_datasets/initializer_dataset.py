@@ -92,14 +92,8 @@ class InitializerDataset(Dataset, ABC):
         filtered_rows[ID_TIME_COLUMN_NAME] = filtered_rows[ID_TIME_COLUMN_NAME] - first_time_index
         existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
-        # missing_values_mask = np.ones(len(self.init_config.time_period), dtype=bool)
-        # missing_values_mask[existing_indices] = 0
-        # xmissing_indices = np.nonzero(missing_values_mask)[0]
-
         if len(filtered_rows) > 0:
             result[existing_indices, :] = rf.structured_to_unstructured(filtered_rows[:][self.init_config.features_to_take], dtype=np.float64, copy=False)
-
-        # result, count_values = self._handle_data_preprocess(result, missing_indices, missing_values_mask, idx)
 
         return result, existing_indices
 

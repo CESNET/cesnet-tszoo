@@ -59,7 +59,7 @@ class BaseDataset(Dataset, ABC):
         self.database.close()
 
     def load_data_from_table(self, ts_row_ranges_to_take: np.ndarray, time_indices_to_take: np.ndarray) -> np.ndarray:
-        """Return data from table. Missing values are filled with `fillers_to_use` and `default_values`. Anomalies are handled by `anomaly_handlers_to_use`. """
+        """Return data from table. Used preprocess will be applied. """
 
         result = np.full((len(ts_row_ranges_to_take), len(time_indices_to_take), len(self.load_config.features_to_take)), fill_value=np.nan, dtype=np.float64)
 

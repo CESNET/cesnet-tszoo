@@ -12,7 +12,7 @@ from cesnet_tszoo.utils.enums import PreprocessType
 
 
 class TimeBasedInitializerDataset(InitializerDataset):
-    """Used for time based datasets. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
+    """Used for time based datasets. Used applying/fitting preprocesses and validating thresholds."""
 
     def __init__(self, database_path: str, table_data_path: str, init_config: TimeDatasetInitConfig):
         self.init_config = init_config
