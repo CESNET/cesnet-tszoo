@@ -150,4 +150,4 @@ val_dataframe = dataset.get_val_df()
 test_dataframe = dataset.get_test_df()
 ```
 
-Whether loaded dataset is series-based or time-based depends on the benchmark. What can be loaded corresponds to previous datasets.
+Loaded dataset can be one of the above.
