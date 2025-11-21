@@ -13,8 +13,7 @@ class CesnetDatabase(ABC):
     """
     Base class for cesnet databases. This class should **not** be used directly. Use it as base for adding new databases.
 
-    Derived databases are used by calling class method [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] which will create a new dataset instance of [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] 
-    or [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset]. Check them for more info about how to use them.
+    Derived databases are used by calling class method [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] which will create a new instance of specified CesnetDataset. Check them for more info about how to use them.
 
     **Intended usage:**
 

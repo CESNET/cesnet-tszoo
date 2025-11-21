@@ -22,7 +22,6 @@ from cesnet_tszoo.data_models.load_dataset_configs.disjoint_time_load_config imp
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
 from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
-import cesnet_tszoo.utils.css_styles.utils as css_utils
 
 
 @dataclass
@@ -70,6 +69,11 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
         imported_annotations_time_identifier: Identifier for the imported annotations of type `AnnotationType.ID_TIME`.
         imported_annotations_both_identifier: Identifier for the imported annotations of type `AnnotationType.BOTH`.  
+        dataloader_factory: Factory used to create DisjointTimeBasedDataloader.  
+        train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
+        val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
+        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.       
+        related_to: Name of file with relevant results to used benchmark.       
 
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize] is called.
 
@@ -77,10 +81,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         dataset_config: Configuration of the dataset.
         train_dataset: Training set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
         val_dataset: Validation set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.
-        test_dataset: Test set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.  
-        train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
-        val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
-        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.              
+        test_dataset: Test set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.          
     """
 
     dataset_config: Optional[DisjointTimeBasedConfig] = field(default=None, init=False)
@@ -106,7 +107,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
     def set_dataset_config_and_initialize(self, dataset_config: DisjointTimeBasedConfig, display_config_details: Optional[Literal["text", "diagram"]] = "text", workers: int | Literal["config"] = "config") -> None:
         """
-        Initialize training set, validation est, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig].
+        Initialize training set, validation set, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig].
 
         The following configuration attributes are used during initialization:
 
@@ -118,7 +119,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         Parameters:
             dataset_config: Desired configuration of the dataset.
-            display_config_details: Flag indicating whether to display the configuration values after initialization. `Default: True`  
+            display_config_details: Flag indicating whether and how to display the configuration values after initialization. `Default: text`  
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
 
@@ -129,7 +130,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
     def apply_transformer(self, transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
                           partial_fit_initialized_transformers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
-        """Used for updating transformer and relevenat configurations set in config.
+        """Used for updating transformer and relevant configurations set in config.
 
         Set parameter to `config` to keep it as it is config.
 
@@ -190,7 +191,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         | `set_shared_size`                       | How much times should time periods share. Order of sharing is training set < validation set < test set. Refer to relevant config for details.   |           
         | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
         | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
-        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |                
+        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |   
+        | `preprocess_order`                      | Used order of when preprocesses are applied. Can be also used to add/remove custom handlers.                                                    |                
         | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
         | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               |
         | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the train set.                                                                               |             
@@ -208,7 +210,8 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             set_shared_size: How much times should time periods share. `Defaults: config`.            
             train_batch_size: Number of samples per batch for train set. `Defaults: config`.
             val_batch_size: Number of samples per batch for val set. `Defaults: config`.
-            test_batch_size: Number of samples per batch for test set. `Defaults: config`.                 
+            test_batch_size: Number of samples per batch for test set. `Defaults: config`. 
+            preprocess_order: Used order of when preprocesses are applied. Can be also used to add/remove custom handlers. `Defaults: config`.                  
             fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`. 
             handle_anomalies_with: Defines the anomaly handler to handle anomalies in the train set. `Defaults: config`. 

@@ -20,12 +20,12 @@ import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 import cesnet_tszoo.utils.custom_handler.factory as custom_handler_factories
 from cesnet_tszoo.utils.custom_handler.factory import PerSeriesCustomHandlerFactory, AllSeriesCustomHandlerFactory, NoFitCustomHandlerFactory
 import cesnet_tszoo.utils.css_styles.utils as css_utils
-from cesnet_tszoo.data_models.holders import FillingHolder, AnomalyHandlerHolder, TransformerHolder, PerSeriesCustomHandlerHolder, NoFitCustomHandlerHolder, AllSeriesCustomHandlerHolder
+from cesnet_tszoo.data_models.holders import FillingHolder, AnomalyHandlerHolder, TransformerHolder, AllSeriesCustomHandlerHolder
 
 
 class DatasetConfig(ABC):
     """
-    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] or [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig].
+    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as TimeBasedConfig, DisjointTimeBasedConfig or SeriesBasedConfig.
 
     For available configuration options, refer to [here][cesnet_tszoo.configs.base_config.DatasetConfig--configuration-options].
 
@@ -35,9 +35,13 @@ class DatasetConfig(ABC):
         used_test_workers: Tracks the number of test workers in use. Helps determine if the test dataloader should be recreated based on worker changes.
         used_all_workers: Tracks the total number of all workers in use. Helps determine if the all dataloader should be recreated based on worker changes.
         import_identifier: Tracks the name of the config upon import. None if not imported.
+        filler_factory: Represents factory used to create passed Filler type.
+        anomaly_handler_factory: Represents factory used to create passed Anomaly Handler type.
+        transformer_factory: Represents factory used to create passed Transformer type.
+        can_fit_fillers: Whether fillers in this config, can be fitted.
         logger: Logger for displaying information. 
 
-    The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize] is called:
+    The following attributes are initialized when CesnetDataset.set_dataset_config_and_initialize is called:
 
     Attributes:
         aggregation: The aggregation period used for the data.
@@ -49,13 +53,11 @@ class DatasetConfig(ABC):
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
-        used_singular_all_time_series: Currently used singular all set time series for dataloader.        
-        transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
-        train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
-        val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
-        test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
-        all_fillers: Fillers used for the all set. `None` if no filler is used or all set is not used.
-        anomaly_handlers: Prepared anomaly handlers for fitting/handling anomalies. Can be array of anomaly handlers or `None`.
+        used_singular_all_time_series: Currently used singular all set time series for dataloader.       
+        train_preprocess_order: All preprocesses used for train set. 
+        val_preprocess_order: All preprocesses used for val set. 
+        test_preprocess_order: All preprocesses used for test set. 
+        all_preprocess_order: All preprocesses used for all set. 
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
         version: Version of cesnet-tszoo this config was made in.
         export_update_needed: Whether config was updated to newer version and should be exported.
@@ -69,7 +71,8 @@ class DatasetConfig(ABC):
         val_batch_size: Batch size for the validation dataloader, when window size is None.
         test_batch_size: Batch size for the test dataloader, when window size is None.
         all_batch_size: Batch size for the all dataloader, when window size is None.
-        fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.Filler] base class.
+        preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of PerSeriesCustomHandler, AllSeriesCustomHandler or NoFitCustomHandler.
+        fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.filler.Filler] base class.
         transform_with: Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
         handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler.
         partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
@@ -121,6 +124,10 @@ class DatasetConfig(ABC):
         self.used_test_workers = None
         self.used_all_workers = None
         self.import_identifier = None
+        self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
+        self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
+        self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
+        self.can_fit_fillers = can_fit_fillers
         self.logger = logger
 
         self.aggregation = None
@@ -133,6 +140,10 @@ class DatasetConfig(ABC):
         self.used_singular_val_time_series = None
         self.used_singular_test_time_series = None
         self.used_singular_all_time_series = None
+        self.train_preprocess_order: list[PreprocessNote] = []
+        self.val_preprocess_order: list[PreprocessNote] = []
+        self.test_preprocess_order: list[PreprocessNote] = []
+        self.all_preprocess_order: list[PreprocessNote] = []
         self.is_initialized = False
         self.version = version.current_version
         self.export_update_needed = False
@@ -143,6 +154,7 @@ class DatasetConfig(ABC):
         self.val_batch_size = val_batch_size
         self.test_batch_size = test_batch_size
         self.all_batch_size = all_batch_size
+        self.preprocess_order = list(preprocess_order)
         self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
         self.include_time = include_time
         self.include_ts_id = include_ts_id
@@ -157,16 +169,6 @@ class DatasetConfig(ABC):
         self.dataset_type = dataset_type
         self.train_dataloader_order = train_dataloader_order
         self.random_state = random_state
-
-        self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
-        self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
-        self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
-        self.preprocess_order = list(preprocess_order)
-        self.train_preprocess_order: list[PreprocessNote] = []
-        self.val_preprocess_order: list[PreprocessNote] = []
-        self.test_preprocess_order: list[PreprocessNote] = []
-        self.all_preprocess_order: list[PreprocessNote] = []
-        self.can_fit_fillers = can_fit_fillers
 
         if self.random_state is not None:
             np.random.seed(random_state)
@@ -447,7 +449,7 @@ class DatasetConfig(ABC):
         self.default_values = temp_default_values
 
     def _set_preprocess_order(self):
-        """Validates and converts preprocess order to their enum variant. """
+        """Validates and converts preprocess order to their enum variant. Also initializes preprocess_orders for all sets. """
 
         for i, order in enumerate(self.preprocess_order):
             if isinstance(order, (str, PreprocessType)):

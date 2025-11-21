@@ -61,60 +61,60 @@ class FillerType(Enum):
     """Built-in filler types. """
 
     MEAN_FILLER = "mean_filler"
-    """Represents filler [`MeanFiller`][cesnet_tszoo.utils.filler.MeanFiller]. Equivalent to literal `mean_filler`. """
+    """Represents filler [`MeanFiller`][cesnet_tszoo.utils.filler.filler.MeanFiller]. Equivalent to literal `mean_filler`. """
 
     FORWARD_FILLER = "forward_filler"
-    """Represents filler [`ForwardFiller`][cesnet_tszoo.utils.filler.ForwardFiller]. Equivalent to literal `forward_filler`. """
+    """Represents filler [`ForwardFiller`][cesnet_tszoo.utils.filler.filler.ForwardFiller]. Equivalent to literal `forward_filler`. """
 
     LINEAR_INTERPOLATION_FILLER = "linear_interpolation_filler"
-    """Represents filler [`LinearInterpolationFiller`][cesnet_tszoo.utils.filler.LinearInterpolationFiller]. Equivalent to literal `linear_interpolation_filler`. """
+    """Represents filler [`LinearInterpolationFiller`][cesnet_tszoo.utils.filler.filler.LinearInterpolationFiller]. Equivalent to literal `linear_interpolation_filler`. """
 
     NO_FILLER = "no_filler"
-    """Represents filler [`NoFiller`][cesnet_tszoo.utils.filler.LinearInterpolationFiller]. Equivalent to literal `no_filler`. """
+    """Represents filler [`NoFiller`][cesnet_tszoo.utils.filler.filler.LinearInterpolationFiller]. Equivalent to literal `no_filler`. """
 
 
 class TransformerType(Enum):
     """Built-in transformer types. """
 
     MIN_MAX_SCALER = "min_max_scaler"
-    """Represents transformer [`MinMaxScaler`][cesnet_tszoo.utils.transformer.MinMaxScaler]. Equivalent to literal `min_max_scaler`. """
+    """Represents transformer [`MinMaxScaler`][cesnet_tszoo.utils.transformer.transformer.MinMaxScaler]. Equivalent to literal `min_max_scaler`. """
 
     STANDARD_SCALER = "standard_scaler"
-    """Represents transformer [`StandardScaler`][cesnet_tszoo.utils.transformer.StandardScaler]. Equivalent to literal `standard_scaler`. """
+    """Represents transformer [`StandardScaler`][cesnet_tszoo.utils.transformer.transformer.StandardScaler]. Equivalent to literal `standard_scaler`. """
 
     MAX_ABS_SCALER = "max_abs_scaler"
-    """Represents transformer [`MaxAbsScaler`][cesnet_tszoo.utils.transformer.MaxAbsScaler]. Equivalent to literal `max_abs_scaler`. """
+    """Represents transformer [`MaxAbsScaler`][cesnet_tszoo.utils.transformer.transformer.MaxAbsScaler]. Equivalent to literal `max_abs_scaler`. """
 
     LOG_TRANSFORMER = "log_transformer"
-    """Represents transformer [`LogTransformer`][cesnet_tszoo.utils.transformer.LogTransformer]. Equivalent to literal `log_transformer`. """
+    """Represents transformer [`LogTransformer`][cesnet_tszoo.utils.transformer.transformer.LogTransformer]. Equivalent to literal `log_transformer`. """
 
     L2_NORMALIZER = "l2_normalizer"
-    """Represents transformer [`L2Normalizer`][cesnet_tszoo.utils.transformer.L2Normalizer]. Equivalent to literal `l2_normalizer`. """
+    """Represents transformer [`L2Normalizer`][cesnet_tszoo.utils.transformer.transformer.L2Normalizer]. Equivalent to literal `l2_normalizer`. """
 
     ROBUST_SCALER = "robust_scaler"
-    """Represents transformer [`RobustScaler`][cesnet_tszoo.utils.transformer.LogTransformer]. Equivalent to literal `robust_scaler`. """
+    """Represents transformer [`RobustScaler`][cesnet_tszoo.utils.transformer.transformer.LogTransformer]. Equivalent to literal `robust_scaler`. """
 
     POWER_TRANSFORMER = "power_transformer"
-    """Represents transformer [`PowerTransformer`][cesnet_tszoo.utils.transformer.PowerTransformer]. Equivalent to literal `power_transformer`. """
+    """Represents transformer [`PowerTransformer`][cesnet_tszoo.utils.transformer.transformer.PowerTransformer]. Equivalent to literal `power_transformer`. """
 
     QUANTILE_TRANSFORMER = "quantile_transformer"
-    """Represents transformer [`QuantileTransformer`][cesnet_tszoo.utils.transformer.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """
+    """Represents transformer [`QuantileTransformer`][cesnet_tszoo.utils.transformer.transformer.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """
 
     NO_TRANSFORMER = "no_transformer"
-    """Represents transformer [`NoTransformer`][cesnet_tszoo.utils.transformer.NoTransformer]. Equivalent to literal `no_transformer`. """
+    """Represents transformer [`NoTransformer`][cesnet_tszoo.utils.transformer.transformer.NoTransformer]. Equivalent to literal `no_transformer`. """
 
 
 class AnomalyHandlerType(Enum):
     """Built-in anomaly handler types. """
 
     Z_SCORE = "z-score"
-    """Represents anomaly handler [`ZScore`][cesnet_tszoo.utils.anomaly_handler.ZScore]. Equivalent to literal `z-score`. """
+    """Represents anomaly handler [`ZScore`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.ZScore]. Equivalent to literal `z-score`. """
 
     INTERQUARTILE_RANGE = "interquartile_range"
-    """Represents anomaly handler [`InterquartileRange`][cesnet_tszoo.utils.anomaly_handler.InterquartileRange]. Equivalent to literal `interquartile_range`. """
+    """Represents anomaly handler [`InterquartileRange`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.InterquartileRange]. Equivalent to literal `interquartile_range`. """
 
     NO_ANOMALY_HANDLER = "no_anomaly_handler"
-    """Represents anomaly handler [`NoAnomalyHandler`][cesnet_tszoo.utils.anomaly_handler.NoAnomalyHandler]. Equivalent to literal `no_anomaly_handler`. """
+    """Represents anomaly handler [`NoAnomalyHandler`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.NoAnomalyHandler]. Equivalent to literal `no_anomaly_handler`. """
 
 
 class TimeFormat(Enum):
@@ -216,25 +216,25 @@ class ScalerType(Enum):
     """Obsolete, dont use. Only for backward compatibility. """
 
     MIN_MAX_SCALER = "min_max_scaler"
-    """Represents transformer [`MinMaxScaler`][cesnet_tszoo.utils.transformer.MinMaxScaler]. Equivalent to literal `min_max_scaler`. """
+    """Represents transformer [`MinMaxScaler`][cesnet_tszoo.utils.transformer.transformer.MinMaxScaler]. Equivalent to literal `min_max_scaler`. """
 
     STANDARD_SCALER = "standard_scaler"
-    """Represents transformer [`StandardScaler`][cesnet_tszoo.utils.transformer.StandardScaler]. Equivalent to literal `standard_scaler`. """
+    """Represents transformer [`StandardScaler`][cesnet_tszoo.utils.transformer.transformer.StandardScaler]. Equivalent to literal `standard_scaler`. """
 
     MAX_ABS_SCALER = "max_abs_scaler"
-    """Represents transformer [`MaxAbsScaler`][cesnet_tszoo.utils.transformer.MaxAbsScaler]. Equivalent to literal `max_abs_scaler`. """
+    """Represents transformer [`MaxAbsScaler`][cesnet_tszoo.utils.transformer.transformer.MaxAbsScaler]. Equivalent to literal `max_abs_scaler`. """
 
     LOG_TRANSFORMER = "log_transformer"
-    """Represents transformer [`LogTransformer`][cesnet_tszoo.utils.transformer.LogTransformer]. Equivalent to literal `log_transformer`. """
+    """Represents transformer [`LogTransformer`][cesnet_tszoo.utils.transformer.transformer.LogTransformer]. Equivalent to literal `log_transformer`. """
 
     L2_NORMALIZER = "l2_normalizer"
-    """Represents transformer [`L2Normalizer`][cesnet_tszoo.utils.transformer.L2Normalizer]. Equivalent to literal `l2_normalizer`. """
+    """Represents transformer [`L2Normalizer`][cesnet_tszoo.utils.transformer.transformer.L2Normalizer]. Equivalent to literal `l2_normalizer`. """
 
     ROBUST_SCALER = "robust_scaler"
-    """Represents transformer [`RobustScaler`][cesnet_tszoo.utils.transformer.LogTransformer]. Equivalent to literal `robust_scaler`. """
+    """Represents transformer [`RobustScaler`][cesnet_tszoo.utils.transformer.transformer.LogTransformer]. Equivalent to literal `robust_scaler`. """
 
     POWER_TRANSFORMER = "power_transformer"
-    """Represents transformer [`PowerTransformer`][cesnet_tszoo.utils.transformer.PowerTransformer]. Equivalent to literal `power_transformer`. """
+    """Represents transformer [`PowerTransformer`][cesnet_tszoo.utils.transformer.transformer.PowerTransformer]. Equivalent to literal `power_transformer`. """
 
     QUANTILE_TRANSFORMER = "quantile_transformer"
-    """Represents transformer [`QuantileTransformer`][cesnet_tszoo.utils.transformer.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """
+    """Represents transformer [`QuantileTransformer`][cesnet_tszoo.utils.transformer.transformer.QuantileTransformer]. Equivalent to literal `quantile_transformer`. """

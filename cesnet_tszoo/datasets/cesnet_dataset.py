@@ -77,7 +77,13 @@ class CesnetDataset(ABC):
         logger: Logger for displaying information.  
         imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
         imported_annotations_time_identifier: Identifier for the imported annotations of type `AnnotationType.ID_TIME`.
-        imported_annotations_both_identifier: Identifier for the imported annotations of type `AnnotationType.BOTH`.            
+        imported_annotations_both_identifier: Identifier for the imported annotations of type `AnnotationType.BOTH`.     
+        dataloader_factory: Factory used to create Dataloaders for specific CesnetDataset subclass.  
+        train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
+        val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
+        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.
+        all_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set.          
+        related_to: Name of file with relevant results to used benchmark.
 
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize] is called:
     Attributes:
@@ -86,10 +92,6 @@ class CesnetDataset(ABC):
         val_dataset: Validation set as a `BaseDataset` instance wrapping the PyTables database.
         test_dataset: Test set as a `BaseDataset` instance wrapping the PyTables database.
         all_dataset: All set as a `BaseDataset` instance wrapping the PyTables database.
-        train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
-        val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
-        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.
-        all_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set.
     """
 
     metadata: DatasetMetadata
@@ -101,12 +103,11 @@ class CesnetDataset(ABC):
     test_dataset: Optional[Dataset] = field(default=None, init=False)
     all_dataset: Optional[Dataset] = field(default=None, init=False)
 
+    dataloader_factory: Optional[DataloaderFactory] = field(default=None, init=False)
     train_dataloader: Optional[DataLoader] = field(default=None, init=False)
     val_dataloader: Optional[DataLoader] = field(default=None, init=False)
     test_dataloader: Optional[DataLoader] = field(default=None, init=False)
     all_dataloader: Optional[DataLoader] = field(default=None, init=False)
-
-    dataloader_factory: Optional[DataloaderFactory] = field(default=None, init=False)
 
     dataset_type: Optional[DatasetType] = field(default=None, init=False)
 
@@ -140,7 +141,7 @@ class CesnetDataset(ABC):
 
         Parameters:
             dataset_config: Desired configuration of the dataset.
-            display_config_details: Flag indicating whether to display the configuration values after initialization. `Default: True`  
+            display_config_details: Flag indicating whether and how to display the configuration values after initialization. `Default: text`  
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
         if display_config_details is not None:
@@ -1009,6 +1010,22 @@ class CesnetDataset(ABC):
         self.logger.info("Default values has been changed successfuly.")
 
     def set_preprocess_order(self, preprocess_order: list[str, type] | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
+        """Used for updating preprocess_order set in config.
+
+        Set parameter to `config` to keep it as it is config.
+
+        If exception is thrown during set, no changes are made.
+
+        Affects following configuration. 
+
+        | Dataset config                     | Description                                                                                                              |
+        | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+        | `preprocess_order`                 | Used order of when preprocesses are applied. Can be also used to add/remove custom handlers.                             |     
+
+        Parameters:
+            preprocess_order: Used order of when preprocesses are applied. Can be also used to add/remove custom handlers. `Defaults: config`.  
+            workers: How many workers to use when setting new default values. `Defaults: config`.      
+        """
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized, use set_dataset_config_and_initialize() before updating preprocess order.")
 
@@ -1097,6 +1114,11 @@ Dataset details:
         print(to_display)
 
     def summary(self, display_type: Literal["text", "diagram"]) -> None:
+        """Used to display used configurations. Can be displayed as interactive html diagram or text summary.
+
+        Parameters:
+            display_type: Whether configuration should be display as diagram or text summary.
+        """
 
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to display summary.")
@@ -1112,6 +1134,8 @@ Dataset details:
             raise NotImplementedError()
 
     def save_summary_diagram_as_html(self, path: str):
+        """Saves diagram produces from `summary` method as html file to specified path. """
+
         if self.dataset_config is None or not self.dataset_config.is_initialized:
             raise ValueError("Dataset is not initialized. Please call set_dataset_config_and_initialize() before attempting to save summary diagram.")
 

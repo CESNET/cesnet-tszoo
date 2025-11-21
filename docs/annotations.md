@@ -3,7 +3,7 @@
 This tutorial will look at how to use annotations.
 
 !!! info "Note"
-    For every option and more detailed examples refer to Jupyter notebook [`annotations`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/annotations.ipynb).
+    For every option and more detailed examples refer to Jupyter notebook [`annotations`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/annotations.ipynb).
 
 ## Basics
 

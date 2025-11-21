@@ -14,7 +14,7 @@ class SplittedDataset(Dataset):
     """
     Works as a wrapper around multiple/single TimeBasedDataset. 
 
-    Splits ts_row_ranges based on workers and for each worker creates a TimeBasedDataset with subset of values from ts_row_ranges. Then each worker gets a dataloader.
+    Splits ts_row_ranges based on workers and for each worker creates a SplitDataset with subset of values from ts_row_ranges. Then each worker gets a dataloader.
     """
 
     def __init__(self, database_path: str, table_data_path: str, load_config: LoadConfig, workers: int):
