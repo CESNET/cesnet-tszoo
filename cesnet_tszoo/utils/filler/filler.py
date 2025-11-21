@@ -50,8 +50,7 @@ class Filler(ABC):
 
         Parameters:
             batch_values: Data of a single time series with shape `(times, features)` excluding IDs.
-            existing_indices: Indices in `batch_values` where data is not missing.
-            missing_indices: Indices in `batch_values` where data is missing.
+            missing_mask: Mask of missing values in batch_values.
             kwargs: first_next_existing_values, first_next_existing_values_distance, default_values 
         """
         ...
