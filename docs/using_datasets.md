@@ -5,7 +5,7 @@ Trying to use dataset you do not have downloaded, will automatically download it
 
 There currently two supported datasets:
 
-- [CESNET-TimeSeries24][cesnet_timeseries24_page] - supports time-based and series-based
+- [CESNET-TimeSeries24][cesnet_timeseries24_page] - supports all approaches
 - [CESNET-AGG23][cesnet_agg23_page] - supports only time-based
 
 ## Using dataset from benchmark

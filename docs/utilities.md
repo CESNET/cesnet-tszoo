@@ -5,7 +5,7 @@ This tutorial will look at various utilities.
 Only time-based will be used, because all methods work almost the same way for other dataset types.
 
 !!! info "Note"
-    For every option and more detailed examples refer to Jupyter notebook [`utilities`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/utilities.ipynb)
+    For every option and more detailed examples refer to Jupyter notebook [`utilities`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/utilities.ipynb)
 
 ## Setting logger
 CESNET TS-Zoo uses logger, but without setting config below, it wont log anything.
@@ -78,7 +78,10 @@ time_based_dataset.get_data_about_set(about=SplitType.TRAIN)
 ```
 
 ## Displaying config details
-Can be called when calling `set_dataset_config_and_initialize` or after it with `display_config`
+- There are two ways to display preprocessing details, with text or diagram. 
+- Can be called when calling `set_dataset_config_and_initialize` or after it with `summary`
+
+### Displaying as a text
 
 ```python
 
@@ -87,10 +90,34 @@ from cesnet_tszoo.configs import TimeBasedConfig
 config = TimeBasedConfig(20)
 
 # Can be called during initialization
-time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details=True)
+time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details="text")
 
 # Or after it
-time_based_dataset.display_config()
+time_based_dataset.summary(display_type="text")
+
+```
+
+### Displaying as a html interactive diagram
+
+```python
+
+from cesnet_tszoo.configs import TimeBasedConfig   
+
+config = TimeBasedConfig(20)
+
+# Can be called during initialization
+time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details="diagram")
+
+# Or after it
+time_based_dataset.summary(display_type="diagram")
+
+```
+
+You can also save the display diagram as html file
+
+```python
+
+time_based_dataset.save_summary_diagram_as_html(path="/diagram.html")
 
 ```
 

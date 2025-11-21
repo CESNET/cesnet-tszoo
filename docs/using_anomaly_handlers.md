@@ -5,7 +5,7 @@ This tutorial will look at some configuration options for using anomaly handlers
 Only time-based will be used, because all methods work almost the same way for other dataset types.
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`using_anomaly_handlers`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/using_anomaly_handlers.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`using_anomaly_handlers`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/using_anomaly_handlers.ipynb)
 
 Relevant configuration values:
 
@@ -14,7 +14,6 @@ Relevant configuration values:
 ## Anomaly handlers
 - Anomaly handlers are implemented as class.
     - You can create your own or use built-in one.
-- Anomaly handler is applied before `default_values` and fillers took care of missing values.
 - Every time series in train set has its own anomaly handler instance.
 - Anomaly handler must implement `fit` and `transform_anomalies`.
 - To use anomaly handler, train set must be implemented.
@@ -22,7 +21,7 @@ Relevant configuration values:
 - You can change used anomaly handler later with `update_dataset_config_and_initialize` or `apply_anomaly_handler`.
 
 ### Built-in
-To see all built-in anomaly handlers refer to [`Anomaly handlers`][cesnet_tszoo.utils.anomaly_handler.ZScore].
+To see all built-in anomaly handlers refer to [`Anomaly handlers`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.ZScore].
 
 ```python
 
@@ -47,10 +46,10 @@ time_based_dataset.apply_anomaly_handler(handle_anomalies_with=AnomalyHandlerTyp
 
 ```
 
-#### Custom
+### Custom
 You can create your own custom anomaly handler. It is recommended to derive from 'AnomalyHandler' base class. 
 
-To check AnomalyHandler base class refer to [`AnomalyHandler`][cesnet_tszoo.utils.anomaly_handler.AnomalyHandler]
+To check AnomalyHandler base class refer to [`AnomalyHandler`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler]
 
 ```python
 
@@ -92,5 +91,32 @@ Or later with:
 time_based_dataset.update_dataset_config_and_initialize(handle_anomalies_with=CustomAnomalyHandler, workers=0)
 # Or
 time_based_dataset.apply_anomaly_handler(handle_anomalies_with=CustomAnomalyHandler, workers=0)
+
+```
+
+### Changing when is anomaly handler applied
+- You can change when is a anomaly handler applied with `preprocess_order` parameter
+
+```python
+
+from cesnet_tszoo.utils.utils.enums import AnomalyHandlerType
+from cesnet_tszoo.configs import TimeBasedConfig
+
+config = TimeBasedConfig(ts_ids=500, train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
+                           handle_anomalies_with=AnomalyHandlerType.Z_SCORE, nan_threshold=0.5, random_state=1500, preprocess_order=["handling_anomalies", "filling_gaps", "transforming"])
+                                                                        
+# Call on dataset to use created config
+time_based_dataset.set_dataset_config_and_initialize(config)
+
+```
+
+Or later with:
+
+
+```python
+
+time_based_dataset.update_dataset_config_and_initialize(preprocess_order=["filling_gaps", "handling_anomalies", "transforming"], workers=0)
+# Or
+time_based_dataset.set_preprocess_order(preprocess_order=["filling_gaps", "handling_anomalies", "transforming"], workers=0)
 
 ```

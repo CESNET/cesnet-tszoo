@@ -1,7 +1,7 @@
 # Getting started
 
 !!! info "Note"
-    For a demonstration of usage for simple forecasting refer to Jupyter notebook [`simple_forecasting`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/simple_forecasting.ipynb)
+    For a demonstration of usage for simple forecasting refer to Jupyter notebook [`simple_forecasting`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/simple_forecasting.ipynb)
 
 ## Code snippets
 

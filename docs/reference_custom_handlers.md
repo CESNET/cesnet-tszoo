@@ -1,4 +1,4 @@
-::: cesnet_tszoo.utils.anomaly_handler.anomaly_handler
+::: cesnet_tszoo.utils.custom_handler.custom_handler
     options:
         heading_level: 2
         show_root_heading: true
@@ -7,8 +7,7 @@
         separate_signature: true
         inherited_members: true
         members:
-        - AnomalyHandler
-        - ZScore
-        - InterquartileRange       
-        - NoAnomalyHandler 
+        - PerSeriesCustomHandler
+        - AllSeriesCustomHandler        
+        - NoFitCustomHandler
         filters: ["!^_"]

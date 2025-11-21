@@ -37,10 +37,10 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
 
     **Important Notes:**
 
-    - Custom fillers must inherit from the [`fillers`][cesnet_tszoo.utils.filler.Filler] base class.
-    - Custom anomaly handlers must inherit from the [`anomaly handlers`][cesnet_tszoo.utils.anomaly_handler.AnomalyHandler] base class.
+    - Custom fillers must inherit from the [`fillers`][cesnet_tszoo.utils.filler.filler.Filler] base class.
+    - Custom anomaly handlers must inherit from the [`anomaly handlers`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler] base class.
     - Selected anomaly handler is only used for train set.
-    - It is recommended to use the [`transformers`][cesnet_tszoo.utils.transformer.Transformer] base class, though this is not mandatory as long as it meets the required methods.
+    - It is recommended to use the [`transformers`][cesnet_tszoo.utils.transformer.transformer.Transformer] base class, though this is not mandatory as long as it meets the required methods.
         - If a transformer is already initialized and `partial_fit_initialized_transformers` is `False`, the transformer does not require `partial_fit`.
         - Otherwise, the transformer must support `partial_fit`.
         - Transformers must implement `transform` method.
@@ -112,7 +112,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         val_batch_size: Batch size for the validation dataloader. Affects number of returned times in one batch. `Default: 64`
         test_batch_size: Batch size for the test dataloader. Affects number of returned times in one batch. `Default: 128`
         preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of [`AllSeriesCustomHandler`][cesnet_tszoo.utils.custom_handler.AllSeriesCustomHandler] or [`NoFitCustomHandler`][cesnet_tszoo.utils.custom_handler.NoFitCustomHandler]. `Default: ["handling_anomalies", "filling_gaps", "transforming"]`
-        fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.Filler] base class. `Default: None`        
+        fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.filler.Filler] base class. `Default: None`        
         transform_with: Defines the transformer used to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s). `Default: None`
         handle_anomalies_with: Defines the anomaly handler for handling anomalies in the train set. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler. `Default: None`
         partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Default: False`

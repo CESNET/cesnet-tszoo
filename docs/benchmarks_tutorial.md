@@ -5,7 +5,7 @@ This tutorial will look at how to use benchmarks.
 Only time-based will be used, because all methods work almost the same way for other dataset types.
 
 !!! info "Note"
-    For every option and more detailed examples refer to Jupyter notebook [`benchmarks`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/benchmarks.ipynb)
+    For every option and more detailed examples refer to Jupyter notebook [`benchmarks`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/benchmarks.ipynb)
 
 Benchmarks can consist of various parts:
 
