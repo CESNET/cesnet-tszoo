@@ -14,6 +14,8 @@ The goal of `cesnet-tszoo` project is to provide time series datasets with usefu
   - Data can be split into train/val/test sets. Split can be done by time series or by time periods.
   - Transforming of data with built-in transformers or with custom transformers.
   - Handling missing values built-in fillers or with custom fillers.
+  - Applying custom handlers.
+  - Changing order of when are preprocesses applied/fitted  
 - Creation and import of benchmarks, for easy reproducibility of experiments.
 - Creation and import of annotations. Can create annotations for specific time series, specific time or specific time in specific time series.
 
@@ -59,6 +61,8 @@ If you use CESNET TS-Zoo, please cite our paper:
 ```
 
 ## Examples
+
+For detailed examples refer to [`Tutorial notebooks`](https://github.com/CESNET/cesnet-ts-zoo-tutorials)
 
 ### Initialize dataset to create train, validation, and test dataframes
 
