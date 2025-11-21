@@ -121,7 +121,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
                  nan_threshold: float = 1.0,
                  random_state: int | None = None):
         """
-        Attributes:
+        Parameters:
             ts_ids: Defines which time series IDs are used for train/val/test/all. Can be a list of IDs, or an integer/float to specify a random selection. An `int` specifies the number of random time series, and a `float` specifies the proportion of available time series. 
                     `int` and `float` must be greater than 0, and a float should be smaller or equal to 1.0.  
             train_time_period: Defines the time period for training set. Can be a range of time IDs or a tuple of datetime objects. Float value is equivalent to percentage of available times with offseted position from previous used set. `Default: None`
