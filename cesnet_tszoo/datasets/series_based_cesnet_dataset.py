@@ -23,7 +23,6 @@ from cesnet_tszoo.data_models.load_dataset_configs.series_load_config import Ser
 import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
-import cesnet_tszoo.utils.css_styles.utils as css_utils
 
 
 @dataclass
@@ -72,6 +71,12 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
         imported_annotations_time_identifier: Identifier for the imported annotations of type `AnnotationType.ID_TIME`.
         imported_annotations_both_identifier: Identifier for the imported annotations of type `AnnotationType.BOTH`.   
+        dataloader_factory: Factory used to create SeriesBasedDataloader.          
+        train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
+        val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
+        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.
+        all_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set.      
+        related_to: Name of file with relevant results to used benchmark.                 
 
     The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize] is called.
 
@@ -80,11 +85,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         train_dataset: Training set as a `SeriesBasedDataset` instance wrapping the PyTables database.
         val_dataset: Validation set as a `SeriesBasedDataset` instance wrapping the PyTables database.
         test_dataset: Test set as a `SeriesBasedDataset` instance wrapping the PyTables database.
-        all_dataset: All set as a `SeriesBasedDataset` instance wrapping the PyTables database.        
-        train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
-        val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
-        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.
-        all_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set.          
+        all_dataset: All set as a `SeriesBasedDataset` instance wrapping the PyTables database.               
     """
 
     dataset_config: Optional[SeriesBasedConfig] = field(default=None, init=False)
@@ -112,7 +113,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
     def set_dataset_config_and_initialize(self, dataset_config: SeriesBasedConfig, display_config_details: Optional[Literal["text", "diagram"]] = "text", workers: int | Literal["config"] = "config") -> None:
         """
-        Initialize training set, validation est, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig].
+        Initialize training set, validation set, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig].
 
         The following configuration attributes are used during initialization:
 
@@ -124,7 +125,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
         Parameters:
             dataset_config: Desired configuration of the dataset.
-            display_config_details: Flag indicating whether to display the configuration values after initialization. `Default: True`  
+            display_config_details: Flag indicating whether and how to display the configuration values after initialization. `Default: text`  
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
 
@@ -165,7 +166,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
         | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
         | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
-        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |                   
+        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |   
+        | `preprocess_order`                      | Used order of when preprocesses are applied. Can be also used to add/remove custom handlers.                                                    |                            
         | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
         | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               | 
         | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the train set.                                                                               |     
@@ -181,7 +183,8 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             train_batch_size: Number of samples per batch for train set. `Defaults: config`.
             val_batch_size: Number of samples per batch for val set. `Defaults: config`.
             test_batch_size: Number of samples per batch for test set. `Defaults: config`.
-            all_batch_size: Number of samples per batch for all set. `Defaults: config`.                    
+            all_batch_size: Number of samples per batch for all set. `Defaults: config`.      
+            preprocess_order: Used order of when preprocesses are applied. Can be also used to add/remove custom handlers. `Defaults: config`.               
             fill_missing_with: Defines how to fill missing values in the dataset. `Defaults: config`. 
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  
             handle_anomalies_with: Defines the anomaly handler to handle anomalies in the train set. `Defaults: config`.
