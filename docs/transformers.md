@@ -20,7 +20,7 @@ Related config parameters in [`TimeBasedConfig`](reference_time_based_config.md#
 
 ## Using transformers on disjoint-time-based dataset
 Disjoint-time-based dataset always uses `create_transformer_per_time_series` = `False`.
-Related config parameters in [`DisjointTimeBasedConfig`][references.DisjointTimeBasedConfig]:
+Related config parameters in [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig):
 
 - `transform_with`:  Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer.
 - `partial_fit_initialized_transformers`: Whether to `partial_fit` already fitted transformer.
@@ -30,7 +30,7 @@ Related config parameters in [`DisjointTimeBasedConfig`][references.DisjointTime
 
 ## Using transformers on series-based dataset
 Series-based dataset always uses `create_transformer_per_time_series` = `False`.
-Related config parameters in [`SeriesBasedConfig`][references.SeriesBasedConfig]:
+Related config parameters in [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig):
 
 - `transform_with`:  Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer.
 - `partial_fit_initialized_transformers`: Whether to `partial_fit` already fitted transformer.

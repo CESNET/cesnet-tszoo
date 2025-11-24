@@ -1,7 +1,7 @@
 # Fillers {#cesnet_tszoo.general.fillers}
 
 The `cesnet_tszoo` package supports various ways of dealing with missing data in dataset.
-Possible config parameters in [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig), [`DisjointTimeBasedConfig`][references.DisjointTimeBasedConfig] and [`SeriesBasedConfig`][references.SeriesBasedConfig]:
+Possible config parameters in [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig), [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) and [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig):
 
 - `fill_missing_with`: Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.Filler) base class.
 - `default_values`: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
