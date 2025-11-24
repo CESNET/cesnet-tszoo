@@ -50,6 +50,8 @@ nav:
     - Utilities: utilities.md
   - Reference:
     - CesnetDatabase: reference_cesnet_database.md
+    - CesnetDataset: reference_cesnet_dataset.md
+    - DatasetConfig: reference_dataset_config.md
     - Benchmark: reference_benchmarks.md
     - Time-based:
       - TimeBasedCesnetDataset: reference_time_based_cesnet_dataset.md
