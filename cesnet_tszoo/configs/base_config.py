@@ -25,7 +25,7 @@ from cesnet_tszoo.data_models.holders import FillingHolder, AnomalyHandlerHolder
 
 class DatasetConfig(ABC):
     """
-    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as TimeBasedConfig, DisjointTimeBasedConfig or SeriesBasedConfig.
+    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig), [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) or [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig).
 
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
@@ -193,7 +193,7 @@ class DatasetConfig(ABC):
         self.logger.info("Quick validation succeeded.")
 
     def _validate_construction(self) -> None:
-        """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.base_config.DatasetConfig._dataset_init]. """
+        """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`](reference_dataset_config.md#references.DatasetConfig._dataset_init). """
 
         # Ensuring boolean flags are correctly set
         assert isinstance(self.partial_fit_initialized_transformers, bool), "partial_fit_initialized_transformers must be a boolean value."
@@ -657,12 +657,12 @@ class DatasetConfig(ABC):
 
     @abstractmethod
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:
-        """Validates and filters the input time periods based on the dataset and aggregation. This typically calls [`_process_time_period`][cesnet_tszoo.configs.base_config.DatasetConfig._process_time_period] for each time period. """
+        """Validates and filters the input time periods based on the dataset and aggregation. This typically calls [`_process_time_period`](reference_dataset_config.md#references.DatasetConfig._process_time_period) for each time period. """
         ...
 
     @abstractmethod
     def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
-        """Validates and filters the input time series IDs based on the `dataset` and `source_type`. This typically calls [`_process_ts_ids`][cesnet_tszoo.configs.base_config.DatasetConfig._process_ts_ids] for each time series ID filter. """
+        """Validates and filters the input time series IDs based on the `dataset` and `source_type`. This typically calls [`_process_ts_ids`](reference_dataset_config.md#references.DatasetConfig._process_ts_ids) for each time series ID filter. """
         ...
 
     @abstractmethod
