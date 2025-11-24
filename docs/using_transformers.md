@@ -4,7 +4,7 @@ This tutorial will look at some configuration options for using transformers.
 
 Each dataset type will have its own part because of multiple differences of available configuration values.
 
-## [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset] dataset
+## [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset) dataset
 
 !!! info "Note"
     For every configuration and more detailed examples refer to Jupyter notebook [`time_based_using_transformers`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/time_based_using_transformers.ipynb)
@@ -28,7 +28,7 @@ Relevant configuration values:
 - You can change used transformer later with `update_dataset_config_and_initialize` or `apply_transformer`.
 
 #### Built-in
-To see all built-in transformers refer to [`Transformers`][cesnet_tszoo.utils.transformer.transformer.LogTransformer].
+To see all built-in transformers refer to [`Transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.LogTransformer).
 
 ```python
 
@@ -56,7 +56,7 @@ time_based_dataset.apply_transformer(transform_with=TransformerType.MIN_MAX_SCAL
 #### Custom
 You can create your own custom transformer. It is recommended to derive from 'Transformer' base class. 
 
-To check Transformer base class refer to [`Transformer`][cesnet_tszoo.utils.transformer.transformer.Transformer]
+To check Transformer base class refer to [`Transformer`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer)
 
 ```python
 
@@ -185,7 +185,7 @@ time_based_dataset.set_preprocess_order(preprocess_order=["handling_anomalies", 
 ```
 
 
-## [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] dataset
+## [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset) dataset
 
 !!! info "Note"
     For every configuration and more detailed examples refer to Jupyter notebook [`disjoint_time_based_using_transformers`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/disjoint_time_based_using_transformers.ipynb)
@@ -206,7 +206,7 @@ Relevant configuration values:
 - You can change used transformer later with `update_dataset_config_and_initialize` or `apply_transformer`.
 
 #### Built-in
-To see all built-in transformers refer to [`Transformers`][cesnet_tszoo.utils.transformer.transformer.LogTransformer].
+To see all built-in transformers refer to [`Transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.LogTransformer).
 
 ```python
 
@@ -234,7 +234,7 @@ disjoint_dataset.apply_transformer(transform_with=TransformerType.MIN_MAX_SCALER
 #### Custom
 You can create your own custom transformer. It is recommended to derive from 'Transformer' base class. 
 
-To check Transformer base class refer to [`Transformer`][cesnet_tszoo.utils.transformer.transformer.Transformer]
+To check Transformer base class refer to [`Transformer`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer)
 
 ```python
 
@@ -358,7 +358,7 @@ disjoint_dataset.set_preprocess_order(preprocess_order=["handling_anomalies", "t
 ```
 
 
-## [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] dataset
+## [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) dataset
 
 !!! info "Note"
     For every configuration and more detailed examples refer to Jupyter notebook [`series_based_using_transformers`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/series_based_using_transformers.ipynb)
@@ -379,7 +379,7 @@ Relevant configuration values:
 - You can change used transformer later with `update_dataset_config_and_initialize` or `apply_transformer`.
 
 #### Built-in
-To see all built-in transformers refer to [`Transformers`][cesnet_tszoo.utils.transformer.transformer.LogTransformer].
+To see all built-in transformers refer to [`Transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.LogTransformer).
 
 ```python
 
@@ -407,7 +407,7 @@ series_based_dataset.apply_transformer(transform_with=TransformerType.MIN_MAX_SC
 #### Custom
 You can create your own custom transformer. It is recommended to derive from 'Transformer' base class. 
 
-To check Transformer base class refer to [`Transformer`][cesnet_tszoo.utils.transformer.transformer.Transformer]
+To check Transformer base class refer to [`Transformer`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer)
 
 ```python
 

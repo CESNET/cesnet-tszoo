@@ -21,7 +21,7 @@ Relevant configuration values:
 - You can change used anomaly handler later with `update_dataset_config_and_initialize` or `apply_anomaly_handler`.
 
 ### Built-in
-To see all built-in anomaly handlers refer to [`Anomaly handlers`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.ZScore].
+To see all built-in anomaly handlers refer to [`Anomaly handlers`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler.ZScore).
 
 ```python
 
@@ -49,7 +49,7 @@ time_based_dataset.apply_anomaly_handler(handle_anomalies_with=AnomalyHandlerTyp
 ### Custom
 You can create your own custom anomaly handler. It is recommended to derive from 'AnomalyHandler' base class. 
 
-To check AnomalyHandler base class refer to [`AnomalyHandler`][cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler]
+To check AnomalyHandler base class refer to [`AnomalyHandler`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler)
 
 ```python
 
