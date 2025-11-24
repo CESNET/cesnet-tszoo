@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from numbers import Number
 from abc import ABC, abstractmethod
 import math
@@ -9,7 +9,7 @@ import numpy.typing as npt
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER, MANDATORY_PREPROCESSES_ORDER_ENUM
-from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType, PreprocessType
+from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType, PreprocessType, AgreggationType, SourceType
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
@@ -25,9 +25,7 @@ from cesnet_tszoo.data_models.holders import FillingHolder, AnomalyHandlerHolder
 
 class DatasetConfig(ABC):
     """
-    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as TimeBasedConfig, DisjointTimeBasedConfig or SeriesBasedConfig.
-
-    For available configuration options, refer to [here][cesnet_tszoo.configs.base_config.DatasetConfig--configuration-options].
+    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig), [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) or [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig).
 
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
@@ -40,10 +38,6 @@ class DatasetConfig(ABC):
         transformer_factory: Represents factory used to create passed Transformer type.
         can_fit_fillers: Whether fillers in this config, can be fitted.
         logger: Logger for displaying information. 
-
-    The following attributes are initialized when CesnetDataset.set_dataset_config_and_initialize is called:
-
-    Attributes:
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
@@ -61,10 +55,6 @@ class DatasetConfig(ABC):
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
         version: Version of cesnet-tszoo this config was made in.
         export_update_needed: Whether config was updated to newer version and should be exported.
-
-    # Configuration options
-
-    Attributes:
         features_to_take: Defines which features are used.
         default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
         train_batch_size: Batch size for the train dataloader, when window size is None.
@@ -72,9 +62,6 @@ class DatasetConfig(ABC):
         test_batch_size: Batch size for the test dataloader, when window size is None.
         all_batch_size: Batch size for the all dataloader, when window size is None.
         preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of PerSeriesCustomHandler, AllSeriesCustomHandler or NoFitCustomHandler.
-        fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.filler.Filler] base class.
-        transform_with: Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
-        handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler.
         partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
         include_time: If `True`, time data is included in the returned values.
         include_ts_id: If `True`, time series IDs are included in the returned values.
@@ -88,7 +75,8 @@ class DatasetConfig(ABC):
         create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
         dataset_type: Type of a dataset this config is used for.
         train_dataloader_order: Defines the order of data returned by the training dataloader.
-        random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
+        random_state: Fixes randomness for reproducibility during configuration and dataset initialization.            
+
     """
 
     def __init__(self,
@@ -118,57 +106,84 @@ class DatasetConfig(ABC):
                  random_state: int | None,
                  can_fit_fillers: bool,
                  logger: logging.Logger):
+        """           
+        Parameters:
+            features_to_take: Defines which features are used.
+            default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
+            train_batch_size: Batch size for the train dataloader, when window size is None.
+            val_batch_size: Batch size for the validation dataloader, when window size is None.
+            test_batch_size: Batch size for the test dataloader, when window size is None.
+            all_batch_size: Batch size for the all dataloader, when window size is None.
+            preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of PerSeriesCustomHandler, AllSeriesCustomHandler or NoFitCustomHandler.
+            fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum `FillerType` for built-in filler or pass a type of custom filler that must derive from `Filler` base class.
+            transform_with: Defines the transformer to transform the dataset. Can pass enum `TransformerType` for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
+            handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum `AnomalyHandlerType` for built-in anomaly handler or a type of custom anomaly handler.
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
+            include_time: If `True`, time data is included in the returned values.
+            include_ts_id: If `True`, time series IDs are included in the returned values.
+            time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values.
+            train_workers: Number of workers for loading training data. `0` means that the data will be loaded in the main process.
+            val_workers: Number of workers for loading validation data. `0` means that the data will be loaded in the main process.
+            test_workers: Number of workers for loading test data. `0` means that the data will be loaded in the main process.
+            all_workers: Number of workers for loading all data. `0` means that the data will be loaded in the main process.
+            init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process.
+            nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately.
+            create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
+            dataset_type: Type of a dataset this config is used for.
+            train_dataloader_order: Defines the order of data returned by the training dataloader.
+            random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
+        """
 
-        self.used_train_workers = None
-        self.used_val_workers = None
-        self.used_test_workers = None
-        self.used_all_workers = None
-        self.import_identifier = None
-        self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
-        self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
-        self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
-        self.can_fit_fillers = can_fit_fillers
-        self.logger = logger
+        self.used_train_workers: Optional[int] = None
+        self.used_val_workers: Optional[int] = None
+        self.used_test_workers: Optional[int] = None
+        self.used_all_workers: Optional[int] = None
+        self.import_identifier: Optional[str] = None
+        self.filler_factory: filler_factories.FillerFactory = filler_factories.get_filler_factory(fill_missing_with)
+        self.anomaly_handler_factory: anomaly_handler_factories.AnomalyHandlerFactory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
+        self.transformer_factory: transformer_factories.TransformerFactory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
+        self.can_fit_fillers: bool = can_fit_fillers
+        self.logger: logging.Logger = logger
 
-        self.aggregation = None
-        self.source_type = None
-        self.database_name = None
-        self.features_to_take_without_ids = None
-        self.indices_of_features_to_take_no_ids = None
-        self.ts_id_name = None
-        self.used_singular_train_time_series = None
-        self.used_singular_val_time_series = None
-        self.used_singular_test_time_series = None
-        self.used_singular_all_time_series = None
+        self.aggregation: Optional[AgreggationType] = None
+        self.source_type: Optional[SourceType] = None
+        self.database_name: Optional[str] = None
+        self.features_to_take_without_ids: Optional[np.ndarray] = None
+        self.indices_of_features_to_take_no_ids: Optional[np.ndarray] = None
+        self.ts_id_name: Optional[str] = None
+        self.used_singular_train_time_series: Optional[int] = None
+        self.used_singular_val_time_series: Optional[int] = None
+        self.used_singular_test_time_series: Optional[int] = None
+        self.used_singular_all_time_series: Optional[int] = None
         self.train_preprocess_order: list[PreprocessNote] = []
         self.val_preprocess_order: list[PreprocessNote] = []
         self.test_preprocess_order: list[PreprocessNote] = []
         self.all_preprocess_order: list[PreprocessNote] = []
-        self.is_initialized = False
-        self.version = version.current_version
-        self.export_update_needed = False
+        self.is_initialized: bool = False
+        self.version: str = version.current_version
+        self.export_update_needed: bool = False
 
-        self.features_to_take = features_to_take
-        self.default_values = default_values
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
-        self.test_batch_size = test_batch_size
-        self.all_batch_size = all_batch_size
-        self.preprocess_order = list(preprocess_order)
-        self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
-        self.include_time = include_time
-        self.include_ts_id = include_ts_id
-        self.time_format = time_format
-        self.train_workers = train_workers
-        self.val_workers = val_workers
-        self.test_workers = test_workers
-        self.all_workers = all_workers
-        self.init_workers = init_workers
-        self.nan_threshold = nan_threshold
-        self.create_transformer_per_time_series = create_transformer_per_time_series
-        self.dataset_type = dataset_type
-        self.train_dataloader_order = train_dataloader_order
-        self.random_state = random_state
+        self.features_to_take: list[str] = features_to_take
+        self.default_values: np.ndarray = default_values
+        self.train_batch_size: int = train_batch_size
+        self.val_batch_size: int = val_batch_size
+        self.test_batch_size: int = test_batch_size
+        self.all_batch_size: int = all_batch_size
+        self.preprocess_order: list[PreprocessType] = list(preprocess_order)
+        self.partial_fit_initialized_transformers: bool = partial_fit_initialized_transformers
+        self.include_time: bool = include_time
+        self.include_ts_id: bool = include_ts_id
+        self.time_format: TimeFormat = time_format
+        self.train_workers: int = train_workers
+        self.val_workers: int = val_workers
+        self.test_workers: int = test_workers
+        self.all_workers: int = all_workers
+        self.init_workers: int = init_workers
+        self.nan_threshold: float = nan_threshold
+        self.create_transformer_per_time_series: bool = create_transformer_per_time_series
+        self.dataset_type: DatasetType = dataset_type
+        self.train_dataloader_order: DataloaderOrder = train_dataloader_order
+        self.random_state: Optional[int] = random_state
 
         if self.random_state is not None:
             np.random.seed(random_state)
@@ -178,7 +193,7 @@ class DatasetConfig(ABC):
         self.logger.info("Quick validation succeeded.")
 
     def _validate_construction(self) -> None:
-        """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.base_config.DatasetConfig._dataset_init]. """
+        """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`](reference_dataset_config.md#references.DatasetConfig._dataset_init). """
 
         # Ensuring boolean flags are correctly set
         assert isinstance(self.partial_fit_initialized_transformers, bool), "partial_fit_initialized_transformers must be a boolean value."
@@ -642,12 +657,12 @@ class DatasetConfig(ABC):
 
     @abstractmethod
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:
-        """Validates and filters the input time periods based on the dataset and aggregation. This typically calls [`_process_time_period`][cesnet_tszoo.configs.base_config.DatasetConfig._process_time_period] for each time period. """
+        """Validates and filters the input time periods based on the dataset and aggregation. This typically calls [`_process_time_period`](reference_dataset_config.md#references.DatasetConfig._process_time_period) for each time period. """
         ...
 
     @abstractmethod
     def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
-        """Validates and filters the input time series IDs based on the `dataset` and `source_type`. This typically calls [`_process_ts_ids`][cesnet_tszoo.configs.base_config.DatasetConfig._process_ts_ids] for each time series ID filter. """
+        """Validates and filters the input time series IDs based on the `dataset` and `source_type`. This typically calls [`_process_ts_ids`](reference_dataset_config.md#references.DatasetConfig._process_ts_ids) for each time series ID filter. """
         ...
 
     @abstractmethod

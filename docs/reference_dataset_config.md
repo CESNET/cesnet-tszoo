@@ -1,6 +1,6 @@
-# Series-based config class {#references.SeriesBasedConfig}
+# Dataset config class {#references.DatasetConfig}
 
-::: cesnet_tszoo.configs.series_based_config.SeriesBasedConfig
+::: cesnet_tszoo.configs.base_config.DatasetConfig
     options:
       heading_level: 2
       show_root_heading: true
@@ -18,7 +18,7 @@
 
 ### Configuration options
 
-::: cesnet_tszoo.configs.series_based_config.SeriesBasedConfig.__init__
+::: cesnet_tszoo.configs.base_config.DatasetConfig.__init__
     options:
       heading_level: 3
       show_root_heading: false
@@ -36,7 +36,7 @@
 
 ### Config attributes
 
-::: cesnet_tszoo.configs.series_based_config.SeriesBasedConfig
+::: cesnet_tszoo.configs.base_config.DatasetConfig
     options:   
       heading_level: 3
       show_root_heading: false

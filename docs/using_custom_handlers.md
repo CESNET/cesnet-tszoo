@@ -21,7 +21,7 @@ Relevant configuration values:
 - Take care that all custom handlers should be imported from other file when while using this library in Jupyter notebook. When not importing from other file/s use workers == 0.
 
 ### AllSeriesCustomHandler
-- You can refer to [`AllSeriesCustomHandler`][cesnet_tszoo.utils.custom_handler.custom_handler.AllSeriesCustomHandler]
+- You can refer to [`AllSeriesCustomHandler`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler.AllSeriesCustomHandler)
 - One instance is created for all time series
 - Must always be fitted on train set before use
 
@@ -67,7 +67,7 @@ time_based_dataset.set_preprocess_order(preprocess_order=["handling_anomalies", 
 ```
 
 ### PerSeriesCustomHandler
-- You can refer to [`PerSeriesCustomHandler`][cesnet_tszoo.utils.custom_handler.custom_handler.PerSeriesCustomHandler]
+- You can refer to [`PerSeriesCustomHandler`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler.PerSeriesCustomHandler)
 - One instance is created per time series
 - Must always be fitted on train set before use
 - Supported only for Time-Based dataset
@@ -115,7 +115,7 @@ time_based_dataset.set_preprocess_order(preprocess_order=["handling_anomalies", 
 ```
 
 ### NoFitCustomHandler
-- You can refer to [`NoFitCustomHandler`][cesnet_tszoo.utils.custom_handler.custom_handler.NoFitCustomHandler]
+- You can refer to [`NoFitCustomHandler`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler.NoFitCustomHandler)
 - One instance is created per time series
 - Does not require nor supports fitting
 

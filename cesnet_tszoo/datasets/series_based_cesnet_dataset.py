@@ -28,7 +28,7 @@ from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
 @dataclass
 class SeriesBasedCesnetDataset(CesnetDataset):
     """
-    This class is used for series-based returning of data. Can be created by using [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset] with parameter `dataset_type` = `DatasetType.SERIES_BASED`.
+    This class is used for series-based returning of data. Can be created by using [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) with parameter `dataset_type` = `DatasetType.SERIES_BASED`.
 
     Series-based means batch size affects number of returned time series in one batch. Which times for each time series are returned does not change.
 
@@ -39,68 +39,52 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     - **Numpy array**: For loading the entire training, validation, test or all set at once.      
     - See [loading data][loading-data] for more details.
 
-    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `SeriesBasedDataset` and `SeriesBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
+    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `SeriesBasedDataset` and `SeriesBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize)) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
     interface. These wrappers are compatible with PyTorch’s [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader), providing efficient parallel data loading. 
 
-    The dataset configuration is done through the [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] class.     
+    The dataset configuration is done through the [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig) class.     
 
     **Intended usage:**
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.databases.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
-    2. Create an instance of [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset). This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    2. Create an instance of [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig) and set it using [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize). 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
-    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
-    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy].
-    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy].     
+    3. Use [`get_train_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader)/[`get_train_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df)/[`get_train_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy) to get training data for chosen model.
+    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader)/[`get_val_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df)/[`get_val_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy).
+    5. Evaluate the model on [`get_test_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader)/[`get_test_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df)/[`get_test_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy).     
 
     Alternatively you can use [`load_benchmark`][cesnet_tszoo.benchmarks.load_benchmark]
 
     1. Call [`load_benchmark`][cesnet_tszoo.benchmarks.load_benchmark] with the desired benchmark. You can use your own saved benchmark or you can use already built-in one. This will download the dataset and annotations (if available) if they have not been previously downloaded.
-    2. Retrieve the initialized dataset using [`get_initialized_dataset`][cesnet_tszoo.benchmarks.Benchmark.get_initialized_dataset]. This will provide a dataset that is ready to use.
-    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
-    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy].
-    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy].       
-
-    Parameters:
-        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
-
-    Attributes:
-        metadata: Holds various metadata used in dataset for its creation, loading data and similar.
-        annotations: Annotations for the selected dataset.
-        logger: Logger for displaying information.  
-        imported_annotations_ts_identifier: Identifier for the imported annotations of type `AnnotationType.TS_ID`.
-        imported_annotations_time_identifier: Identifier for the imported annotations of type `AnnotationType.ID_TIME`.
-        imported_annotations_both_identifier: Identifier for the imported annotations of type `AnnotationType.BOTH`.   
-        dataloader_factory: Factory used to create SeriesBasedDataloader.          
-        train_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set.
-        val_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set.
-        test_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set.
-        all_dataloader: Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set.      
-        related_to: Name of file with relevant results to used benchmark.                 
-
-    The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize] is called.
-
-    Attributes:
-        dataset_config: Configuration of the dataset.
-        train_dataset: Training set as a `SeriesBasedDataset` instance wrapping the PyTables database.
-        val_dataset: Validation set as a `SeriesBasedDataset` instance wrapping the PyTables database.
-        test_dataset: Test set as a `SeriesBasedDataset` instance wrapping the PyTables database.
-        all_dataset: All set as a `SeriesBasedDataset` instance wrapping the PyTables database.               
+    2. Retrieve the initialized dataset using [`get_initialized_dataset`](reference_benchmarks.md#cesnet_tszoo.benchmarks.Benchmark.get_initialized_dataset). This will provide a dataset that is ready to use.
+    3. Use [`get_train_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader)/[`get_train_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df)/[`get_train_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy) to get training data for chosen model.
+    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader)/[`get_val_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df)/[`get_val_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy).
+    5. Evaluate the model on [`get_test_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader)/[`get_test_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df)/[`get_test_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy).                     
     """
 
     dataset_config: Optional[SeriesBasedConfig] = field(default=None, init=False)
+    """Configuration of the dataset."""
 
     train_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
+    """Training set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
     val_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
+    """Validation set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
     test_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
+    """Test set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
     all_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
+    """All set as a `SeriesBasedDataset` instance wrapping the PyTables database.  """
 
     train_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set."""
     val_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for validation set."""
     test_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for test set."""
     all_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
+    """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for all set."""
 
     dataloader_factory: SeriesBasedDataloaderFactory = field(default=SeriesBasedDataloaderFactory(), init=False)
+    """Factory used to create SeriesBasedDataloader.  """
 
     dataset_type: DatasetType = field(default=DatasetType.SERIES_BASED, init=False)
 
@@ -113,15 +97,16 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
     def set_dataset_config_and_initialize(self, dataset_config: SeriesBasedConfig, display_config_details: Optional[Literal["text", "diagram"]] = "text", workers: int | Literal["config"] = "config") -> None:
         """
-        Initialize training set, validation set, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig].
+        Initialize training set, validation set, test set etc.. This method must be called before any data can be accessed. It is required for the final initialization of [`dataset_config`](reference_series_based_config.md#references.SeriesBasedConfig).
 
         The following configuration attributes are used during initialization:
 
-        | Dataset config                         | Description                                                                                    |
-        | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
-        | `init_workers`                         | Specifies the number of workers to use for initialization. Applied when `workers` = "config".  |
-        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.   |
-        | `nan_threshold`                        | Filters out time series with missing values exceeding the specified threshold.                 |
+        Dataset config | Description
+        -------------- | -----------
+        `init_workers` | Specifies the number of workers to use for initialization. Applied when `workers` = "config".
+        `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.
+        `nan_threshold` | Filters out time series with missing values exceeding the specified threshold.
+
 
         Parameters:
             dataset_config: Desired configuration of the dataset.
@@ -153,30 +138,28 @@ class SeriesBasedCesnetDataset(CesnetDataset):
                                              workers: int | Literal["config"] = "config",
                                              display_config_details: Optional[Literal["text", "diagram"]] = None):
         """Used for updating selected configurations set in config.
-
         Set parameter to `config` to keep it as it is config.
-
         If exception is thrown during set, no changes are made.
 
-        Can affect following configuration. 
+        Can affect following configuration: 
 
-        | Dataset config                          | Description                                                                                                                                     |
-        | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-        | `default_values`                        | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.                        |           
-        | `train_batch_size`                      | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details. |
-        | `val_batch_size`                        | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |
-        | `test_batch_size`                       | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.  |
-        | `all_batch_size`                        | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.   |   
-        | `preprocess_order`                      | Used order of when preprocesses are applied. Can be also used to add/remove custom handlers.                                                    |                            
-        | `fill_missing_with`                     | Defines how to fill missing values in the dataset.                                                                                              |     
-        | `transform_with`                        | Defines the transformer to transform the dataset.                                                                                               | 
-        | `handle_anomalies_with`                 | Defines the anomaly handler to handle anomalies in the train set.                                                                               |     
-        | `partial_fit_initialized_transformers`  | If `True`, partial fitting on train set is performed when using initiliazed transformers.                                                       |   
-        | `train_workers`                         | Number of workers for loading training data.                                                                                                    |
-        | `val_workers`                           | Number of workers for loading validation data.                                                                                                  |
-        | `test_workers`                          | Number of workers for loading test data.                                                                                                        |
-        | `all_workers`                           | Number of workers for loading all data.                                                                                                         |     
-        | `init_workers`                          | Number of workers for dataset configuration.                                                                                                    |                        
+        Dataset config | Description
+        -------------- | -----------
+        `default_values` | Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
+        `train_batch_size` | Number of samples per batch for train set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.
+        `val_batch_size` | Number of samples per batch for val set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.
+        `test_batch_size` | Number of samples per batch for test set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.
+        `all_batch_size` | Number of samples per batch for all set. Affected by whether the dataset is series-based or time-based. Refer to relevant config for details.
+        `preprocess_order` | Used order of when preprocesses are applied. Can be also used to add/remove custom handlers.
+        `fill_missing_with` | Defines how to fill missing values in the dataset.
+        `transform_with` | Defines the transformer to transform the dataset.
+        `handle_anomalies_with` | Defines the anomaly handler to handle anomalies in the train set.
+        `partial_fit_initialized_transformers` | If `True`, partial fitting on train set is performed when using initialized transformers.
+        `train_workers` | Number of workers for loading training data.
+        `val_workers` | Number of workers for loading validation data.
+        `test_workers` | Number of workers for loading test data.
+        `all_workers` | Number of workers for loading all data.
+        `init_workers` | Number of workers for dataset configuration.
 
         Parameters:
             default_values: Default values for missing data, applied before fillers. `Defaults: config`.            
@@ -276,7 +259,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         return result
 
     def _initialize_datasets(self) -> None:
-        """Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize], this method initializes the set datasets (train, validation, test and all). """
+        """Called in [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize), this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
             load_config = SeriesLoadConfig(self.dataset_config, SplitType.TRAIN)
@@ -304,7 +287,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
     def _initialize_transformers_and_details(self, workers: int) -> None:
         """
-        Called in [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
+        Called in [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize). 
 
         Goes through data to validate time series against `nan_threshold`, partial fit `transformers`, fit `anomaly handlers` and prepare `fillers`.
         """
@@ -450,7 +433,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
 
     def _update_export_config_copy(self) -> None:
         """
-        Called at the end of [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
+        Called at the end of [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize). 
 
         Updates values of config used for saving config.
         """
@@ -474,17 +457,15 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     def apply_transformer(self, transform_with: type | list[Transformer] | np.ndarray[Transformer] | TransformerType | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "l2_normalizer"] | None | Literal["config"] = "config",
                           partial_fit_initialized_transformers: bool | Literal["config"] = "config", workers: int | Literal["config"] = "config") -> None:
         """Used for updating transformer and relevenat configurations set in config.
-
         Set parameter to `config` to keep it as it is config.
-
         If exception is thrown during set, no changes are made.
 
-        Affects following configuration. 
+        Affects following configuration: 
 
-        | Dataset config                         | Description                                                                                                    |
-        | -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-        | `transform_with`                       | Defines the transformer to transform the dataset.                                                              |     
-        | `partial_fit_initialized_transformers` | If `True`, partial fitting on train set is performed when using initiliazed transformers.                      |    
+        Dataset config | Description
+        -------------- | -----------
+        `transform_with` | Defines the transformer to transform the dataset.
+        `partial_fit_initialized_transformers` | If `True`, partial fitting on train set is performed when using initialized transformers.
 
         Parameters:
             transform_with: Defines the transformer to transform the dataset. `Defaults: config`.  

@@ -60,7 +60,7 @@ time_based_dataset.set_default_values(default_values="default", workers=0)
 - You can change used filler later with `update_dataset_config_and_initialize` or `apply_filler`.
 
 ### Built-in
-To see all built-in fillers refer to [`Fillers`][cesnet_tszoo.utils.filler.filler.MeanFiller].
+To see all built-in fillers refer to [`Fillers`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.MeanFiller).
 
 ```python
 
@@ -88,7 +88,7 @@ time_based_dataset.apply_filler(fill_missing_with=FillerType.FORWARD_FILLER, wor
 ### Custom
 You can create your own custom filler, which must derive from 'Filler' base class. 
 
-To check Filler base class refer to [`Filler`][cesnet_tszoo.utils.filler.filler.Filler]
+To check Filler base class refer to [`Filler`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.Filler)
 
 ```python
 
