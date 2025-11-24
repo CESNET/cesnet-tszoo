@@ -53,6 +53,7 @@ dev = [
     "build",
     "mkdocs-autorefs",
     "mkdocs-material-extensions",
+    "mkdocs-autolinks-plugin",
     "mkdocs-material",
     "mkdocs",
     "mkdocstrings-python",
