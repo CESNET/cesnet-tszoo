@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from numbers import Number
 from abc import ABC, abstractmethod
 import math
@@ -9,7 +9,7 @@ import numpy.typing as npt
 
 import cesnet_tszoo.version as version
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER, MANDATORY_PREPROCESSES_ORDER_ENUM
-from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType, PreprocessType
+from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType, PreprocessType, AgreggationType, SourceType
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
@@ -134,56 +134,56 @@ class DatasetConfig(ABC):
             random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
         """
 
-        self.used_train_workers = None
-        self.used_val_workers = None
-        self.used_test_workers = None
-        self.used_all_workers = None
-        self.import_identifier = None
-        self.filler_factory = filler_factories.get_filler_factory(fill_missing_with)
-        self.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
-        self.transformer_factory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
-        self.can_fit_fillers = can_fit_fillers
-        self.logger = logger
+        self.used_train_workers: Optional[int] = None
+        self.used_val_workers: Optional[int] = None
+        self.used_test_workers: Optional[int] = None
+        self.used_all_workers: Optional[int] = None
+        self.import_identifier: Optional[str] = None
+        self.filler_factory: filler_factories.FillerFactory = filler_factories.get_filler_factory(fill_missing_with)
+        self.anomaly_handler_factory: anomaly_handler_factories.AnomalyHandlerFactory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
+        self.transformer_factory: transformer_factories.TransformerFactory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
+        self.can_fit_fillers: bool = can_fit_fillers
+        self.logger: logging.Logger = logger
 
-        self.aggregation = None
-        self.source_type = None
-        self.database_name = None
-        self.features_to_take_without_ids = None
-        self.indices_of_features_to_take_no_ids = None
-        self.ts_id_name = None
-        self.used_singular_train_time_series = None
-        self.used_singular_val_time_series = None
-        self.used_singular_test_time_series = None
-        self.used_singular_all_time_series = None
+        self.aggregation: Optional[AgreggationType] = None
+        self.source_type: Optional[SourceType] = None
+        self.database_name: Optional[str] = None
+        self.features_to_take_without_ids: Optional[np.ndarray] = None
+        self.indices_of_features_to_take_no_ids: Optional[np.ndarray] = None
+        self.ts_id_name: Optional[str] = None
+        self.used_singular_train_time_series: Optional[int] = None
+        self.used_singular_val_time_series: Optional[int] = None
+        self.used_singular_test_time_series: Optional[int] = None
+        self.used_singular_all_time_series: Optional[int] = None
         self.train_preprocess_order: list[PreprocessNote] = []
         self.val_preprocess_order: list[PreprocessNote] = []
         self.test_preprocess_order: list[PreprocessNote] = []
         self.all_preprocess_order: list[PreprocessNote] = []
-        self.is_initialized = False
-        self.version = version.current_version
-        self.export_update_needed = False
+        self.is_initialized: bool = False
+        self.version: str = version.current_version
+        self.export_update_needed: bool = False
 
-        self.features_to_take = features_to_take
-        self.default_values = default_values
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
-        self.test_batch_size = test_batch_size
-        self.all_batch_size = all_batch_size
-        self.preprocess_order = list(preprocess_order)
-        self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
-        self.include_time = include_time
-        self.include_ts_id = include_ts_id
-        self.time_format = time_format
-        self.train_workers = train_workers
-        self.val_workers = val_workers
-        self.test_workers = test_workers
-        self.all_workers = all_workers
-        self.init_workers = init_workers
-        self.nan_threshold = nan_threshold
-        self.create_transformer_per_time_series = create_transformer_per_time_series
-        self.dataset_type = dataset_type
-        self.train_dataloader_order = train_dataloader_order
-        self.random_state = random_state
+        self.features_to_take: list[str] = features_to_take
+        self.default_values: np.ndarray = default_values
+        self.train_batch_size: int = train_batch_size
+        self.val_batch_size: int = val_batch_size
+        self.test_batch_size: int = test_batch_size
+        self.all_batch_size: int = all_batch_size
+        self.preprocess_order: list[PreprocessType] = list(preprocess_order)
+        self.partial_fit_initialized_transformers: bool = partial_fit_initialized_transformers
+        self.include_time: bool = include_time
+        self.include_ts_id: bool = include_ts_id
+        self.time_format: TimeFormat = time_format
+        self.train_workers: int = train_workers
+        self.val_workers: int = val_workers
+        self.test_workers: int = test_workers
+        self.all_workers: int = all_workers
+        self.init_workers: int = init_workers
+        self.nan_threshold: float = nan_threshold
+        self.create_transformer_per_time_series: bool = create_transformer_per_time_series
+        self.dataset_type: DatasetType = dataset_type
+        self.train_dataloader_order: DataloaderOrder = train_dataloader_order
+        self.random_state: Optional[int] = random_state
 
         if self.random_state is not None:
             np.random.seed(random_state)

@@ -1,5 +1,6 @@
 from abc import ABC
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -16,19 +17,19 @@ class SeriesBasedHandler(ABC):
                  val_ts: list[int] | npt.NDArray[np.int_] | float | int | None,
                  test_ts: list[int] | npt.NDArray[np.int_] | float | int | None):
 
-        self.train_ts = train_ts
-        self.val_ts = val_ts
-        self.test_ts = test_ts
-        self.all_ts = None
+        self.train_ts: Optional[np.ndarray] = train_ts
+        self.val_ts: Optional[np.ndarray] = val_ts
+        self.test_ts: Optional[np.ndarray] = test_ts
+        self.all_ts: Optional[np.ndarray] = None
 
-        self.uses_all_ts = uses_all_ts
+        self.uses_all_ts: bool = uses_all_ts
 
-        self.train_ts_row_ranges = None
-        self.val_ts_row_ranges = None
-        self.test_ts_row_ranges = None
-        self.all_ts_row_ranges = None
+        self.train_ts_row_ranges: Optional[np.ndarray] = None
+        self.val_ts_row_ranges: Optional[np.ndarray] = None
+        self.test_ts_row_ranges: Optional[np.ndarray] = None
+        self.all_ts_row_ranges: Optional[np.ndarray] = None
 
-        self.logger = logger
+        self.logger: Logger = logger
 
     def _prepare_and_set_ts_sets(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, ts_id_name: str, random_state) -> None:
         """Validates and filters the input time series IDs based on the `dataset` and `source_type`. Handles random split."""

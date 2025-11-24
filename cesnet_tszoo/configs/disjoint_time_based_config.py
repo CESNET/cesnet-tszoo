@@ -22,7 +22,31 @@ from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 
 class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfig):
     """
-    This class is used for configuring the `DisjointTimeBasedCesnetDataset`.
+    This class is used for configuring the [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
+
+    Used to configure the following:
+
+    - Train, validation, test, all sets (time period, sizes, features, window size)
+    - Handling missing values (default values, [`fillers`](reference_fillers.md#cesnet_tszoo.utils.filler.filler))
+    - Handling anomalies ([`anomaly handlers`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler))
+    - Data transformation using [`transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer)
+    - Applying custom handlers ([`custom handlers`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler))
+    - Changing order of preprocesses
+    - Dataloader options (train/val/test/all/init workers, batch sizes)
+    - Plotting
+
+    **Important Notes:**
+
+    - Custom fillers must inherit from the [`fillers`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.Filler) base class.
+    - Custom anomaly handlers must inherit from the [`anomaly handlers`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler) base class.
+    - Selected anomaly handler is only used for train set.
+    - It is recommended to use the [`transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer) base class, though this is not mandatory as long as it meets the required methods.
+        - If a transformer is already initialized and `partial_fit_initialized_transformers` is `False`, the transformer does not require `partial_fit`.
+        - Otherwise, the transformer must support `partial_fit`.
+        - Transformers must implement `transform` method.
+        - Both `partial_fit` and `transform` methods must accept an input of type `np.ndarray` with shape `(times, features)`.
+    - Custom handlers must be derived from one of the built-in [`custom handler`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler) classes 
+    - `train_time_period`, `val_time_period`, `test_time_period` can overlap, but they should keep order of `train_time_period` < `val_time_period` < `test_time_period`
 
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
@@ -141,7 +165,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
             fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum `FillerType` for built-in filler or pass a type of custom filler that must derive from `Filler` base class. `Default: None`        
             transform_with: Defines the transformer used to transform the dataset. Can pass enum `TransformerType`, pass a type of custom transformer or instance of already fitted transformer(s). `Default: None`
             handle_anomalies_with: Defines the anomaly handler for handling anomalies in the train set. Can pass enum `AnomalyHandlerType` for built-in anomaly handler or a type of custom anomaly handler. `Default: None`
-            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Default: False`
+            partial_fit_initialized_transformer: If `True`, partial fitting on train set is performed when using initiliazed transformers. `Default: False`
             include_time: If `True`, time data is included in the returned values. `Default: True`
             include_ts_id: If `True`, time series IDs are included in the returned values. `Default: True`
             time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values. `Default: TimeFormat.ID_TIME`

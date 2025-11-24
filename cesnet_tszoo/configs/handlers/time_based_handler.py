@@ -1,6 +1,7 @@
 from abc import ABC
 from datetime import datetime, timezone
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -24,31 +25,31 @@ class TimeBasedHandler(ABC):
                  val_time_period: tuple[datetime, datetime] | range | float | None,
                  test_time_period: tuple[datetime, datetime] | range | float | None):
 
-        self.train_time_period = train_time_period
-        self.val_time_period = val_time_period
-        self.test_time_period = test_time_period
+        self.train_time_period: Optional[np.ndarray] = train_time_period
+        self.val_time_period: Optional[np.ndarray] = val_time_period
+        self.test_time_period: Optional[np.ndarray] = test_time_period
 
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
-        self.test_batch_size = test_batch_size
-        self.all_batch_size = all_batch_size
+        self.train_batch_size: int = train_batch_size
+        self.val_batch_size: int = val_batch_size
+        self.test_batch_size: int = test_batch_size
+        self.all_batch_size: int = all_batch_size
 
-        self.set_shared_size = set_shared_size
+        self.set_shared_size: int | float = set_shared_size
 
-        self.sliding_window_size = sliding_window_size
-        self.sliding_window_prediction_size = sliding_window_prediction_size
-        self.sliding_window_step = sliding_window_step
+        self.sliding_window_size: Optional[int] = sliding_window_size
+        self.sliding_window_prediction_size: Optional[int] = sliding_window_prediction_size
+        self.sliding_window_step: int = sliding_window_step
 
-        self.uses_all_time_period = uses_all_time_period
+        self.uses_all_time_period: bool = uses_all_time_period
 
-        self.display_train_time_period = None
-        self.display_val_time_period = None
-        self.display_test_time_period = None
-        self.display_all_time_period = None
+        self.display_train_time_period: Optional[range] = None
+        self.display_val_time_period: Optional[range] = None
+        self.display_test_time_period: Optional[range] = None
+        self.display_all_time_period: Optional[range] = None
 
-        self.all_time_period = None
+        self.all_time_period: Optional[np.ndarray] = None
 
-        self.logger = logger
+        self.logger: Logger = logger
 
     def _prepare_and_set_time_period_sets(self, all_time_ids: np.ndarray, time_format: TimeFormat) -> None:
         """Validates and filters `train_time_period`, `val_time_period`, `test_time_period` and `all_time_period` based on `dataset` and `aggregation`. """

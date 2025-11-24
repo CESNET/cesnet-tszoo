@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Literal, Optional
 from datetime import datetime
 from numbers import Number
 
@@ -22,7 +22,32 @@ from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 
 class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
     """
-    This class is used for configuring the `TimeBasedCesnetDataset`.
+    This class is used for configuring the [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset).
+
+    Used to configure the following:
+
+    - Train, validation, test, all sets (time period, sizes, features, window size)
+    - Handling missing values (default values, [`fillers`](reference_fillers.md#cesnet_tszoo.utils.filler.filler))
+    - Handling anomalies ([`anomaly handlers`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler))
+    - Data transformation using [`transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer)
+    - Applying custom handlers ([`custom handlers`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler))
+    - Changing order of preprocesses
+    - Dataloader options (train/val/test/all/init workers, batch sizes)
+    - Plotting
+
+    **Important Notes:**
+
+    - Custom fillers must inherit from the [`fillers`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.Filler) base class.
+    - Fillers can carry over values from the train set to the validation and test sets. For example, [`ForwardFiller`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.ForwardFiller) can carry over values from previous sets.   
+    - Custom anomaly handlers must inherit from the [`anomaly handlers`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler) base class.
+    - It is recommended to use the [`transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer) base class, though this is not mandatory as long as it meets the required methods.
+        - If transformers are already initialized and `create_transformer_per_time_series` is `True` and `partial_fit_initialized_transformers` is `True` then transformers must support `partial_fit`.
+        - If `create_transformer_per_time_series` is `True`, transformers must have a `fit` method and `transform_with` should be a list of transformers.
+        - If `create_transformer_per_time_series` is `False`, transformers must support `partial_fit`.
+        - Transformers must implement the `transform` method.
+        - The `fit/partial_fit` and `transform` methods must accept an input of type `np.ndarray` with shape `(times, features)`.
+    - Custom handlers must be derived from one of the built-in [`custom handler`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler) classes 
+    - `train_time_period`, `val_time_period`, `test_time_period` can overlap, but they should keep order of `train_time_period` < `val_time_period` < `test_time_period`
 
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
@@ -155,11 +180,11 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
             random_state: Fixes randomness for reproducibility during configuration and dataset initialization. `Default: None`         
         """
 
-        self.ts_ids = ts_ids
+        self.ts_ids: np.ndarray = ts_ids
 
-        self.ts_row_ranges = None
+        self.ts_row_ranges: Optional[np.ndarray] = None
 
-        self.logger = logging.getLogger("time_config")
+        self.logger: logging.Logger = logging.getLogger("time_config")
 
         TimeBasedHandler.__init__(self, self.logger, train_batch_size, val_batch_size, test_batch_size, all_batch_size, True, sliding_window_size, sliding_window_prediction_size, sliding_window_step, set_shared_size, train_time_period, val_time_period, test_time_period)
         DatasetConfig.__init__(self, features_to_take, default_values, train_batch_size, val_batch_size, test_batch_size, all_batch_size, preprocess_order, fill_missing_with, transform_with, handle_anomalies_with, partial_fit_initialized_transformers, include_time, include_ts_id, time_format,

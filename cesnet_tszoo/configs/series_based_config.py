@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Literal, Optional
 from datetime import datetime
 from numbers import Number
 
@@ -22,7 +22,31 @@ from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
 
 class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
     """
-    This class is used for configuring the `SeriesBasedCesnetDataset`.
+    This class is used for configuring the [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset).
+
+    Used to configure the following:
+
+    - Train, validation, test, all sets (time period, sizes, features)
+    - Handling missing values (default values, [`fillers`](reference_fillers.md#cesnet_tszoo.utils.filler.filler))
+    - Handling anomalies ([`anomaly handlers`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler))
+    - Data transformation using [`transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer)
+    - Applying custom handlers ([`custom handlers`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler))
+    - Changing order of preprocesses
+    - Dataloader options (train/val/test/all/init workers, batch size, train loading order)
+    - Plotting
+
+    **Important Notes:**
+
+    - Custom fillers must inherit from the [`fillers`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.Filler) base class.
+    - Custom anomaly handlers must inherit from the [`anomaly handlers`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler) base class.
+    - Selected anomaly handler is only used for train set.    
+    - It is recommended to use the [`transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer) base class, though this is not mandatory as long as it meets the required methods.
+        - If a transformer is already initialized and `partial_fit_initialized_transformers` is `False`, the transformer does not require `partial_fit`.
+        - Otherwise, the transformer must support `partial_fit`.
+        - Transformers must implement `transform` method.
+        - Both `partial_fit` and `transform` methods must accept an input of type `np.ndarray` with shape `(times, features)`.
+    - Custom handlers must be derived from one of the built-in [`custom handler`](reference_custom_handlers.md#cesnet_tszoo.utils.custom_handler.custom_handler) classes 
+    - `train_ts`, `val_ts`, and `test_ts` must not contain any overlapping time series IDs.
 
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
@@ -143,9 +167,9 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
             random_state: Fixes randomness for reproducibility during configuration and dataset initialization. `Default: None`       
         """
 
-        self.time_period = time_period
+        self.time_period: np.ndarray = time_period
 
-        self.display_time_period = None
+        self.display_time_period: Optional[range] = None
 
         self.logger = logging.getLogger("series_config")
 
