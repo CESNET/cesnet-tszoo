@@ -90,7 +90,6 @@ test_dataframe = dataset.get_test_df()
 Time-based datasets are configured with [`TimeBasedConfig`](https://cesnet.github.io/cesnet-tszoo/reference_time_based_config/).
 
 #### Using [`DisjointTimeBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_disjoint_time_based_cesnet_dataset/) dataset
-
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType
