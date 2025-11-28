@@ -113,6 +113,10 @@ time_based_dataset.summary(display_type="diagram")
 
 ```
 
+You can see example below:
+
+![example_summary.svg](./images/example_summary.svg)
+
 You can also save the display diagram as html file
 
 ```python
