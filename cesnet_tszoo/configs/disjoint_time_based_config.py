@@ -288,10 +288,10 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
 
         self._prepare_and_set_time_period_sets(all_time_ids, self.time_format)
 
-    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
+    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, rd: np.random.RandomState) -> None:
         """ Validates and filters inputted time series id from `train_ts`, `val_ts` and `test_ts` based on `dataset` and `source_type`. Handles random set."""
 
-        self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state)
+        self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state, rd)
 
     def _get_feature_transformers(self) -> Transformer:
         """Creates transformer with `transformer_factory`. """
