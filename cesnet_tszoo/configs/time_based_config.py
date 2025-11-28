@@ -283,7 +283,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
         self._prepare_and_set_time_period_sets(all_time_ids, self.time_format)
 
-    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
+    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, rd: np.random.RandomState) -> None:
         """ Validates and filters inputted time series id from `ts_ids` based on `dataset` and `source_type`. Handles random set."""
 
         random_ts_ids = all_ts_ids[self.ts_id_name]
@@ -291,7 +291,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
         # Process ts_ids if it was specified with times series ids
         if not isinstance(self.ts_ids, (float, int)):
-            self.ts_ids, self.ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.ts_ids, all_ts_ids, all_ts_row_ranges, None, None, self.logger, self.ts_id_name, self.random_state)
+            self.ts_ids, self.ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.ts_ids, all_ts_ids, all_ts_row_ranges, None, None, self.logger, self.ts_id_name, self.random_state, rd)
 
             mask = np.isin(random_ts_ids, self.ts_ids, invert=True)
             random_ts_ids = random_ts_ids[mask]
@@ -306,7 +306,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
 
         # Process random ts_ids if it is to be randomly made
         if isinstance(self.ts_ids, int):
-            self.ts_ids, self.ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.ts_ids, random_indices, self.logger, self.ts_id_name, self.random_state)
+            self.ts_ids, self.ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.ts_ids, random_indices, self.logger, self.ts_id_name, self.random_state, rd)
             self.logger.debug("Random ts_ids set with %s time series.", self.ts_ids)
 
     def _get_feature_transformers(self) -> np.ndarray[Transformer] | Transformer:

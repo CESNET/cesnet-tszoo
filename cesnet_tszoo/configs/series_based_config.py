@@ -236,10 +236,10 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         self.time_period, self.display_time_period = TimeBasedHandler._process_time_period(self.time_period, all_time_ids, self.logger, self.time_format)
         self.logger.debug("Processed time_period: %s, display_time_period: %s", self.time_period, self.display_time_period)
 
-    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
+    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, rd: np.random.RandomState) -> None:
         """Validates and filters the input time series IDs based on the `dataset` and `source_type`. Handles random split."""
 
-        self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state)
+        self._prepare_and_set_ts_sets(all_ts_ids, all_ts_row_ranges, self.ts_id_name, self.random_state, rd)
 
     def _get_feature_transformers(self) -> Transformer:
         """Creates transformer with `transformer_factory`. """

@@ -185,9 +185,6 @@ class DatasetConfig(ABC):
         self.train_dataloader_order: DataloaderOrder = train_dataloader_order
         self.random_state: Optional[int] = random_state
 
-        if self.random_state is not None:
-            np.random.seed(random_state)
-
         self._validate_construction()
 
         self.logger.info("Quick validation succeeded.")
@@ -364,12 +361,14 @@ class DatasetConfig(ABC):
     def _dataset_init(self, dataset_metadata: DatasetMetadata) -> None:
         """Performs deeper parameter validation and updates values based on data from the dataset. """
 
+        rd = np.random.RandomState(self.random_state)
+
         self.ts_id_name = dataset_metadata.ts_id_name
 
         self._set_features_to_take(dataset_metadata.features)
         self.logger.debug("Features to take have been successfully set.")
 
-        self._set_ts(dataset_metadata.ts_indices, dataset_metadata.ts_row_ranges)
+        self._set_ts(dataset_metadata.ts_indices, dataset_metadata.ts_row_ranges, rd)
         self.logger.debug("Time series IDs have been successfully set.")
 
         self._set_time_period(dataset_metadata.time_indices)
@@ -661,7 +660,7 @@ class DatasetConfig(ABC):
         ...
 
     @abstractmethod
-    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
+    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, rd: np.random.RandomState) -> None:
         """Validates and filters the input time series IDs based on the `dataset` and `source_type`. This typically calls [`_process_ts_ids`](reference_dataset_config.md#references.DatasetConfig._process_ts_ids) for each time series ID filter. """
         ...
 
