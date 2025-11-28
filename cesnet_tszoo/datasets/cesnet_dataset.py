@@ -111,9 +111,6 @@ class CesnetDataset(ABC):
             workers: The number of workers to use during initialization. `Default: "config"`  
         """
 
-        if self.dataset_config is not None and self.dataset_config != dataset_config:
-            raise ValueError("This dataset is already initialized with config. Create new dataset to configure with passed dataset_config!")
-
         if display_config_details is not None:
             display_config_details = DisplayType(display_config_details)
 
