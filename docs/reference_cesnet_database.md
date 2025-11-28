@@ -1,4 +1,4 @@
-::: cesnet_tszoo.datasets.cesnet_database.CesnetDatabase
+::: cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase
     options:
         heading_level: 2
         show_root_heading: true

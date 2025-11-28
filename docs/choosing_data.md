@@ -4,10 +4,10 @@ This tutorial will look at some configuration options for choosing data you wish
 
 Each dataset type will have its own part because of multiple differences of available configuration values.
 
-## [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset] dataset
+## [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset) dataset
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`time_based_choosing_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/time_based_choosing_data.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`time_based_choosing_data`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/time_based_choosing_data.ipynb)
 
 Relevant configuration values:
 
@@ -113,10 +113,10 @@ time_based_dataset.set_dataset_config_and_initialize(config)
 
 ```
 
-## [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] dataset
+## [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset) dataset
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`disjoint_time_based_choosing_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/disjoint_time_based_choosing_data.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`disjoint_time_based_choosing_data`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/disjoint_time_based_choosing_data.ipynb)
 
 Relevant configuration values:
 
@@ -207,10 +207,10 @@ disjoint_dataset.set_dataset_config_and_initialize(config)
 
 ```
 
-## [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] dataset
+## [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) dataset
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`series_based_choosing_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/series_based_choosing_data.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`series_based_choosing_data`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/series_based_choosing_data.ipynb)
 
 Relevant configuration values:
 

@@ -1,13 +1,13 @@
-# Anomaly handlers
+# Anomaly handlers {#cesnet_tszoo.general.anomaly_handlers}
 
 The `cesnet_tszoo` package supports various ways of using anomaly handlers to handle anomalies. Anomaly handlers can be created and fitted (on train set) when initializing dataset with config and each time series has its own anomaly handler instance.
 
-Possible config parameters in [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig], [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig] and [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig]:
+Possible config parameters in [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig), [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) and [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig):
 
 - `handle_anomalies_with`:  Defines the anomaly handlers to handle anomalies in the train set. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or pass a type of custom anomaly handler.
 
 ### Built-in anomaly handlers
-The `cesnet_tszoo` package comes with multiple built-in anomaly handlers. To check built-in anomaly handlers refer to [`anomaly handlers`][cesnet_tszoo.utils.anomaly_handler].
+The `cesnet_tszoo` package comes with multiple built-in anomaly handlers. To check built-in anomaly handlers refer to [`anomaly handlers`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler).
 
 ### Custom anomaly handlers
-It is possible to create and use own anomaly handlers. It is recommended to use prepared base class [`AnomalyHandler`][cesnet_tszoo.utils.anomaly_handler.AnomalyHandler].
+It is possible to create and use own anomaly handlers. It is recommended to use prepared base class [`AnomalyHandler`](reference_anomaly_handlers.md#cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler).

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 import os
 import logging
 
@@ -11,11 +11,12 @@ from cesnet_tszoo.configs.series_based_config import SeriesBasedConfig
 from cesnet_tszoo.configs.disjoint_time_based_config import DisjointTimeBasedConfig
 
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-from cesnet_tszoo.datasets.datasets import CESNET_TimeSeries24, CESNET_AGG23, CesnetDatabase
+import cesnet_tszoo.datasets.databases.database_factory as database_factory
+from cesnet_tszoo.datasets.databases import CesnetDatabase
 from cesnet_tszoo.datasets.time_based_cesnet_dataset import TimeBasedCesnetDataset
 from cesnet_tszoo.datasets.series_based_cesnet_dataset import SeriesBasedCesnetDataset
 from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTimeBasedCesnetDataset
-from cesnet_tszoo.utils.enums import AnnotationType, SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import AnnotationType, SourceType, AgreggationType, DisplayType
 from cesnet_tszoo.utils.file_utils import yaml_load
 from cesnet_tszoo.utils.utils import ExportBenchmark
 from cesnet_tszoo.configs.config_loading import load_config
@@ -29,34 +30,34 @@ class Benchmark:
 
     For time-based:
 
-    When using [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset] (`dataset_type` = `DatasetType.TIME_BASED`):
+    When using [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset) (`dataset_type` = `DatasetType.TIME_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
-    2. Create an instance of [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset). This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    2. Create an instance of [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig) and set it using [`set_dataset_config_and_initialize`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize). 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
-    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
-    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_numpy].
-    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy].     
+    3. Use [`get_train_dataloader`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset)/[`get_train_df`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df)/[`get_train_numpy`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy) to get training data for chosen model.
+    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_dataloader)/[`get_val_df`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_df)/[`get_val_numpy`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_numpy).
+    5. Evaluate the model on [`get_test_dataloader`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader)/[`get_test_df`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df)/[`get_test_numpy`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy).     
 
-    When using [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] (`dataset_type` = `DatasetType.SERIES_BASED`):
+    When using [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) (`dataset_type` = `DatasetType.SERIES_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
-    2. Create an instance of [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize]. 
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset). This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    2. Create an instance of [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig) and set it using [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize). 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
-    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
-    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy].
-    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy].   
+    3. Use [`get_train_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader)/[`get_train_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df)/[`get_train_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy) to get training data for chosen model.
+    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader)/[`get_val_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df)/[`get_val_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy).
+    5. Evaluate the model on [`get_test_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader)/[`get_test_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df)/[`get_test_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy).   
 
-    When using [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] (`dataset_type` = `DatasetType.DISJOINT_TIME_BASED`):
+    When using [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset) (`dataset_type` = `DatasetType.DISJOINT_TIME_BASED`):
 
-    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`][cesnet_tszoo.datasets.cesnet_database.CesnetDatabase.get_dataset]. This will download the dataset if it has not been previously downloaded and return instance of dataset.
-    2. Create an instance of [`DisjointTimeBasedConfig`][cesnet_tszoo.configs.disjoint_time_based_config.DisjointTimeBasedConfig] and set it using [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize]. 
+    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset). This will download the dataset if it has not been previously downloaded and return instance of dataset.
+    2. Create an instance of [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) and set it using [`set_dataset_config_and_initialize`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize). 
        This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.
-    3. Use [`get_train_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader]/[`get_train_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df]/[`get_train_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy] to get training data for chosen model.
-    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_dataloader]/[`get_val_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_df]/[`get_val_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_numpy].
-    5. Evaluate the model on [`get_test_dataloader`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader]/[`get_test_df`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_df]/[`get_test_numpy`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_numpy].      
+    3. Use [`get_train_dataloader`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader)/[`get_train_df`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df)/[`get_train_numpy`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy) to get training data for chosen model.
+    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_dataloader)/[`get_val_df`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_df)/[`get_val_numpy`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_numpy).
+    5. Evaluate the model on [`get_test_dataloader`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader)/[`get_test_df`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_df)/[`get_test_numpy`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_numpy).      
 
-    You can create custom time-based benchmarks with [`save_benchmark`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.save_benchmark], series-based benchmarks with [`save_benchmark`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.save_benchmark] or disjoint-time-based with [`save_benchmark`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.save_benchmark].
+    You can create custom time-based benchmarks with [`save_benchmark`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.save_benchmark), series-based benchmarks with [`save_benchmark`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.save_benchmark) or disjoint-time-based with [`save_benchmark`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.save_benchmark).
     They will be saved to `"data_root"/tszoo/benchmarks/` directory, where `data_root` was set when you created instance of dataset.
     """
 
@@ -72,17 +73,17 @@ class Benchmark:
 
         return self.config
 
-    def get_initialized_dataset(self, display_config_details: bool = True, check_errors: bool = False, workers: Literal["config"] | int = "config") -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
+    def get_initialized_dataset(self, display_config_details: Optional[Literal["text", "diagram"]] = "text", check_errors: bool = False, workers: Literal["config"] | int = "config") -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
         """
         Returns dataset with intialized sets, transformers, fillers etc..
 
         This method uses following config attributes:
 
-        | Dataset config                    | Description                                                                                    |
-        | --------------------------------- | ---------------------------------------------------------------------------------------------- |
-        | `init_workers`                    | Specifies the number of workers to use for initialization. Applied when `workers` = "config". |
-        | `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.        |
-        | `nan_threshold`                   | Filters out time series with missing values exceeding the specified threshold.                 |
+        Dataset config | Description
+        -------------- | -----------
+        `init_workers` | Specifies the number of workers to use for initialization. Applied when `workers` = "config".
+        `partial_fit_initialized_transformers` | Determines whether initialized transformers should be partially fitted on the training data.
+        `nan_threshold` | Filters out time series with missing values exceeding the specified threshold.
 
         Parameters:
             display_config_details: Flag indicating whether to display the configuration values after initialization. `Default: True`   
@@ -92,6 +93,9 @@ class Benchmark:
         Returns:
             Returns initialized dataset.
         """
+
+        if display_config_details is not None:
+            display_config_details = DisplayType(display_config_details)
 
         if check_errors:
             self.dataset.check_errors()
@@ -176,12 +180,10 @@ def load_benchmark(identifier: str, data_root: str) -> Benchmark:
 def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBasedCesnetDataset | SeriesBasedCesnetDataset | DisjointTimeBasedCesnetDataset:
     """Returns `dataset` based on `export_benchmark`. """
 
-    if export_benchmark.database_name == CESNET_TimeSeries24.name:
-        dataset = CESNET_TimeSeries24.get_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
-    elif export_benchmark.database_name == CESNET_AGG23:
-        dataset = CESNET_AGG23.get_dataset(data_root, False, False)
-    else:
-        raise ValueError("Invalid database name.")
+    factory = database_factory.get_database_factory(export_benchmark.database_name)
+
+    dataset = factory.create_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
+    dataset.related_to = export_benchmark.related_results_identifier
 
     return dataset
 
@@ -247,6 +249,7 @@ def _get_custom_benchmark(identifier: str, data_root: str) -> Benchmark:
 
     logger = logging.getLogger("benchmark")
 
+    path_for_related_results = os.path.join(get_path_to_files_folder(), "related_results")
     benchmark_file_path = os.path.join(data_root, "tszoo", "benchmarks", f"{identifier}.yaml")
     logger.debug("Looking for benchmark configuration file at '%s'.", benchmark_file_path)
 
@@ -285,11 +288,17 @@ def _get_custom_benchmark(identifier: str, data_root: str) -> Benchmark:
     else:
         logger.info("No %s annotations found.", AnnotationType.BOTH)
 
-    # Since the benchmark is custom, related results are None
-    logger.info("As benchmark '%s' is custom, related results cant be loaded.", identifier)
-
     logger.debug("Creating benchmark with description '%s'.", export_benchmark.description)
     result_benchmark = Benchmark(config, dataset, export_benchmark.description)
+
+    # Load related results if available
+    if export_benchmark.related_results_identifier is not None:
+        related_results_file_path = os.path.join(path_for_related_results, f"{export_benchmark.related_results_identifier}.csv")
+        logger.debug("Loading related results from '%s'.", related_results_file_path)
+        result_benchmark.related_results = pd.read_csv(related_results_file_path)
+        logger.info("Related results found and loaded.")
+    else:
+        logger.info("No related results found for benchmark '%s'.", identifier)
 
     logger.info("Custom benchmark '%s' successfully prepared and ready for use.", identifier)
 

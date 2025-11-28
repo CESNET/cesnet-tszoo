@@ -27,13 +27,15 @@ nav:
   - Installation: installation.md
   - Overview of datasets: datasets_overview.md
   - Approaches to datasets: dataset_approaches.md
-  - Transformers: transformers.md
-  - Fillers: fillers.md
-  - Anomaly handlers: anomaly_handlers.md
   - Benchmarks: benchmarks.md
   - Datasets:
     - CESNET-TimeSeries24: cesnet_timeseries24.md
     - CESNET-AGG23: cesnet_agg23.md
+  - Preprocesses:
+    - Transformers: transformers.md
+    - Fillers: fillers.md
+    - Anomaly handlers: anomaly_handlers.md
+    - Custom handlers: custom_handlers.md      
   - Tutorials:
     - Getting started: getting_started.md
     - Using datasets: using_datasets.md
@@ -42,11 +44,14 @@ nav:
     - Handling missing data: handling_missing_data.md
     - Using transformers: using_transformers.md
     - Using anomaly handlers: using_anomaly_handlers.md
+    - Using custom handlers: using_custom_handlers.md
     - Benchmarks: benchmarks_tutorial.md
     - Annotations: annotations.md
     - Utilities: utilities.md
   - Reference:
     - CesnetDatabase: reference_cesnet_database.md
+    - CesnetDataset: reference_cesnet_dataset.md
+    - DatasetConfig: reference_dataset_config.md
     - Benchmark: reference_benchmarks.md
     - Time-based:
       - TimeBasedCesnetDataset: reference_time_based_cesnet_dataset.md
@@ -61,4 +66,5 @@ nav:
       - Transformers: reference_transformers.md
       - Fillers: reference_fillers.md
       - Anomaly handlers: reference_anomaly_handlers.md
+      - Custom handlers: reference_custom_handlers.md
       - Enums: reference_enums.md

@@ -1,4 +1,4 @@
-::: cesnet_tszoo.utils.filler
+::: cesnet_tszoo.utils.filler.filler
     options:
         heading_level: 2
         show_root_heading: true
@@ -11,4 +11,5 @@
         - MeanFiller        
         - ForwardFiller
         - LinearInterpolationFiller
+        - NoFiller
         filters: ["!^_"]

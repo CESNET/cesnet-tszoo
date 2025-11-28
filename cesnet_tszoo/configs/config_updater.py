@@ -1,15 +1,19 @@
 import logging
-
-from packaging.version import Version
 from copy import deepcopy
 
+from packaging.version import Version
+
 from cesnet_tszoo.configs.base_config import DatasetConfig
-from cesnet_tszoo.configs import DisjointTimeBasedConfig
+from cesnet_tszoo.configs.time_based_config import TimeBasedConfig
+import cesnet_tszoo.utils.filler.factory as filler_factories
+import cesnet_tszoo.utils.transformer.factory as transformer_factories
+import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
 from cesnet_tszoo.utils.enums import DatasetType, TransformerType, ScalerType
 import cesnet_tszoo.version as version
 
 
 class ConfigUpdater:
+    """Updates config to newer version. """
 
     def __init__(self, config: DatasetConfig):
         self.logger = logging.getLogger("config_updater")
@@ -38,15 +42,30 @@ class ConfigUpdater:
             self.__add_anomaly_handler()
 
             self.config_to_update.export_update_needed = True
-
             self.config_to_update.version = version.VERSION_0_1_3
             self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_0_1_3)
 
-        if Version(self.config_to_update.version) < Version(version.VERSION_2_0_0):
-            self.logger.warning("Config version is lower than '%s', updating config to match it.", version.VERSION_2_0_0)
+        self.__default_version_update(version.VERSION_2_0_0)
+
+        if Version(self.config_to_update.version) < Version(version.VERSION_2_0_1):
+            self.logger.warning("Config version is lower than '%s', updating config to match it.", version.VERSION_2_0_1)
+
+            self.__filler_refactoring()
+            self.__anomaly_handler_refactoring()
+            self.__transformer_refactoring()
+            self.__remove_unnecessary_attributes()
+            self.__preprocess_order()
+
             self.config_to_update.export_update_needed = True
-            self.config_to_update.version = version.VERSION_2_0_0
-            self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_2_0_0)
+            self.config_to_update.version = version.VERSION_2_0_1
+            self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_2_0_1)
+
+        if Version(self.config_to_update.version) < Version(version.VERSION_2_1_0):
+            self.logger.warning("Config version is lower than '%s', updating config to match it.", version.VERSION_2_1_0)
+
+            self.config_to_update.export_update_needed = True
+            self.config_to_update.version = version.VERSION_2_1_0
+            self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_2_1_0)
 
         self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.current_version)
         self.config_to_update.version = version.current_version
@@ -54,6 +73,69 @@ class ConfigUpdater:
         self.updated_config = self.config_to_update
 
         return self.updated_config
+
+    def __filler_refactoring(self):
+        self.logger.debug("Updating attributes for filler refactoring.")
+
+        self.config_to_update.filler_factory = filler_factories.get_filler_factory(getattr(self.config_to_update, "fill_missing_with"))
+
+        delattr(self.config_to_update, "fill_missing_with")
+        delattr(self.config_to_update, "is_filler_custom")
+        delattr(self.config_to_update, "fill_missing_with_display")
+        delattr(self.config_to_update, "used_fillers")
+
+    def __anomaly_handler_refactoring(self):
+        self.logger.debug("Updating attributes for anomaly handler refactoring.")
+
+        self.config_to_update.anomaly_handler_factory = anomaly_handler_factories.get_anomaly_handler_factory(getattr(self.config_to_update, "handle_anomalies_with"))
+
+        delattr(self.config_to_update, "handle_anomalies_with")
+        delattr(self.config_to_update, "is_anomaly_handler_custom")
+        delattr(self.config_to_update, "handle_anomalies_with_display")
+        delattr(self.config_to_update, "used_anomaly_handlers")
+
+    def __transformer_refactoring(self):
+        self.logger.debug("Updating attributes for transformer refactoring.")
+
+        self.config_to_update.transformer_factory = transformer_factories.get_transformer_factory(getattr(self.config_to_update, "transform_with"), self.config_to_update.create_transformer_per_time_series, self.config_to_update.partial_fit_initialized_transformers)
+
+        delattr(self.config_to_update, "transform_with")
+        delattr(self.config_to_update, "is_transformer_custom")
+        delattr(self.config_to_update, "transform_with_display")
+        delattr(self.config_to_update, "are_transformers_premade")
+
+    def __remove_unnecessary_attributes(self):
+        self.logger.debug("Removing unnecessary attributes for config refactoring.")
+
+        delattr(self.config_to_update, "used_times")
+        delattr(self.config_to_update, "used_ts_ids")
+        delattr(self.config_to_update, "used_ts_row_ranges")
+        delattr(self.config_to_update, "transformers")
+        delattr(self.config_to_update, "train_fillers")
+        delattr(self.config_to_update, "val_fillers")
+        delattr(self.config_to_update, "test_fillers")
+        delattr(self.config_to_update, "all_fillers")
+
+        if hasattr(self.config_to_update, "allow_ts_id_overlap"):
+            delattr(self.config_to_update, "allow_ts_id_overlap")
+
+        if hasattr(self.config_to_update, "anomaly_handlers"):
+            delattr(self.config_to_update, "anomaly_handlers")
+
+    def __preprocess_order(self):
+        self.config_to_update.preprocess_order = ["filling_gaps", "handling_anomalies", "transforming"]
+        self.config_to_update.train_preprocess_order = []
+        self.config_to_update.val_preprocess_order = []
+        self.config_to_update.test_preprocess_order = []
+        self.config_to_update.all_preprocess_order = []
+        self.config_to_update.can_fit_fillers = isinstance(self.config_to_update, TimeBasedConfig)
+
+    def __default_version_update(self, update_version: str):
+        if Version(self.config_to_update.version) < Version(update_version):
+            self.logger.warning("Config version is lower than '%s', updating config to match it.", update_version)
+            self.config_to_update.export_update_needed = True
+            self.config_to_update.version = update_version
+            self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", update_version)
 
     def __try_set_default_config_version(self):
         if not hasattr(self.config_to_update, "version"):
@@ -128,38 +210,7 @@ class ConfigUpdater:
             delattr(self.config_to_update, "used_singular_test_other_time_series")
 
         else:
-            self.logger.debug("Updating config as DisjointTimeBasedConfig. Where ts_ids will be set to train_ts, val_ts and test_ts_ids will be set to test_ts")
-            self.config_to_update.dataset_type = DatasetType.DISJOINT_TIME_BASED
-
-            self.config_to_update = DisjointTimeBasedConfig(train_ts=self.config_to_update.ts_ids.copy(),
-                                                            val_ts=self.config_to_update.ts_ids.copy(),
-                                                            test_ts=self.config_to_update.test_ts_ids,
-                                                            train_time_period=self.config_to_update.train_time_period,
-                                                            val_time_period=self.config_to_update.val_time_period,
-                                                            test_time_period=self.config_to_update.test_time_period,
-                                                            features_to_take=self.config_to_update.features_to_take,
-                                                            default_values=self.config_to_update.default_values,
-                                                            sliding_window_size=self.config_to_update.sliding_window_size,
-                                                            sliding_window_prediction_size=self.config_to_update.sliding_window_prediction_size,
-                                                            sliding_window_step=self.config_to_update.sliding_window_step,
-                                                            set_shared_size=self.config_to_update.set_shared_size,
-                                                            train_batch_size=self.config_to_update.train_batch_size,
-                                                            val_batch_size=self.config_to_update.val_batch_size,
-                                                            test_batch_size=self.config_to_update.test_batch_size,
-                                                            fill_missing_with=self.config_to_update.fill_missing_with,
-                                                            transform_with=self.config_to_update.transform_with,
-                                                            partial_fit_initialized_transformer=self.config_to_update.partial_fit_initialized_transformers,
-                                                            include_time=self.config_to_update.include_time,
-                                                            include_ts_id=self.config_to_update.include_ts_id,
-                                                            time_format=self.config_to_update.time_format,
-                                                            train_workers=self.config_to_update.train_workers,
-                                                            val_workers=self.config_to_update.val_workers,
-                                                            test_workers=self.config_to_update.test_workers,
-                                                            init_workers=self.config_to_update.init_workers,
-                                                            nan_threshold=self.config_to_update.nan_threshold,
-                                                            random_state=self.config_to_update.random_state)
-
-            self.config_to_update.allow_ts_id_overlap = True
+            raise ValueError("Cannot update config, because it uses test_ts_ids which cannot be easily converted to newer format.")
 
     def __add_anomaly_handler(self):
         self.logger.debug("Adding anomaly handler attributes.")

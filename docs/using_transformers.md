@@ -4,10 +4,10 @@ This tutorial will look at some configuration options for using transformers.
 
 Each dataset type will have its own part because of multiple differences of available configuration values.
 
-## [`TimeBasedCesnetDataset`][cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset] dataset
+## [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset) dataset
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`time_based_using_transformers`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/time_based_using_transformers.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`time_based_using_transformers`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/time_based_using_transformers.ipynb)
 
 Relevant configuration values:
 
@@ -20,7 +20,6 @@ Relevant configuration values:
     - You can create your own or use built-in one.
 - Transformer must implement `transform`.
 - Transformer can implement `inverse_transform`.
-- Transformers are applied after `default_values` and fillers took care of missing values.
 - To use transformers, train set must be implemented (unless transformers are already fitted and `partial_fit_initialized_transformers` is False).
 - `fit` method on transformer:
     - must be implemented when `create_transformer_per_time_series` is True and transformers are not already fitted.
@@ -29,7 +28,7 @@ Relevant configuration values:
 - You can change used transformer later with `update_dataset_config_and_initialize` or `apply_transformer`.
 
 #### Built-in
-To see all built-in transformers refer to [`Transformers`][cesnet_tszoo.utils.transformer.LogTransformer].
+To see all built-in transformers refer to [`Transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.LogTransformer).
 
 ```python
 
@@ -57,7 +56,7 @@ time_based_dataset.apply_transformer(transform_with=TransformerType.MIN_MAX_SCAL
 #### Custom
 You can create your own custom transformer. It is recommended to derive from 'Transformer' base class. 
 
-To check Transformer base class refer to [`Transformer`][cesnet_tszoo.utils.transformer.Transformer]
+To check Transformer base class refer to [`Transformer`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer)
 
 ```python
 
@@ -158,11 +157,38 @@ transformer.inverse_transform(data)[:10]
 
 ```
 
+#### Changing when are transformers applied
+- You can change when is a transformer applied with `preprocess_order` parameter
 
-## [`DisjointTimeBasedCesnetDataset`][cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset] dataset
+```python
+
+from cesnet_tszoo.utils.utils.enums import TransformerType
+from cesnet_tszoo.configs import TimeBasedConfig
+
+config = TimeBasedConfig(ts_ids=[1367, 1368], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
+                         transform_with=TransformerType.MIN_MAX_SCALER, create_transformer_per_time_series=True, random_state=111, preprocess_order=["handling_anomalies", "filling_gaps", "transforming"])
+                                                                        
+# Call on time-based dataset to use created config
+time_based_dataset.set_dataset_config_and_initialize(config)    
+
+```
+
+Or later with:
+
+
+```python
+
+time_based_dataset.update_dataset_config_and_initialize(preprocess_order=["handling_anomalies", "transforming", "filling_gaps"], workers=0)
+# Or
+time_based_dataset.set_preprocess_order(preprocess_order=["handling_anomalies", "transforming", "filling_gaps"], workers=0)
+
+```
+
+
+## [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset) dataset
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`disjoint_time_based_using_transformers`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/disjoint_time_based_using_transformers.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`disjoint_time_based_using_transformers`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/disjoint_time_based_using_transformers.ipynb)
 
 Relevant configuration values:
 
@@ -172,7 +198,6 @@ Relevant configuration values:
 ### Transformers
 - Transformers are implemented as class.
     - You can create your own or use built-in one.
-- Transformer is applied after `default_values` and fillers took care of missing values.
 - One transformer is used for all time series.
 - Transformer must implement `transform`.
 - Transformer can implement `inverse_transform`.
@@ -181,7 +206,7 @@ Relevant configuration values:
 - You can change used transformer later with `update_dataset_config_and_initialize` or `apply_transformer`.
 
 #### Built-in
-To see all built-in transformers refer to [`Transformers`][cesnet_tszoo.utils.transformer.LogTransformer].
+To see all built-in transformers refer to [`Transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.LogTransformer).
 
 ```python
 
@@ -209,7 +234,7 @@ disjoint_dataset.apply_transformer(transform_with=TransformerType.MIN_MAX_SCALER
 #### Custom
 You can create your own custom transformer. It is recommended to derive from 'Transformer' base class. 
 
-To check Transformer base class refer to [`Transformer`][cesnet_tszoo.utils.transformer.Transformer]
+To check Transformer base class refer to [`Transformer`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer)
 
 ```python
 
@@ -305,11 +330,38 @@ transformer.inverse_transform(data)[:10]
 
 ```
 
+#### Changing when is transformer applied
+- You can change when is a transformer applied with `preprocess_order` parameter
 
-## [`SeriesBasedCesnetDataset`][cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset] dataset
+```python
+
+from cesnet_tszoo.utils.utils.enums import TransformerType
+from cesnet_tszoo.configs import DisjointTimeBasedConfig
+
+config = DisjointTimeBasedConfig(train_ts=500, val_ts=None, test_ts=None, train_time_period=0.5, features_to_take=["n_flows", "n_packets"],
+                           transform_with=TransformerType.MIN_MAX_SCALER, nan_threshold=0.5, random_state=1500, preprocess_order=["handling_anomalies", "filling_gaps", "transforming"])
+                                                                        
+# Call on disjoint-time-based dataset to use created config
+disjoint_dataset.set_dataset_config_and_initialize(config)    
+
+```
+
+Or later with:
+
+
+```python
+
+disjoint_dataset.update_dataset_config_and_initialize(preprocess_order=["handling_anomalies", "transforming", "filling_gaps"], workers=0)
+# Or
+disjoint_dataset.set_preprocess_order(preprocess_order=["handling_anomalies", "transforming", "filling_gaps"], workers=0)
+
+```
+
+
+## [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) dataset
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`series_based_using_transformers`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/series_based_using_transformers.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`series_based_using_transformers`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/series_based_using_transformers.ipynb)
 
 Relevant configuration values:
 
@@ -319,7 +371,6 @@ Relevant configuration values:
 ### Transformers
 - Transformers are implemented as class.
     - You can create your own or use built-in one.
-- Transformer is applied after `default_values` and fillers took care of missing values.
 - One transformer is used for all time series.
 - Transformer must implement `transform`.
 - Transformer can implement `inverse_transform`.
@@ -328,7 +379,7 @@ Relevant configuration values:
 - You can change used transformer later with `update_dataset_config_and_initialize` or `apply_transformer`.
 
 #### Built-in
-To see all built-in transformers refer to [`Transformers`][cesnet_tszoo.utils.transformer.LogTransformer].
+To see all built-in transformers refer to [`Transformers`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.LogTransformer).
 
 ```python
 
@@ -356,7 +407,7 @@ series_based_dataset.apply_transformer(transform_with=TransformerType.MIN_MAX_SC
 #### Custom
 You can create your own custom transformer. It is recommended to derive from 'Transformer' base class. 
 
-To check Transformer base class refer to [`Transformer`][cesnet_tszoo.utils.transformer.Transformer]
+To check Transformer base class refer to [`Transformer`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.Transformer)
 
 ```python
 
@@ -449,5 +500,32 @@ for batch in series_based_dataset.get_train_dataloader():
     break
 
 transformer.inverse_transform(data)[:10]
+
+```
+
+#### Changing when is transformer applied
+- You can change when is a transformer applied with `preprocess_order` parameter
+
+```python
+
+from cesnet_tszoo.utils.utils.enums import TransformerType
+from cesnet_tszoo.configs import SeriesBasedConfig
+
+config = SeriesBasedConfig(time_period=0.5, train_ts=500, features_to_take=["n_flows", "n_packets"],
+                           transform_with=TransformerType.MIN_MAX_SCALER, nan_threshold=0.5, random_state=1500, preprocess_order=["handling_anomalies", "filling_gaps", "transforming"])
+                                                                        
+# Call on series-based dataset to use created config
+series_based_dataset.set_dataset_config_and_initialize(config)    
+
+```
+
+Or later with:
+
+
+```python
+
+series_based_dataset.update_dataset_config_and_initialize(preprocess_order=["handling_anomalies", "transforming", "filling_gaps"], workers=0)
+# Or
+series_based_dataset.set_preprocess_order(preprocess_order=["handling_anomalies", "transforming", "filling_gaps"], workers=0)
 
 ```

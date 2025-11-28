@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from numbers import Number
 from abc import ABC, abstractmethod
 import math
@@ -8,16 +8,24 @@ import numpy as np
 import numpy.typing as npt
 
 import cesnet_tszoo.version as version
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
-from cesnet_tszoo.utils.enums import AgreggationType, FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER, MANDATORY_PREPROCESSES_ORDER_ENUM
+from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType, PreprocessType, AgreggationType, SourceType
 from cesnet_tszoo.utils.transformer import Transformer
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
+from cesnet_tszoo.data_models.preprocess_note import PreprocessNote
+from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
+import cesnet_tszoo.utils.transformer.factory as transformer_factories
+import cesnet_tszoo.utils.filler.factory as filler_factories
+import cesnet_tszoo.utils.anomaly_handler.factory as anomaly_handler_factories
+import cesnet_tszoo.utils.custom_handler.factory as custom_handler_factories
+from cesnet_tszoo.utils.custom_handler.factory import PerSeriesCustomHandlerFactory, AllSeriesCustomHandlerFactory, NoFitCustomHandlerFactory
+import cesnet_tszoo.utils.css_styles.utils as css_utils
+from cesnet_tszoo.data_models.holders import FillingHolder, AnomalyHandlerHolder, TransformerHolder, AllSeriesCustomHandlerHolder
 
 
 class DatasetConfig(ABC):
     """
-    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as [`SeriesBasedConfig`][cesnet_tszoo.configs.series_based_config.SeriesBasedConfig] or [`TimeBasedConfig`][cesnet_tszoo.configs.time_based_config.TimeBasedConfig].
-
-    For available configuration options, refer to [here][cesnet_tszoo.configs.base_config.DatasetConfig--configuration-options].
+    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig), [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) or [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig).
 
     Attributes:
         used_train_workers: Tracks the number of train workers in use. Helps determine if the train dataloader should be recreated based on worker changes.
@@ -25,55 +33,35 @@ class DatasetConfig(ABC):
         used_test_workers: Tracks the number of test workers in use. Helps determine if the test dataloader should be recreated based on worker changes.
         used_all_workers: Tracks the total number of all workers in use. Helps determine if the all dataloader should be recreated based on worker changes.
         import_identifier: Tracks the name of the config upon import. None if not imported.
+        filler_factory: Represents factory used to create passed Filler type.
+        anomaly_handler_factory: Represents factory used to create passed Anomaly Handler type.
+        transformer_factory: Represents factory used to create passed Transformer type.
+        can_fit_fillers: Whether fillers in this config, can be fitted.
         logger: Logger for displaying information. 
-
-    The following attributes are initialized when [`set_dataset_config_and_initialize`][cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.set_dataset_config_and_initialize] is called:
-
-    Attributes:
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
-        transform_with_display: Used to display the configured type of `transform_with`.
-        fill_missing_with_display: Used to display the configured type of `fill_missing_with`.
-        handle_anomalies_with_display: Used to display the configured type of `handle_anomalies_with`.
         features_to_take_without_ids: Features to be returned, excluding time or time series IDs.
         indices_of_features_to_take_no_ids: Indices of non-ID features in `features_to_take`.
-        is_transformer_custom: Flag indicating whether the transformer is custom.
-        is_filler_custom: Flag indicating whether the filler is custom.
-        is_anomaly_handler_custom: Flag indicating whether the anomaly handler is custom.
         ts_id_name: Name of the time series ID, dependent on `source_type`.
-        used_times: List of all times used in the configuration.
-        used_ts_ids: List of all time series IDs used in the configuration.
-        used_ts_row_ranges: List of time series IDs with their respective time ID ranges.
-        used_fillers: List of all fillers used in the configuration.
-        used_anomaly_handlers: List of all anomaly handlers used in the configuration.
         used_singular_train_time_series: Currently used singular train set time series for dataloader.
         used_singular_val_time_series: Currently used singular validation set time series for dataloader.
         used_singular_test_time_series: Currently used singular test set time series for dataloader.
-        used_singular_all_time_series: Currently used singular all set time series for dataloader.        
-        transformers: Prepared transformers for fitting/transforming. Can be one transformer, array of transformers or `None`.
-        are_transformers_premade: Indicates whether the transformers are premade.
-        train_fillers: Fillers used in the train set. `None` if no filler is used or train set is not used.
-        val_fillers: Fillers used in the validation set. `None` if no filler is used or validation set is not used.
-        test_fillers: Fillers used in the test set. `None` if no filler is used or test set is not used.
-        all_fillers: Fillers used for the all set. `None` if no filler is used or all set is not used.
-        anomaly_handlers: Prepared anomaly handlers for fitting/handling anomalies. Can be array of anomaly handlers or `None`.
+        used_singular_all_time_series: Currently used singular all set time series for dataloader.       
+        train_preprocess_order: All preprocesses used for train set. 
+        val_preprocess_order: All preprocesses used for val set. 
+        test_preprocess_order: All preprocesses used for test set. 
+        all_preprocess_order: All preprocesses used for all set. 
         is_initialized: Flag indicating if the configuration has already been initialized. If true, config initialization will be skipped.  
         version: Version of cesnet-tszoo this config was made in.
         export_update_needed: Whether config was updated to newer version and should be exported.
-
-    # Configuration options
-
-    Attributes:
         features_to_take: Defines which features are used.
         default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
         train_batch_size: Batch size for the train dataloader, when window size is None.
         val_batch_size: Batch size for the validation dataloader, when window size is None.
         test_batch_size: Batch size for the test dataloader, when window size is None.
         all_batch_size: Batch size for the all dataloader, when window size is None.
-        fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum [`FillerType`][cesnet_tszoo.utils.enums.FillerType] for built-in filler or pass a type of custom filler that must derive from [`Filler`][cesnet_tszoo.utils.filler.Filler] base class.
-        transform_with: Defines the transformer to transform the dataset. Can pass enum [`TransformerType`][cesnet_tszoo.utils.enums.TransformerType] for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
-        handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum [`AnomalyHandlerType`][cesnet_tszoo.utils.enums.AnomalyHandlerType] for built-in anomaly handler or a type of custom anomaly handler.
+        preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of PerSeriesCustomHandler, AllSeriesCustomHandler or NoFitCustomHandler.
         partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
         include_time: If `True`, time data is included in the returned values.
         include_ts_id: If `True`, time series IDs are included in the returned values.
@@ -87,7 +75,8 @@ class DatasetConfig(ABC):
         create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
         dataset_type: Type of a dataset this config is used for.
         train_dataloader_order: Defines the order of data returned by the training dataloader.
-        random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
+        random_state: Fixes randomness for reproducibility during configuration and dataset initialization.            
+
     """
 
     def __init__(self,
@@ -97,6 +86,7 @@ class DatasetConfig(ABC):
                  val_batch_size: int,
                  test_batch_size: int,
                  all_batch_size: int,
+                 preprocess_order: list[str, type],
                  fill_missing_with: type | FillerType | Literal["mean_filler", "forward_filler", "linear_interpolation_filler"] | None,
                  transform_with: type | TransformerType | list[Transformer] | np.ndarray[Transformer] | Transformer | Literal["min_max_scaler", "standard_scaler", "max_abs_scaler", "log_transformer", "robust_scaler", "power_transformer", "quantile_transformer", "l2_normalizer"] | None,
                  handle_anomalies_with: type | AnomalyHandlerType | Literal["z-score", "interquartile_range"] | None,
@@ -114,77 +104,93 @@ class DatasetConfig(ABC):
                  dataset_type: DatasetType,
                  train_dataloader_order: DataloaderOrder | Literal["random", "sequential"],
                  random_state: int | None,
+                 can_fit_fillers: bool,
                  logger: logging.Logger):
+        """           
+        Parameters:
+            features_to_take: Defines which features are used.
+            default_values: Default values for missing data, applied before fillers. Can set one value for all features or specify for each feature.
+            train_batch_size: Batch size for the train dataloader, when window size is None.
+            val_batch_size: Batch size for the validation dataloader, when window size is None.
+            test_batch_size: Batch size for the test dataloader, when window size is None.
+            all_batch_size: Batch size for the all dataloader, when window size is None.
+            preprocess_order: Defines in which order preprocesses are used. Also can add to order a type of PerSeriesCustomHandler, AllSeriesCustomHandler or NoFitCustomHandler.
+            fill_missing_with: Defines how to fill missing values in the dataset. Can pass enum `FillerType` for built-in filler or pass a type of custom filler that must derive from `Filler` base class.
+            transform_with: Defines the transformer to transform the dataset. Can pass enum `TransformerType` for built-in transformer, pass a type of custom transformer or instance of already fitted transformer(s).
+            handle_anomalies_with: Defines the anomaly handler for handling anomalies in the dataset. Can pass enum `AnomalyHandlerType` for built-in anomaly handler or a type of custom anomaly handler.
+            partial_fit_initialized_transformers: If `True`, partial fitting on train set is performed when using initiliazed transformers.
+            include_time: If `True`, time data is included in the returned values.
+            include_ts_id: If `True`, time series IDs are included in the returned values.
+            time_format: Format for the returned time data. When using TimeFormat.DATETIME, time will be returned as separate list along rest of the values.
+            train_workers: Number of workers for loading training data. `0` means that the data will be loaded in the main process.
+            val_workers: Number of workers for loading validation data. `0` means that the data will be loaded in the main process.
+            test_workers: Number of workers for loading test data. `0` means that the data will be loaded in the main process.
+            all_workers: Number of workers for loading all data. `0` means that the data will be loaded in the main process.
+            init_workers: Number of workers for initial dataset processing during configuration. `0` means that the data will be loaded in the main process.
+            nan_threshold: Maximum allowable percentage of missing data. Time series exceeding this threshold are excluded. Time series over the threshold will not be used. Used for `train/val/test/all` separately.
+            create_transformer_per_time_series: If `True`, a separate transformer is created for each time series. Not used when using already initialized transformers. 
+            dataset_type: Type of a dataset this config is used for.
+            train_dataloader_order: Defines the order of data returned by the training dataloader.
+            random_state: Fixes randomness for reproducibility during configuration and dataset initialization.              
+        """
 
-        self.used_train_workers = None
-        self.used_val_workers = None
-        self.used_test_workers = None
-        self.used_all_workers = None
-        self.import_identifier = None
-        self.logger = logger
+        self.used_train_workers: Optional[int] = None
+        self.used_val_workers: Optional[int] = None
+        self.used_test_workers: Optional[int] = None
+        self.used_all_workers: Optional[int] = None
+        self.import_identifier: Optional[str] = None
+        self.filler_factory: filler_factories.FillerFactory = filler_factories.get_filler_factory(fill_missing_with)
+        self.anomaly_handler_factory: anomaly_handler_factories.AnomalyHandlerFactory = anomaly_handler_factories.get_anomaly_handler_factory(handle_anomalies_with)
+        self.transformer_factory: transformer_factories.TransformerFactory = transformer_factories.get_transformer_factory(transform_with, create_transformer_per_time_series, partial_fit_initialized_transformers)
+        self.can_fit_fillers: bool = can_fit_fillers
+        self.logger: logging.Logger = logger
 
-        self.aggregation = None
-        self.source_type = None
-        self.database_name = None
-        self.transform_with_display = None
-        self.fill_missing_with_display = None
-        self.handle_anomalies_with_display = None
-        self.features_to_take_without_ids = None
-        self.indices_of_features_to_take_no_ids = None
-        self.is_transformer_custom = False
-        self.is_filler_custom = False
-        self.is_anomaly_handler_custom = False
-        self.ts_id_name = None
-        self.used_times = None
-        self.used_ts_ids = None
-        self.used_ts_row_ranges = None
-        self.used_fillers = None
-        self.used_anomaly_handlers = None
-        self.used_singular_train_time_series = None
-        self.used_singular_val_time_series = None
-        self.used_singular_test_time_series = None
-        self.used_singular_all_time_series = None
-        self.transformers = None
-        self.are_transformers_premade = False
-        self.train_fillers = None
-        self.val_fillers = None
-        self.test_fillers = None
-        self.all_fillers = None
-        self.anomaly_handlers = None
-        self.is_initialized = False
-        self.version = version.current_version
-        self.export_update_needed = False
+        self.aggregation: Optional[AgreggationType] = None
+        self.source_type: Optional[SourceType] = None
+        self.database_name: Optional[str] = None
+        self.features_to_take_without_ids: Optional[np.ndarray] = None
+        self.indices_of_features_to_take_no_ids: Optional[np.ndarray] = None
+        self.ts_id_name: Optional[str] = None
+        self.used_singular_train_time_series: Optional[int] = None
+        self.used_singular_val_time_series: Optional[int] = None
+        self.used_singular_test_time_series: Optional[int] = None
+        self.used_singular_all_time_series: Optional[int] = None
+        self.train_preprocess_order: list[PreprocessNote] = []
+        self.val_preprocess_order: list[PreprocessNote] = []
+        self.test_preprocess_order: list[PreprocessNote] = []
+        self.all_preprocess_order: list[PreprocessNote] = []
+        self.is_initialized: bool = False
+        self.version: str = version.current_version
+        self.export_update_needed: bool = False
 
-        self.features_to_take = features_to_take
-        self.default_values = default_values
-        self.train_batch_size = train_batch_size
-        self.val_batch_size = val_batch_size
-        self.test_batch_size = test_batch_size
-        self.all_batch_size = all_batch_size
-        self.fill_missing_with = fill_missing_with
-        self.transform_with = transform_with
-        self.handle_anomalies_with = handle_anomalies_with
-        self.partial_fit_initialized_transformers = partial_fit_initialized_transformers
-        self.include_time = include_time
-        self.include_ts_id = include_ts_id
-        self.time_format = time_format
-        self.train_workers = train_workers
-        self.val_workers = val_workers
-        self.test_workers = test_workers
-        self.all_workers = all_workers
-        self.init_workers = init_workers
-        self.nan_threshold = nan_threshold
-        self.create_transformer_per_time_series = create_transformer_per_time_series
-        self.dataset_type = dataset_type
-        self.train_dataloader_order = train_dataloader_order
-        self.random_state = random_state
+        self.features_to_take: list[str] = features_to_take
+        self.default_values: np.ndarray = default_values
+        self.train_batch_size: int = train_batch_size
+        self.val_batch_size: int = val_batch_size
+        self.test_batch_size: int = test_batch_size
+        self.all_batch_size: int = all_batch_size
+        self.preprocess_order: list[PreprocessType] = list(preprocess_order)
+        self.partial_fit_initialized_transformers: bool = partial_fit_initialized_transformers
+        self.include_time: bool = include_time
+        self.include_ts_id: bool = include_ts_id
+        self.time_format: TimeFormat = time_format
+        self.train_workers: int = train_workers
+        self.val_workers: int = val_workers
+        self.test_workers: int = test_workers
+        self.all_workers: int = all_workers
+        self.init_workers: int = init_workers
+        self.nan_threshold: float = nan_threshold
+        self.create_transformer_per_time_series: bool = create_transformer_per_time_series
+        self.dataset_type: DatasetType = dataset_type
+        self.train_dataloader_order: DataloaderOrder = train_dataloader_order
+        self.random_state: Optional[int] = random_state
 
         self._validate_construction()
 
         self.logger.info("Quick validation succeeded.")
 
     def _validate_construction(self) -> None:
-        """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`][cesnet_tszoo.configs.base_config.DatasetConfig._dataset_init]. """
+        """Performs basic parameter validation to ensure correct configuration. More comprehensive validation, which requires dataset-specific data, is handled in [`_dataset_init`](reference_dataset_config.md#references.DatasetConfig._dataset_init). """
 
         # Ensuring boolean flags are correctly set
         assert isinstance(self.partial_fit_initialized_transformers, bool), "partial_fit_initialized_transformers must be a boolean value."
@@ -205,6 +211,22 @@ class DatasetConfig(ABC):
         assert isinstance(self.test_batch_size, int) and self.test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(self.all_batch_size, int) and self.all_batch_size > 0, "all_batch_size must be a positive integer."
 
+        # Ensuring that preprocess order contains all required preprocesses
+        assert self.preprocess_order is not None, "preprocess_order must be set."
+        assert isinstance(self.preprocess_order, list), "preprocess_order must be list"
+        assert MANDATORY_PREPROCESSES_ORDER.issubset(self.preprocess_order) or MANDATORY_PREPROCESSES_ORDER_ENUM.issubset(self.preprocess_order), f"preprocess_order must at least contain order for {list(MANDATORY_PREPROCESSES_ORDER)}"
+
+        mandatory_count = 0
+        for preprocess in self.preprocess_order:
+            if isinstance(preprocess, (str, PreprocessType)):
+                PreprocessType(preprocess)
+                mandatory_count += 1
+            elif not isinstance(preprocess, type):
+                raise ValueError(f"Values in preprocess_order must be either from {list(MANDATORY_PREPROCESSES_ORDER)} or a type.")
+
+        if mandatory_count != len(MANDATORY_PREPROCESSES_ORDER):
+            raise ValueError(f"preprocess_order must not contain duplicate mandatory preprocesses ({MANDATORY_PREPROCESSES_ORDER}).")
+
         # Validate nan_threshold value
         assert isinstance(self.nan_threshold, Number) and 0 <= self.nan_threshold <= 1, "nan_threshold must be a number between 0 and 1."
         self.nan_threshold = float(self.nan_threshold)
@@ -213,20 +235,6 @@ class DatasetConfig(ABC):
         self.time_format = TimeFormat(self.time_format)
         self.train_dataloader_order = DataloaderOrder(self.train_dataloader_order)
 
-        # Validate and process transformer type
-        if isinstance(self.transform_with, (str, TransformerType)):
-            self.transform_with = TransformerType(self.transform_with)
-            if self.transform_with in [TransformerType.POWER_TRANSFORMER, TransformerType.QUANTILE_TRANSFORMER, TransformerType.ROBUST_SCALER] and not self.create_transformer_per_time_series:
-                raise NotImplementedError("The selected transformer requires a working partial_fit method, which is not implemented for this configuration.")
-
-        # Validate and process missing data filler type
-        if isinstance(self.fill_missing_with, (str, FillerType)):
-            self.fill_missing_with = FillerType(self.fill_missing_with)
-
-        # Validate and process anomaly handler type
-        if isinstance(self.handle_anomalies_with, (str, AnomalyHandlerType)):
-            self.handle_anomalies_with = AnomalyHandlerType(self.handle_anomalies_with)
-
     def _update_batch_sizes(self, train_batch_size: int, val_batch_size: int, test_batch_size: int, all_batch_size: int) -> None:
 
         # Ensuring batch size values are positive integers
@@ -234,6 +242,11 @@ class DatasetConfig(ABC):
         assert isinstance(val_batch_size, int) and val_batch_size > 0, "val_batch_size must be a positive integer."
         assert isinstance(test_batch_size, int) and test_batch_size > 0, "test_batch_size must be a positive integer."
         assert isinstance(all_batch_size, int) and all_batch_size > 0, "all_batch_size must be a positive integer."
+
+        self.train_batch_size = train_batch_size
+        self.val_batch_size = val_batch_size
+        self.test_batch_size = test_batch_size
+        self.all_batch_size = all_batch_size
 
         self.logger.debug("Updated batch sizes.")
 
@@ -294,51 +307,81 @@ class DatasetConfig(ABC):
         """Returns whether all set is used. """
         ...
 
-    def _get_table_data_path(self) -> str:
-        """Returns the path to the data table corresponding to the `source_type` and `aggregation`."""
-        return f"/{self.source_type.value}/{AgreggationType._to_str_with_agg(self.aggregation)}"
+    def _get_train_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
+        return self.__get_preprocess_init_order_groups(self.train_preprocess_order)
 
-    def _get_table_identifiers_row_ranges_path(self) -> str:
-        """Returns the path to the identifiers' row ranges table corresponding to the `source_type` and `aggregation`. """
-        return f"/{self.source_type.value}/id_ranges_{AgreggationType._to_str_with_agg(self.aggregation)}"
+    def _get_val_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
+        return self.__get_preprocess_init_order_groups(self.val_preprocess_order)
 
-    def _dataset_init(self, all_real_ts_ids: np.ndarray, all_time_ids: np.ndarray, all_ts_row_ranges: np.ndarray, all_dataset_features: dict[str, np.dtype], default_values: dict[str, Number], ts_id_name: str) -> None:
+    def _get_test_preprocess_init_order_groups(self) -> list[PreprocessOrderGroup]:
+        return self.__get_preprocess_init_order_groups(self.test_preprocess_order)
+
+    def __get_preprocess_init_order_groups(self, preprocess_order) -> list[PreprocessOrderGroup]:
+        """Returns preprocess grouped orders used when initializing config. """
+
+        groups = []
+
+        outers = []
+        inners = []
+
+        preprocess_note: PreprocessNote
+        for preprocess_note in preprocess_order:
+
+            if preprocess_note.is_inner_preprocess:
+
+                if len(outers) > 0:
+                    group = PreprocessOrderGroup(inners + outers)
+                    groups.append(group)
+
+                    inners = group.get_preprocess_orders_for_inner_transform()
+                    outers.clear()
+
+                inners.append(preprocess_note)
+
+            if not preprocess_note.is_inner_preprocess:
+                outers.append(preprocess_note)
+
+        group = PreprocessOrderGroup(inners + outers)
+
+        if group.any_preprocess_needs_fitting or group.any_preprocess_is_dummy_fitting:
+            groups.append(group)
+
+        if len(groups) == 0:
+            groups.append(PreprocessOrderGroup([]))
+
+        return groups
+
+    def _update_identifiers_from_dataset_metadata(self, dataset_metadata: DatasetMetadata) -> None:
+        """Updates identifying attributes from dataset metadata. """
+
+        self.aggregation = dataset_metadata.aggregation
+        self.source_type = dataset_metadata.source_type
+        self.database_name = dataset_metadata.database_name
+
+    def _dataset_init(self, dataset_metadata: DatasetMetadata) -> None:
         """Performs deeper parameter validation and updates values based on data from the dataset. """
 
-        self.ts_id_name = ts_id_name
+        rd = np.random.RandomState(self.random_state)
 
-        # Set the features to take
-        self._set_features_to_take(all_dataset_features)
+        self.ts_id_name = dataset_metadata.ts_id_name
+
+        self._set_features_to_take(dataset_metadata.features)
         self.logger.debug("Features to take have been successfully set.")
 
-        # Set time series IDs
-        self._set_ts(all_real_ts_ids, all_ts_row_ranges)
+        self._set_ts(dataset_metadata.ts_indices, dataset_metadata.ts_row_ranges, rd)
         self.logger.debug("Time series IDs have been successfully set.")
 
-        # Set the time periods
-        self._set_time_period(all_time_ids)
+        self._set_time_period(dataset_metadata.time_indices)
         self.logger.debug("Time period have been successfully set.")
 
-        # Set default values
-        self._set_default_values(default_values)
+        self._set_default_values(dataset_metadata.default_values)
         self.logger.debug("Default values have been successfully set.")
 
-        # Set feature transformers
-        self._set_feature_transformers()
-        self.logger.debug("Feature transformers have been successfully set.")
+        self._set_preprocess_order()
+        self.logger.debug("Preprocess order have been successfully set.")
 
-        # Set fillers
-        self._set_fillers()
-        self.logger.debug("Fillers have been successfully set.")
-
-        # Set anomaly handlers
-        self._set_anomaly_handlers()
-        self.logger.debug("Anomaly handlers have been successfully set.")
-
-        # Final validation and finalization
         self._validate_finalization()
-
-        self.logger.info("Finalization and validation completed successfully.")
+        self.logger.debug("Finalization and validation completed successfully.")
 
     def _set_features_to_take(self, all_dataset_features: dict[str, np.dtype]) -> None:
         """Validates and filters the input `features_to_take` based on the `dataset`, `source_type`, and `aggregation`. """
@@ -419,29 +462,221 @@ class DatasetConfig(ABC):
 
         self.default_values = temp_default_values
 
+    def _set_preprocess_order(self):
+        """Validates and converts preprocess order to their enum variant. Also initializes preprocess_orders for all sets. """
+
+        for i, order in enumerate(self.preprocess_order):
+            if isinstance(order, (str, PreprocessType)):
+                self.preprocess_order[i] = PreprocessType(order)
+            elif not isinstance(order, type):
+                raise NotImplementedError("Currenty preprocess order supports only string names or types")
+
+        self._init_preprocess_order()
+
+    def _init_preprocess_order(self):
+        self.train_preprocess_order = []
+        self.val_preprocess_order = []
+        self.test_preprocess_order = []
+        self.all_preprocess_order = []
+
+        for preprocess_type in self.preprocess_order:
+
+            if preprocess_type == PreprocessType.TRANSFORMING:
+                self.__set_transform_order(preprocess_type)
+            elif preprocess_type == PreprocessType.FILLING_GAPS:
+                self.__set_filling_order(preprocess_type)
+            elif preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                self.__set_anomaly_handler_order(preprocess_type)
+            elif isinstance(preprocess_type, type):
+                self.__set_custom_handler(preprocess_type)
+            else:
+                raise NotImplementedError()
+
+    def __set_transform_order(self, preprocess_type: PreprocessType):
+        needs_fitting = (self.partial_fit_initialized_transformers or not self.transformer_factory.has_already_initialized) and not self.transformer_factory.is_empty_factory
+        should_partial_fit = (self.transformer_factory.has_already_initialized and self.partial_fit_initialized_transformers) or (not self.transformer_factory.has_already_initialized and not self.create_transformer_per_time_series)
+        is_outer = not self.create_transformer_per_time_series and needs_fitting
+        transformers = self._get_feature_transformers()
+
+        self.train_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, self.has_train(), not is_outer, TransformerHolder(transformers, self.create_transformer_per_time_series, should_partial_fit)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_val(), not is_outer, TransformerHolder(transformers, self.create_transformer_per_time_series, False)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_test(), not is_outer, TransformerHolder(transformers, self.create_transformer_per_time_series, False)))
+        self.all_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_all(), not is_outer, TransformerHolder(transformers, self.create_transformer_per_time_series, False)))
+
+    def __set_filling_order(self, preprocess_type: PreprocessType):
+        needs_fitting = self.can_fit_fillers and not self.filler_factory.is_empty_factory
+        train_fillers, val_fillers, test_fillers, all_fillers = self._get_fillers()
+
+        self.train_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_train(), True, FillingHolder(train_fillers, self.default_values)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, self.has_val(), True, FillingHolder(val_fillers, self.default_values)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, False, needs_fitting, self.has_test(), True, FillingHolder(test_fillers, self.default_values)))
+        self.all_preprocess_order.append(PreprocessNote(preprocess_type, needs_fitting, False, self.has_all(), True, FillingHolder(all_fillers, self.default_values)))
+
+    def __set_anomaly_handler_order(self, preprocess_type: PreprocessType):
+        anomaly_handlers = self._get_anomaly_handlers()
+
+        self.train_preprocess_order.append(PreprocessNote(preprocess_type, False, not self.anomaly_handler_factory.is_empty_factory, self.has_train(), True, AnomalyHandlerHolder(anomaly_handlers)))
+        self.val_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, self.has_val(), True, AnomalyHandlerHolder(None)))
+        self.test_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, self.has_test(), True, AnomalyHandlerHolder(None)))
+        self.all_preprocess_order.append(PreprocessNote(preprocess_type, not self.anomaly_handler_factory.is_empty_factory, False, self.has_all(), True, AnomalyHandlerHolder(None)))
+
+    def _update_preprocess_order_supported_ids(self, preprocess_order: list[PreprocessNote], supported_ts_ids: np.ndarray | list):
+        for preprocess in preprocess_order:
+            preprocess.holder.supported_ts_updated(supported_ts_ids)
+
+    def __set_custom_handler(self, preprocess_type: type):
+        factory = custom_handler_factories.get_custom_handler_factory(preprocess_type)
+
+        if factory.preprocess_enum_type == PreprocessType.PER_SERIES_CUSTOM:
+            self._set_per_series_custom_handler(factory)
+        elif factory.preprocess_enum_type == PreprocessType.ALL_SERIES_CUSTOM:
+            self.__set_all_series_custom_handler(factory)
+        elif factory.preprocess_enum_type == PreprocessType.NO_FIT_CUSTOM:
+            self._set_no_fit_custom_handler(factory)
+        else:
+            raise NotImplementedError()
+
+    @abstractmethod
+    def _set_per_series_custom_handler(self, factory: PerSeriesCustomHandlerFactory):
+        ...
+
+    def __set_all_series_custom_handler(self, factory: AllSeriesCustomHandlerFactory):
+
+        if not self.has_train():
+            raise ValueError("To use AllSeriesCustomHandlerFactory you need to use train set.")
+
+        handler = factory.create_handler()
+
+        self.train_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, False, True, factory.can_apply_to_train, False, AllSeriesCustomHandlerHolder(handler)))
+        self.val_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_val and self.has_val(), False, AllSeriesCustomHandlerHolder(handler)))
+        self.test_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_test and self.has_test(), False, AllSeriesCustomHandlerHolder(handler)))
+        self.all_preprocess_order.append(PreprocessNote(factory.preprocess_enum_type, True, False, factory.can_apply_to_all and self.has_all(), False, AllSeriesCustomHandlerHolder(handler)))
+
+    def _get_summary_steps(self) -> list[css_utils.SummaryDiagramStep]:
+        steps = []
+
+        steps.append(self._get_summary_dataset())
+        steps.append(self._get_summary_filter_time_series())
+        steps.append(self._get_summary_filter_features())
+        steps += self._get_summary_preprocessing()
+        steps += self._get_summary_loader()
+
+        return steps
+
+    def _get_summary_dataset(self) -> css_utils.SummaryDiagramStep:
+        attributes = [css_utils.StepAttribute("Database", self.database_name),
+                      css_utils.StepAttribute("Aggregation", self.aggregation),
+                      css_utils.StepAttribute("Source", self.source_type)]
+
+        return css_utils.SummaryDiagramStep("Load from dataset", attributes)
+
+    @abstractmethod
+    def _get_summary_filter_time_series(self) -> css_utils.SummaryDiagramStep:
+        ...
+
+    def _get_summary_filter_features(self) -> css_utils.SummaryDiagramStep:
+        attributes = [css_utils.StepAttribute("Taken features", self.features_to_take_without_ids),
+                      css_utils.StepAttribute("Time series ID included", self.include_ts_id),
+                      css_utils.StepAttribute("Time included", self.include_time),
+                      css_utils.StepAttribute("Time format", self.time_format)]
+
+        return css_utils.SummaryDiagramStep("Filter features", attributes)
+
+    def _get_summary_preprocessing(self) -> list[css_utils.SummaryDiagramStep]:
+        steps = []
+
+        for preprocess_type, train_pr, val_pr, test_pr, all_pr in list(zip(self.preprocess_order, self.train_preprocess_order, self.val_preprocess_order, self.test_preprocess_order, self.all_preprocess_order)):
+            preprocess_title = None
+            preprocess_type_name = None
+            is_per_time_series = train_pr.is_inner_preprocess
+            target_sets = []
+            requires_fitting = False
+            if train_pr.can_be_applied:
+                target_sets.append("train")
+                requires_fitting = train_pr.should_be_fitted
+            if val_pr.can_be_applied:
+                target_sets.append("val")
+            if test_pr.can_be_applied:
+                target_sets.append("test")
+            if all_pr.can_be_applied:
+                target_sets.append("all")
+
+            if len(target_sets) == 0:
+                continue
+
+            if train_pr.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                preprocess_title = "Handle anomalies"
+                preprocess_type_name = self.anomaly_handler_factory.anomaly_handler_type.__name__
+
+                if self.anomaly_handler_factory.is_empty_factory:
+                    continue
+
+            elif train_pr.preprocess_type == PreprocessType.FILLING_GAPS:
+                preprocess_title = "Handle missing values"
+                preprocess_type_name = f"{self.filler_factory.filler_type.__name__}"
+
+                steps.append(css_utils.SummaryDiagramStep("Pre-fill with default values", [css_utils.StepAttribute("Default values", self.default_values)]))
+
+                if self.filler_factory.is_empty_factory:
+                    continue
+
+            elif train_pr.preprocess_type == PreprocessType.TRANSFORMING:
+                preprocess_title = "Apply transformer"
+                preprocess_type_name = self.transformer_factory.transformer_type.__name__
+
+                if self.transformer_factory.is_empty_factory:
+                    continue
+
+                is_per_time_series = self.create_transformer_per_time_series
+            elif train_pr.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
+            elif train_pr.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
+            elif train_pr.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
+                preprocess_title = f"Apply {preprocess_type.__name__}"
+                preprocess_type_name = preprocess_type.__name__
+
+            step = css_utils.SummaryDiagramStep(preprocess_title, [css_utils.StepAttribute("Type", preprocess_type_name),
+                                                                   css_utils.StepAttribute("Requires fitting", requires_fitting),
+                                                                   css_utils.StepAttribute("Is per time series", is_per_time_series),
+                                                                   css_utils.StepAttribute("Target sets", target_sets)])
+            steps.append(step)
+
+        return steps
+
+    @abstractmethod
+    def _get_summary_loader(self) -> list[css_utils.SummaryDiagramStep]:
+        ...
+
+    @abstractmethod
+    def _set_no_fit_custom_handler(self, factory: NoFitCustomHandlerFactory):
+        ...
+
     @abstractmethod
     def _set_time_period(self, all_time_ids: np.ndarray) -> None:
-        """Validates and filters the input time periods based on the dataset and aggregation. This typically calls [`_process_time_period`][cesnet_tszoo.configs.base_config.DatasetConfig._process_time_period] for each time period. """
+        """Validates and filters the input time periods based on the dataset and aggregation. This typically calls [`_process_time_period`](reference_dataset_config.md#references.DatasetConfig._process_time_period) for each time period. """
         ...
 
     @abstractmethod
-    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray) -> None:
-        """Validates and filters the input time series IDs based on the `dataset` and `source_type`. This typically calls [`_process_ts_ids`][cesnet_tszoo.configs.base_config.DatasetConfig._process_ts_ids] for each time series ID filter. """
+    def _set_ts(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, rd: np.random.RandomState) -> None:
+        """Validates and filters the input time series IDs based on the `dataset` and `source_type`. This typically calls [`_process_ts_ids`](reference_dataset_config.md#references.DatasetConfig._process_ts_ids) for each time series ID filter. """
         ...
 
     @abstractmethod
-    def _set_feature_transformers(self) -> None:
-        """Creates and/or validates transformers based on the `transform_with` parameter. """
+    def _get_feature_transformers(self) -> np.ndarray[Transformer] | Transformer:
+        """Creates transformers with `transformer_factory`. """
         ...
 
     @abstractmethod
-    def _set_fillers(self) -> None:
-        """Creates and/or validates fillers based on the `fill_missing_with` parameter. """
+    def _get_fillers(self) -> tuple:
+        """Creates fillers with `filler_factory`. """
         ...
 
     @abstractmethod
-    def _set_anomaly_handlers(self) -> None:
-        """Creates and/or validates anomaly handlers based on the `handle_anomalies_with` parameter. """
+    def _get_anomaly_handlers(self) -> np.ndarray:
+        """Creates anomaly handlers with `anomaly_handler_factory`. """
         ...
 
     @abstractmethod

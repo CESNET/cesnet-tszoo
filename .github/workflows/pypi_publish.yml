@@ -1,0 +1,35 @@
+name: Publish to PyPI on merge to main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-upload-testpypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.3'
+
+      - name: Install build tools
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade build
+          python3 -m pip install --upgrade twine
+
+      - name: Build package
+        run: python3 -m build
+
+      - name: Upload to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python3 -m twine upload dist/*

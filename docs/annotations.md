@@ -3,7 +3,7 @@
 This tutorial will look at how to use annotations.
 
 !!! info "Note"
-    For every option and more detailed examples refer to Jupyter notebook [`annotations`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/annotations.ipynb).
+    For every option and more detailed examples refer to Jupyter notebook [`annotations`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/annotations.ipynb).
 
 ## Basics
 
@@ -72,7 +72,7 @@ dataset.remove_annotation(annotation_group="test3", ts_id=3, id_time=0 ) # Remov
 
 ## Exporting annotations
 - You can export your created annotation with `save_annotations` method.
-- `save_annotations` creates CSV file at: `os.path.join(dataset.annotations_root, identifier)`.
+- `save_annotations` creates CSV file at: `os.path.join(dataset.metadata.annotations_root, identifier)`.
 - When parameter `force_write` is True, existing files with same name will be overwritten.
 - You should not add ".csv" to identifier, because it will be added automatically.
 

@@ -1,0 +1,154 @@
+.pipe-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: white;
+    border: 1px dashed #555;
+    row-gap: 0px;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: "Segoe UI", sans-serif;
+    justify-content: flex-start;
+    width: max-content;
+    height: fit-content;
+    min-width: 240px;
+    position: relative;
+}
+
+.pipe-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: black;
+}
+
+.pipe-step {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+}
+
+.pipe-connector {
+    width: 4px;
+    height: 20px;
+    background: black;
+    margin: 0 auto;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.text-fallback {
+    display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .pipe-connector {
+        background: white;
+    }
+
+    .pipe-container {
+        background: #1e1e1e;
+    }
+
+    .pipe-title {
+        color: white;
+    }
+}
+
+.dropbtn:hover {
+    background-color: #0f5e92;
+}
+
+
+.dropbtn::before {
+    content: "⯈";
+    position: absolute;
+    font-size: 7px;
+    left: 10px;
+    transition: transform 0.2s;
+}
+
+details[open] .dropbtn::before {
+    content: "▼";
+    font-size: 6px;
+}
+
+.dropbtn {
+    cursor: pointer;
+    background-color: #2176bd;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 5px 5px 0 0;
+    font-size: 16px;
+    list-style: none;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.empty-dropbtn {
+    cursor: pointer;
+    background-color: #043e64;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px 5px 0 0;
+    font-size: 16px;
+    list-style: none;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+summary::-webkit-details-marker {
+    display: none;
+}
+
+.dropdown-content {
+    width: 100%;
+    padding: 10px 10px;
+    background-color: #3498db;
+    border-radius: 0 0 5px 5px;
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+
+.dropdown-content table {
+    table-layout: fixed;
+    background-color: #f8f9fa;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #888;
+    margin: 0px auto;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dropdown-content th,
+.dropdown-content td {
+    text-align: left;
+    padding: 4px 12px;
+    border-bottom: 1px solid #ddd;
+    word-wrap: break-word;
+    border: 1px solid #888;
+    color: black;
+}
+
+.dropdown-content th {
+    background-color: #e9ecef;
+    font-weight: bold;
+}
+
+.dropdown-content tr:hover {
+    background-color: #f1f1f1;
+}

@@ -1,104 +1,72 @@
-from copy import deepcopy
-from typing import Optional
-
 import numpy as np
 
-from cesnet_tszoo.utils.filler import Filler
-from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
 from cesnet_tszoo.pytables_data.base_datasets.initializer_dataset import InitializerDataset
+from cesnet_tszoo.data_models.fitted_preprocess_instance import FittedPreprocessInstance
+from cesnet_tszoo.data_models.init_dataset_configs.series_init_config import SeriesDatasetInitConfig
+from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder
+from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
 
 
 class SeriesBasedInitializerDataset(InitializerDataset):
-    """Used for series based datasets. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
+    """Used for series based datasets. Used applying/fitting preprocesses and validating thresholds."""
 
-    def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, train_ts_row_ranges: np.ndarray, val_ts_row_ranges: np.ndarray, test_ts_row_ranges: np.ndarray, all_ts_row_ranges: np.ndarray, time_period: np.ndarray,
-                 features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray, all_fillers: np.ndarray[Filler], anomaly_handlers: np.ndarray[AnomalyHandler]):
-        self.train_ts_row_ranges = train_ts_row_ranges
-        self.val_ts_row_ranges = val_ts_row_ranges
-        self.test_ts_row_ranges = test_ts_row_ranges
-        self.all_ts_row_ranges = all_ts_row_ranges
+    def __init__(self, database_path: str, table_data_path: str, init_config: SeriesDatasetInitConfig):
+        self.init_config = init_config
 
-        self.anomaly_handlers = anomaly_handlers
+        super(SeriesBasedInitializerDataset, self).__init__(database_path, table_data_path, init_config)
 
-        self.all_fillers = deepcopy(all_fillers)
+    def __getitem__(self, idx) -> InitDatasetReturn:
 
-        super(SeriesBasedInitializerDataset, self).__init__(database_path, table_data_path, ts_id_name, time_period, features_to_take, indices_of_features_to_take_no_ids, default_values)
+        data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
+        is_under_nan_threshold = 1 - len(existing_indices) / len(self.init_config.time_period) <= self.init_config.nan_threshold
 
-    def __getitem__(self, idx):
+        preprocess_fitted_instances = []
+        train_data = np.array([])
 
-        current_ts_row_ranges = None
-        offset = 0
-        is_train = False
-        is_val = False
-        is_test = False
+        if is_under_nan_threshold:
 
-        # Check if current time series belongs into train set
-        if self.train_ts_row_ranges is not None:
-            if idx < len(self.train_ts_row_ranges):
-                current_ts_row_ranges = self.train_ts_row_ranges
-                is_train = True
+            # Prepare data from current time series for training
+            if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
+                train_data = data[: len(self.init_config.time_period), self.offset_exclude_feature_ids:].reshape(-1, 1)
+            elif len(self.init_config.time_period) == 1:
+                train_data = data[: len(self.init_config.time_period), self.offset_exclude_feature_ids:].reshape(1, -1)
             else:
-                offset += len(self.train_ts_row_ranges)
+                train_data = data[: len(self.init_config.time_period), self.offset_exclude_feature_ids:]
 
-        if self.val_ts_row_ranges is not None and not is_train:
-            if idx - offset >= 0 and idx - offset < len(self.val_ts_row_ranges):
-                current_ts_row_ranges = self.val_ts_row_ranges
-                is_val = True
-            elif idx - offset > 0:
-                offset += len(self.val_ts_row_ranges)
+            train_data = self._handle_data_preprocess(train_data, idx)
 
-        if self.test_ts_row_ranges is not None and not is_train and not is_val:
-            if idx - offset >= 0 and idx - offset < len(self.test_ts_row_ranges):
-                current_ts_row_ranges = self.test_ts_row_ranges
-                is_test = True
+            for preprocess_order in self.init_config.preprocess_order_group.preprocess_inner_orders:
+                if preprocess_order.should_be_fitted and not preprocess_order.holder.is_empty():
+                    preprocess_fitted_instances.append(FittedPreprocessInstance(preprocess_order.preprocess_type, preprocess_order.get_from_holder(idx)))
 
-        if not is_train and not is_val and not is_test:
-            current_ts_row_ranges = self.all_ts_row_ranges
-
-        data, count_values = self.load_data_from_table(current_ts_row_ranges[idx - offset], idx)
-        this_anomaly_handler = None
-
-        if self.anomaly_handlers is not None and self.train_ts_row_ranges is not None and idx < len(self.train_ts_row_ranges):
-            this_anomaly_handler = self.anomaly_handlers[idx]
-        else:
-            this_anomaly_handler = None
-
-        # If current times series belongs to train set, return it for fitting transformers
-        if is_train:
-            train_data = None
-
-            if len(self.indices_of_features_to_take_no_ids) == 1:
-                train_data = data[:, self.offset_exclude_feature_ids:].reshape(-1, 1)
-            elif len(self.time_period) == 1:
-                train_data = data[:, self.offset_exclude_feature_ids:].reshape(1, -1)
-            else:
-                train_data = data[:, self.offset_exclude_feature_ids:]
-
-            return train_data, count_values, is_train, is_val, is_test, idx - offset, this_anomaly_handler
-
-        return None, count_values, is_train, is_val, is_test, idx - offset, this_anomaly_handler
+        return InitDatasetReturn(train_data, is_under_nan_threshold, preprocess_fitted_instances)
 
     def __len__(self) -> int:
-        return len(self.all_ts_row_ranges)
+        return len(self.init_config.ts_row_ranges)
 
-    def fill_values(self, missing_values_mask: np.ndarray, idx, result, first_next_existing_values, first_next_existing_values_distance):
+    def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
+        return self._handle_data_preprocess_order_group(self.init_config.preprocess_order_group, data, idx)
+
+    def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int) -> np.ndarray:
         """Just fills data. """
 
-        existing_indices = np.where(missing_values_mask == 0)[0]
-        missing_indices = np.where(missing_values_mask == 1)[0]
+        return filling_holder.apply(data.view(), idx)
 
-        if self.all_fillers is not None:
-            self.all_fillers[idx].fill(result[:, self.offset_exclude_feature_ids:].view(), existing_indices, missing_indices, default_values=self.default_values,
-                                       first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
-
-        return (len(existing_indices), len(missing_indices))
-
-    def handle_anomalies(self, data: np.ndarray, idx: int):
+    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses anomaly handlers. """
 
-        if self.anomaly_handlers is None:
-            return
+        if anomaly_handler_holder.is_empty():
+            return data
 
-        if idx < len(self.train_ts_row_ranges):
-            self.anomaly_handlers[idx].fit(data[:, self.offset_exclude_feature_ids:])
-            self.anomaly_handlers[idx].transform_anomalies(data[:, self.offset_exclude_feature_ids:])
+        if should_fit:
+            anomaly_handler_holder.fit(data, idx)
+
+        return anomaly_handler_holder.apply(data.view(), idx)
+
+    def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        """Fits and uses transformers. """
+
+        if should_fit:
+            transfomer_holder.fit(data, idx)
+
+        return transfomer_holder.apply(data, idx)

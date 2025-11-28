@@ -1,5 +1,6 @@
 from abc import ABC
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -16,21 +17,21 @@ class SeriesBasedHandler(ABC):
                  val_ts: list[int] | npt.NDArray[np.int_] | float | int | None,
                  test_ts: list[int] | npt.NDArray[np.int_] | float | int | None):
 
-        self.train_ts = train_ts
-        self.val_ts = val_ts
-        self.test_ts = test_ts
-        self.all_ts = None
+        self.train_ts: Optional[np.ndarray] = train_ts
+        self.val_ts: Optional[np.ndarray] = val_ts
+        self.test_ts: Optional[np.ndarray] = test_ts
+        self.all_ts: Optional[np.ndarray] = None
 
-        self.uses_all_ts = uses_all_ts
+        self.uses_all_ts: bool = uses_all_ts
 
-        self.train_ts_row_ranges = None
-        self.val_ts_row_ranges = None
-        self.test_ts_row_ranges = None
-        self.all_ts_row_ranges = None
+        self.train_ts_row_ranges: Optional[np.ndarray] = None
+        self.val_ts_row_ranges: Optional[np.ndarray] = None
+        self.test_ts_row_ranges: Optional[np.ndarray] = None
+        self.all_ts_row_ranges: Optional[np.ndarray] = None
 
-        self.logger = logger
+        self.logger: Logger = logger
 
-    def _prepare_and_set_ts_sets(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, ts_id_name: str, random_state) -> None:
+    def _prepare_and_set_ts_sets(self, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, ts_id_name: str, random_state: Optional[int], rd: np.random.RandomState) -> None:
         """Validates and filters the input time series IDs based on the `dataset` and `source_type`. Handles random split."""
 
         random_ts_ids = all_ts_ids[ts_id_name]
@@ -38,7 +39,7 @@ class SeriesBasedHandler(ABC):
 
         # Process train_ts if it was specified with times series ids
         if self.train_ts is not None and not isinstance(self.train_ts, (float, int)):
-            self.train_ts, self.train_ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.train_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state)
+            self.train_ts, self.train_ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.train_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state, rd)
 
             mask = np.isin(random_ts_ids, self.train_ts, invert=True)
             random_ts_ids = random_ts_ids[mask]
@@ -48,7 +49,7 @@ class SeriesBasedHandler(ABC):
 
         # Process val_ts if it was specified with times series ids
         if self.val_ts is not None and not isinstance(self.val_ts, (float, int)):
-            self.val_ts, self.val_ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.val_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state)
+            self.val_ts, self.val_ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.val_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state, rd)
 
             mask = np.isin(random_ts_ids, self.val_ts, invert=True)
             random_ts_ids = random_ts_ids[mask]
@@ -58,7 +59,7 @@ class SeriesBasedHandler(ABC):
 
         # Process time_ts if it was specified with times series ids
         if self.test_ts is not None and not isinstance(self.test_ts, (float, int)):
-            self.test_ts, self.test_ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.test_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state)
+            self.test_ts, self.test_ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.test_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state, rd)
 
             mask = np.isin(random_ts_ids, self.test_ts, invert=True)
             random_ts_ids = random_ts_ids[mask]
@@ -79,23 +80,23 @@ class SeriesBasedHandler(ABC):
 
         # Process random train_ts if it is to be randomly made
         if isinstance(self.train_ts, int):
-            self.train_ts, self.train_ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.train_ts, random_indices, self.logger, ts_id_name, random_state)
+            self.train_ts, self.train_ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.train_ts, random_indices, self.logger, ts_id_name, random_state, rd)
             self.logger.debug("Random train_ts set with %s time series.", self.train_ts)
 
         # Process random val_ts if it is to be randomly made
         if isinstance(self.val_ts, int):
-            self.val_ts, self.val_ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.val_ts, random_indices, self.logger, ts_id_name, random_state)
+            self.val_ts, self.val_ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.val_ts, random_indices, self.logger, ts_id_name, random_state, rd)
             self.logger.debug("Random val_ts set with %s time series.", self.val_ts)
 
         # Process random test_ts if it is to be randomly made
         if isinstance(self.test_ts, int):
-            self.test_ts, self.test_ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.test_ts, random_indices, self.logger, ts_id_name, random_state)
+            self.test_ts, self.test_ts_row_ranges, random_indices = SeriesBasedHandler._process_ts_ids(None, all_ts_ids, all_ts_row_ranges, self.test_ts, random_indices, self.logger, ts_id_name, random_state, rd)
             self.logger.debug("Random test_ts set with %s time series.", self.test_ts)
 
         if self.uses_all_ts:
             if self.train_ts is None and self.val_ts is None and self.test_ts is None:
                 self.all_ts = all_ts_ids[ts_id_name]
-                self.all_ts, self.all_ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.all_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state)
+                self.all_ts, self.all_ts_row_ranges, _ = SeriesBasedHandler._process_ts_ids(self.all_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state, rd)
                 self.logger.info("Using all time series for all_ts because train_ts, val_ts, and test_ts are all set to None.")
             else:
                 for temp_ts_ids in [self.train_ts, self.val_ts, self.test_ts]:
@@ -113,7 +114,7 @@ class SeriesBasedHandler(ABC):
                 if self.test_ts is not None:
                     self.logger.debug("all_ts includes ids from test_ts.")
 
-                self.all_ts, self.all_ts_row_ranges, _ = self._process_ts_ids(self.all_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state)
+                self.all_ts, self.all_ts_row_ranges, _ = self._process_ts_ids(self.all_ts, all_ts_ids, all_ts_row_ranges, None, None, self.logger, ts_id_name, random_state, rd)
         else:
             self.all_ts = None
 
@@ -162,7 +163,7 @@ class SeriesBasedHandler(ABC):
             raise ValueError("Train, Val, and Test can't have the same IDs.")
 
     @staticmethod
-    def _process_ts_ids(ts_ids: np.ndarray, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, split_size: float | int | None, random_indices: np.ndarray, logger: Logger, ts_id_name: str, random_state) -> None:
+    def _process_ts_ids(ts_ids: np.ndarray, all_ts_ids: np.ndarray, all_ts_row_ranges: np.ndarray, split_size: float | int | None, random_indices: np.ndarray, logger: Logger, ts_id_name: str, random_state: Optional[int], rd: np.random.RandomState) -> None:
         """Validates and filters the input `ts_ids` based on the `dataset` and `source_type`. """
 
         if ts_ids is None and split_size is None:
@@ -174,7 +175,7 @@ class SeriesBasedHandler(ABC):
                 raise ValueError(f"Trying to use more time series than there are in the dataset. There are {len(all_ts_ids)} time series available.")
 
             if split_size == len(random_indices):
-                np.random.shuffle(random_indices)
+                rd.shuffle(random_indices)
                 ts_indices = random_indices
                 ts_ids = all_ts_ids[ts_id_name][ts_indices]
                 random_indices = np.array([])  # No remaining indices

@@ -5,7 +5,7 @@ This tutorial will look at some configuration options used for handling missing 
 Only time-based will be used, because all methods work almost the same way for other dataset types.
 
 !!! info "Note"
-    For every configuration and more detailed examples refer to Jupyter notebook [`handling_missing_data`](https://github.com/CESNET/cesnet-tszoo/blob/main/tutorial_notebooks/handling_missing_data.ipynb)
+    For every configuration and more detailed examples refer to Jupyter notebook [`handling_missing_data`](https://github.com/CESNET/cesnet-ts-zoo-tutorials/blob/main/handling_missing_data.ipynb)
 
 Relevant configuration values:
 
@@ -60,7 +60,7 @@ time_based_dataset.set_default_values(default_values="default", workers=0)
 - You can change used filler later with `update_dataset_config_and_initialize` or `apply_filler`.
 
 ### Built-in
-To see all built-in fillers refer to [`Fillers`][cesnet_tszoo.utils.filler.MeanFiller].
+To see all built-in fillers refer to [`Fillers`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.MeanFiller).
 
 ```python
 
@@ -88,7 +88,7 @@ time_based_dataset.apply_filler(fill_missing_with=FillerType.FORWARD_FILLER, wor
 ### Custom
 You can create your own custom filler, which must derive from 'Filler' base class. 
 
-To check Filler base class refer to [`Filler`][cesnet_tszoo.utils.filler.Filler]
+To check Filler base class refer to [`Filler`](reference_fillers.md#cesnet_tszoo.utils.filler.filler.Filler)
 
 ```python
 
@@ -115,5 +115,33 @@ Or later with:
 time_based_dataset.update_dataset_config_and_initialize(fill_missing_with=CustomFiller, workers=0)
 # Or
 time_based_dataset.apply_filler(CustomFiller, workers=0)
+
+```
+
+## Changing when are missing values handled
+- You can change when are `default_values` and filler applied with `preprocess_order` parameter
+- `default_values` are always applied before filler and filler considers values filled with `default_values`, as still missing
+
+```python
+
+from cesnet_tszoo.utils.utils.enums import FillerType
+from cesnet_tszoo.configs import TimeBasedConfig
+
+config = TimeBasedConfig(ts_ids=[1200], train_time_period=range(0, 30), test_time_period=range(30, 80), features_to_take=['n_flows', 'n_packets'],
+                         default_values=None, fill_missing_with=FillerType.FORWARD_FILLER, preprocess_order=["handling_anomalies", "filling_gaps", "transforming"])
+                                                                        
+# Call on time-based dataset to use created config
+time_based_dataset.set_dataset_config_and_initialize(config)
+
+```
+
+Or later with:
+
+
+```python
+
+time_based_dataset.update_dataset_config_and_initialize(preprocess_order=["filling_gaps", "handling_anomalies", "transforming"], workers=0)
+# Or
+time_based_dataset.set_preprocess_order(preprocess_order=["filling_gaps", "handling_anomalies", "transforming"], workers=0)
 
 ```

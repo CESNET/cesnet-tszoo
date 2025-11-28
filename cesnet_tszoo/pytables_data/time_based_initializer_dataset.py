@@ -3,83 +3,151 @@ from copy import deepcopy
 import numpy as np
 
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME
-from cesnet_tszoo.utils.filler import Filler
-from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
 from cesnet_tszoo.pytables_data.base_datasets.initializer_dataset import InitializerDataset
+from cesnet_tszoo.data_models.init_dataset_configs.time_init_config import TimeDatasetInitConfig
+from cesnet_tszoo.data_models.fitted_preprocess_instance import FittedPreprocessInstance
+from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
+from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
+from cesnet_tszoo.utils.enums import PreprocessType
 
 
 class TimeBasedInitializerDataset(InitializerDataset):
-    """Used for time based datasets. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
+    """Used for time based datasets. Used applying/fitting preprocesses and validating thresholds."""
 
-    def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, ts_row_ranges: np.ndarray, all_time_period: np.ndarray, train_time_period: np.ndarray, val_time_period: np.ndarray, test_time_period: np.ndarray,
-                 features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray, anomaly_handlers: np.ndarray[AnomalyHandler],
-                 train_fillers: np.ndarray[Filler], val_fillers: np.ndarray[Filler], test_fillers: np.ndarray[Filler]):
-        self.ts_row_ranges = ts_row_ranges
+    def __init__(self, database_path: str, table_data_path: str, init_config: TimeDatasetInitConfig):
+        self.init_config = init_config
 
-        self.train_time_period = train_time_period
-        self.val_time_period = val_time_period
-        self.test_time_period = test_time_period
-        self.all_time_period = all_time_period
-
-        self.train_fillers = deepcopy(train_fillers)
-        self.val_fillers = val_fillers
-        self.test_fillers = test_fillers
-
-        self.anomaly_handlers = anomaly_handlers
-
-        time_period = None
-
-        if self.all_time_period is None:
-            for temp_time_period in [self.train_time_period, self.val_time_period, self.test_time_period]:
-                if temp_time_period is None:
-                    continue
-                elif time_period is None:
-                    time_period = temp_time_period.copy()
-                else:
-                    time_period = np.concatenate((time_period, temp_time_period))
-
-            time_period = np.unique(time_period)
-        else:
-            time_period = self.all_time_period.copy()
-
-        super(TimeBasedInitializerDataset, self).__init__(database_path, table_data_path, ts_id_name, time_period, features_to_take, indices_of_features_to_take_no_ids, default_values)
+        super(TimeBasedInitializerDataset, self).__init__(database_path, table_data_path, init_config)
 
     def __getitem__(self, idx):
 
-        data, count_values = self.load_data_from_table(self.ts_row_ranges[idx], idx)
+        if self.init_config.ts_ids_ignore[idx]:
+            return None
 
-        train_count_values, val_count_values, test_count_values, all_count_values = count_values
+        data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
 
-        this_val_filler = self.val_fillers[idx] if self.val_time_period is not None and self.val_fillers is not None else None
-        this_test_filler = self.test_fillers[idx] if self.test_time_period is not None and self.test_fillers is not None else None
-        this_anomaly_handler = self.anomaly_handlers[idx] if self.anomaly_handlers is not None else None
+        shared_offset = 0
+        active_sets = 0
 
-        # Prepare train data from current time series, if train set is used
-        train_data = None
-        if self.train_time_period is not None:
-            if len(self.indices_of_features_to_take_no_ids) == 1:
-                train_data = data[: len(self.train_time_period), self.offset_exclude_feature_ids:].reshape(-1, 1)
-            elif len(self.train_time_period) == 1:
-                train_data = data[: len(self.train_time_period), self.offset_exclude_feature_ids:].reshape(1, -1)
+        total = 0
+        if self.init_config.train_time_period is not None:
+            total += len(self.init_config.train_time_period)
+            active_sets += 1
+        if self.init_config.val_time_period is not None:
+            total += len(self.init_config.val_time_period)
+            active_sets += 1
+        if self.init_config.test_time_period is not None:
+            total += len(self.init_config.test_time_period)
+            active_sets += 1
+
+        if active_sets > 1:
+            shared_offset = int((total - len(self.init_config.all_time_period)) / (active_sets - 1))
+
+        can_preprocess = True
+
+        is_train_under_nan_threshold = True
+        if self.init_config.train_time_period is not None and can_preprocess:
+            in_train = (existing_indices < len(self.init_config.train_time_period)).sum()
+            is_train_under_nan_threshold = 1 - (in_train) / len(self.init_config.train_time_period) <= self.init_config.nan_threshold
+            existing_indices -= len(self.init_config.train_time_period) - shared_offset
+            existing_indices = existing_indices[existing_indices >= 0]
+
+        can_preprocess = can_preprocess and is_train_under_nan_threshold
+
+        is_val_under_nan_threshold = True
+        if self.init_config.val_time_period is not None and can_preprocess:
+            in_val = (existing_indices < len(self.init_config.val_time_period)).sum()
+            is_val_under_nan_threshold = 1 - (in_val) / len(self.init_config.val_time_period) <= self.init_config.nan_threshold
+            existing_indices -= len(self.init_config.val_time_period) - shared_offset
+            existing_indices = existing_indices[existing_indices >= 0]
+        can_preprocess = can_preprocess and is_val_under_nan_threshold
+
+        is_test_under_nan_threshold = True
+        if self.init_config.test_time_period is not None and can_preprocess:
+            in_test = (existing_indices < len(self.init_config.test_time_period)).sum()
+            is_test_under_nan_threshold = 1 - (in_test) / len(self.init_config.test_time_period) <= self.init_config.nan_threshold
+        can_preprocess = can_preprocess and is_test_under_nan_threshold
+
+        is_all_under_nan_threshold = True
+        can_preprocess = can_preprocess and is_all_under_nan_threshold
+
+        train_preprocess_fitted_instances = []
+        val_preprocess_fitted_instances = []
+        test_preprocess_fitted_instances = []
+
+        train_data = np.array([])
+        if can_preprocess:
+
+            # Prepare data from current time series for training
+            if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
+                train_data = data[:, self.offset_exclude_feature_ids:].reshape(-1, 1)
+            elif len(self.init_config.time_period) == 1:
+                train_data = data[:, self.offset_exclude_feature_ids:].reshape(1, -1)
             else:
-                train_data = data[: len(self.train_time_period), self.offset_exclude_feature_ids:]
+                train_data = data[:, self.offset_exclude_feature_ids:]
 
-        return train_data, train_count_values, val_count_values, test_count_values, all_count_values, this_val_filler, this_test_filler, this_anomaly_handler
+            train_data = self._handle_data_preprocess(train_data, idx)
+
+            if self.init_config.train_time_period is not None:
+                train_data = train_data[: len(self.init_config.train_time_period)]
+            else:
+                train_data = np.array([])
+
+            for preprocess_order in self.init_config.train_preprocess_order_group.preprocess_inner_orders:
+                if preprocess_order.should_be_fitted and not preprocess_order.holder.is_empty():
+                    train_preprocess_fitted_instances.append(FittedPreprocessInstance(preprocess_order.preprocess_type, preprocess_order.get_from_holder(idx)))
+
+            for preprocess_order in self.init_config.val_preprocess_order_group.preprocess_inner_orders:
+                if preprocess_order.should_be_fitted and not preprocess_order.holder.is_empty():
+                    val_preprocess_fitted_instances.append(FittedPreprocessInstance(preprocess_order.preprocess_type, preprocess_order.get_from_holder(idx)))
+
+            for preprocess_order in self.init_config.test_preprocess_order_group.preprocess_inner_orders:
+                if preprocess_order.should_be_fitted and not preprocess_order.holder.is_empty():
+                    test_preprocess_fitted_instances.append(FittedPreprocessInstance(preprocess_order.preprocess_type, preprocess_order.get_from_holder(idx)))
+
+        return InitDatasetReturn(train_data, is_train_under_nan_threshold, train_preprocess_fitted_instances), InitDatasetReturn(None, is_val_under_nan_threshold, val_preprocess_fitted_instances), InitDatasetReturn(None, is_test_under_nan_threshold, test_preprocess_fitted_instances), InitDatasetReturn(None, is_all_under_nan_threshold, None)
 
     def __len__(self) -> int:
-        return len(self.ts_row_ranges)
+        return len(self.init_config.ts_row_ranges)
 
-    def fill_values(self, missing_values_mask: np.ndarray, idx, result, first_next_existing_values, first_next_existing_values_distance):
+    def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> tuple[np.ndarray, np.ndarray]:
+
+        train_preprocess_inner_orders = self.init_config.train_preprocess_order_group.preprocess_inner_orders
+        val_preprocess_inner_orders = self.init_config.val_preprocess_order_group.preprocess_inner_orders
+        test_preprocess_inner_orders = self.init_config.test_preprocess_order_group.preprocess_inner_orders
+
+        for train_preprocess, val_preprocess, test_preprocess in list(zip(train_preprocess_inner_orders, val_preprocess_inner_orders, test_preprocess_inner_orders)):
+
+            train_holder = train_preprocess.holder
+            val_holder = val_preprocess.holder
+            test_holder = test_preprocess.holder
+
+            need_train_fit = train_preprocess.should_be_fitted
+            need_val_fit = val_preprocess.should_be_fitted
+            need_test_fit = test_preprocess.should_be_fitted
+
+            can_train_apply = train_preprocess.can_be_applied
+            can_val_apply = val_preprocess.can_be_applied
+
+            if train_preprocess.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                data = self._handle_anomalies(train_preprocess.holder, train_preprocess.should_be_fitted, data[:len(self.init_config.train_time_period)].view(), idx)
+            elif train_preprocess.preprocess_type == PreprocessType.FILLING_GAPS:
+                data = self._handle_filling(train_holder, val_holder, test_holder, need_val_fit, need_test_fit, data, idx)
+            elif train_preprocess.preprocess_type == PreprocessType.TRANSFORMING:
+                data = self._handle_transforming(train_preprocess.holder, need_train_fit, data, idx)
+            elif train_preprocess.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
+                data = self._handle_per_series_custom_handler(train_preprocess.holder, need_train_fit, can_train_apply, can_val_apply, data, idx)
+            elif train_preprocess.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
+                data = self._handle_all_series_custom_handler(train_preprocess.holder, can_train_apply, can_val_apply, data, idx)
+            elif train_preprocess.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
+                data = self._handle_no_fit_custom_handler(train_holder, can_train_apply, can_val_apply, data, idx)
+            else:
+                raise NotImplementedError()
+
+        return data
+
+    def _handle_filling(self, train_filling_holder: FillingHolder, val_filling_holder: FillingHolder, test_filling_holder: FillingHolder, need_val_fit: bool, need_test_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fills data and prepares fillers based on previous times. Order is train (does not need to update train fillers) > val > test."""
-
-        train_existing_indices = []
-        train_missing_indices = []
-        val_existing_indices = []
-        val_missing_indices = []
-        test_existing_indices = []
-        test_missing_indices = []
-        all_existing_indices = np.where(missing_values_mask == 0)[0]
-        all_missing_indices = np.where(missing_values_mask == 1)[0]
 
         offset_start = np.inf
         first_start_index = None
@@ -87,71 +155,97 @@ class TimeBasedInitializerDataset(InitializerDataset):
         previous_offset = 0
 
         # Missing/existing indices for train set
-        if self.train_time_period is not None:
-            first_start_index = offset_start = self.train_time_period[ID_TIME_COLUMN_NAME][0]
-            train_existing_indices = np.where(missing_values_mask[:len(self.train_time_period)] == 0)[0]
-            train_missing_indices = np.where(missing_values_mask[:len(self.train_time_period)] == 1)[0]
+        if self.init_config.train_time_period is not None:
+            first_start_index = offset_start = self.init_config.train_time_period[ID_TIME_COLUMN_NAME][0]
 
         # Missing/existing indices for validation set; Additionally prepares validation fillers based on previous values if needed and fills data
-        if self.val_time_period is not None:
+        if self.init_config.val_time_period is not None and need_val_fit:
 
-            current_start_index = self.val_time_period[ID_TIME_COLUMN_NAME][0]
+            current_start_index = self.init_config.val_time_period[ID_TIME_COLUMN_NAME][0]
             if first_start_index is not None and current_start_index > first_start_index:
                 previous_offset = current_start_index - first_start_index
 
-                previous_existing_indices = np.where(missing_values_mask[:current_start_index - first_start_index] == 0)[0]
-                previous_missing_indices = np.where(missing_values_mask[:current_start_index - first_start_index] == 1)[0]
+                train_should_fill = False
+                data[:current_start_index - first_start_index] = val_filling_holder.apply(data[:current_start_index - first_start_index].view(), idx)
 
-                if self.val_fillers is not None:
-                    train_should_fill = False
-                    self.val_fillers[idx].fill(result[:current_start_index - first_start_index, self.offset_exclude_feature_ids:].view(), previous_existing_indices, previous_missing_indices,
-                                               default_values=self.default_values,
-                                               first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
-
-            offset_start = min(offset_start, self.val_time_period[ID_TIME_COLUMN_NAME][0])
-            offsetted_val_time_period = self.val_time_period[ID_TIME_COLUMN_NAME] - offset_start
-
-            val_existing_indices = np.where(missing_values_mask[offsetted_val_time_period] == 0)[0]
-            val_missing_indices = np.where(missing_values_mask[offsetted_val_time_period] == 1)[0]
+            offset_start = min(offset_start, self.init_config.val_time_period[ID_TIME_COLUMN_NAME][0])
 
             if first_start_index is None:
                 first_start_index = current_start_index
 
         # Missing/existing indices for test set; Additionally prepares test fillers based on previous values if needed and fills data
-        if self.test_time_period is not None:
+        if self.init_config.test_time_period is not None and need_test_fit:
 
-            current_start_index = self.test_time_period[ID_TIME_COLUMN_NAME][0]
+            current_start_index = self.init_config.test_time_period[ID_TIME_COLUMN_NAME][0]
 
             if first_start_index is not None and current_start_index > first_start_index:
-                previous_existing_indices = np.where(missing_values_mask[previous_offset:current_start_index - first_start_index] == 0)[0]
-                previous_missing_indices = np.where(missing_values_mask[previous_offset:current_start_index - first_start_index] == 1)[0]
 
-                if self.test_fillers is not None:
-                    if self.val_fillers is not None:
-                        self.test_fillers[idx] = deepcopy(self.val_fillers[idx])
-                    train_should_fill = False
-                    self.test_fillers[idx].fill(result[previous_offset:current_start_index - first_start_index, self.offset_exclude_feature_ids:].view(), previous_existing_indices, previous_missing_indices,
-                                                default_values=self.default_values,
-                                                first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
+                if self.init_config.val_time_period is not None:
+                    test_filling_holder.fillers[idx] = deepcopy(val_filling_holder.get_instance(idx))
 
-            offset_start = min(offset_start, self.test_time_period[ID_TIME_COLUMN_NAME][0])
-            offsetted_test_time_period = self.test_time_period[ID_TIME_COLUMN_NAME] - offset_start
+                train_should_fill = False
+                data[previous_offset:current_start_index - first_start_index] = test_filling_holder.apply(data[previous_offset:current_start_index - first_start_index].view(), idx)
 
-            test_existing_indices = np.where(missing_values_mask[offsetted_test_time_period] == 0)[0]
-            test_missing_indices = np.where(missing_values_mask[offsetted_test_time_period] == 1)[0]
+            offset_start = min(offset_start, self.init_config.test_time_period[ID_TIME_COLUMN_NAME][0])
 
-        if self.train_time_period is not None and self.train_fillers is not None and train_should_fill:  # for transformer...
-            self.train_fillers[idx].fill(result[:, self.offset_exclude_feature_ids:].view(), train_existing_indices, train_missing_indices,
-                                         default_values=self.default_values,
-                                         first_next_existing_values=first_next_existing_values, first_next_existing_values_distance=first_next_existing_values_distance)
+        if self.init_config.train_time_period is not None and train_should_fill:  # for transformer...
+            data = train_filling_holder.apply(data, idx)
 
-        return (len(train_existing_indices), len(train_missing_indices)), (len(val_existing_indices), len(val_missing_indices)), (len(test_existing_indices), (len(test_missing_indices))), (len(all_existing_indices), (len(all_missing_indices)))
+        return data
 
-    def handle_anomalies(self, data: np.ndarray, idx: int):
+    def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        """Fits and uses transformers. """
+
+        if self.init_config.train_time_period is not None:
+            if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
+                train_data = data[: len(self.init_config.train_time_period), :].reshape(-1, 1)
+            elif len(self.init_config.train_time_period) == 1:
+                train_data = data[: len(self.init_config.train_time_period), :].reshape(1, -1)
+            else:
+                train_data = data[: len(self.init_config.train_time_period), :]
+
+            if should_fit:
+                transfomer_holder.fit(train_data, idx)
+
+        return transfomer_holder.apply(data, idx)
+
+    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses anomaly handlers. """
 
-        if self.anomaly_handlers is None:
-            return
+        if should_fit:
+            anomaly_handler_holder.fit(data, idx)
 
-        self.anomaly_handlers[idx].fit(data[:len(self.train_time_period), self.offset_exclude_feature_ids:])
-        self.anomaly_handlers[idx].transform_anomalies(data[:len(self.train_time_period), self.offset_exclude_feature_ids:])
+        return anomaly_handler_holder.apply(data.view(), idx)
+
+    def _handle_per_series_custom_handler(self, handler_holder: PerSeriesCustomHandlerHolder, should_fit: bool, can_train_apply: bool, can_val_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if should_fit:
+            handler_holder.fit(data[:len(self.init_config.train_time_period)], idx)
+
+        if can_train_apply or can_val_apply:
+            start = 0 if can_train_apply else len(self.init_config.train_time_period)
+            end = len(self.init_config.train_time_period) + len(self.init_config.val_time_period) if can_val_apply else len(self.init_config.train_time_period)
+
+            data[start:end] = handler_holder.apply(data[start:end].view(), idx)
+
+        return data
+
+    def _handle_all_series_custom_handler(self, handler_holder: AllSeriesCustomHandlerHolder, can_train_apply: bool, can_val_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if can_train_apply or can_val_apply:
+            start = 0 if can_train_apply else len(self.init_config.train_time_period)
+            end = len(self.init_config.train_time_period) + len(self.init_config.val_time_period) if can_val_apply else len(self.init_config.train_time_period)
+
+            data[start:end] = handler_holder.apply(data[start:end].view(), idx)
+
+        return data
+
+    def _handle_no_fit_custom_handler(self, handler_holder: NoFitCustomHandlerHolder, can_train_apply: bool, can_val_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if can_train_apply:
+            train_size = len(self.init_config.train_time_period)
+            data[:train_size] = handler_holder.apply(data[:train_size].view(), idx)
+
+        if can_val_apply:
+            val_size = len(self.init_config.val_time_period)
+            start = 0 if self.init_config.train_time_period is None else len(self.init_config.train_time_period)
+            data[start:start + val_size] = handler_holder.apply(data[start:start + val_size].view(), idx)
+
+        return data

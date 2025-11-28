@@ -14,6 +14,8 @@ The goal of `cesnet-tszoo` project is to provide time series datasets with usefu
   - Data can be split into train/val/test sets. Split can be done by time series or by time periods.
   - Transforming of data with built-in transformers or with custom transformers.
   - Handling missing values built-in fillers or with custom fillers.
+  - Applying custom handlers.
+  - Changing order of when are preprocesses applied/fitted  
 - Creation and import of benchmarks, for easy reproducibility of experiments.
 - Creation and import of annotations. Can create annotations for specific time series, specific time or specific time in specific time series.
 
@@ -45,7 +47,22 @@ or for editable install with:
 pip install -e git+https://github.com/CESNET/cesnet-tszoo#egg=cesnet-tszoo
 ```
 
+## Citation
+
+If you use CESNET TS-Zoo, please cite our paper:
+
+```
+@misc{kures2025,
+    title={CESNET TS-Zoo: A Library for Reproducible Analysis of Network Traffic Time Series}, 
+    author={Milan Kureš and Josef Koumar and Karel Hynek},
+    booktitle={2025 21th International Conference on Network and Service Management (CNSM)}, 
+    year={2025}
+}
+```
+
 ## Examples
+
+For detailed examples refer to [`Tutorial notebooks`](https://github.com/CESNET/cesnet-ts-zoo-tutorials)
 
 ### Initialize dataset to create train, validation, and test dataframes
 
@@ -132,6 +149,4 @@ val_dataframe = dataset.get_val_df()
 test_dataframe = dataset.get_test_df()
 ```
 
-Whether loaded dataset is series-based or time-based depends on the benchmark. What can be loaded corresponds to previous datasets.
-
-## Papers
+Loaded dataset can be one of the above.

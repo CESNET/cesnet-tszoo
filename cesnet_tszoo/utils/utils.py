@@ -1,23 +1,46 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from cesnet_tszoo.utils.enums import AgreggationType, SourceType, DatasetType
+import numpy as np
+
+from cesnet_tszoo.utils.enums import AgreggationType, SourceType, DatasetType, PreprocessType
 import cesnet_tszoo.version as version
 from packaging.version import Version
 
 
-def get_abbreviated_list_string(to_abbreviate, max_length: int = 5):
+def get_abbreviated_list_string(to_abbreviate, max_length: int = 5, include_length: bool = True):
     """Returns visual shortend version of possibly big list. """
 
     if to_abbreviate is None:
         return None
 
+    result = None
+
     if len(to_abbreviate) <= max_length * 2:
-        return f"{to_abbreviate}, Length={len(to_abbreviate)}"
+        result = f"{to_abbreviate}"
     else:
         beggining = str(to_abbreviate[:max_length]).removesuffix(']')
         ending = str(to_abbreviate[-max_length:]).removeprefix('[')
-        return f"{beggining} ... {ending}, Length={len(to_abbreviate)}"
+        result = f"{beggining} ... {ending}"
+
+    if include_length:
+        result += f", Length={len(to_abbreviate)}"
+
+    return result
+
+
+def normalize_display_list(to_normalize: list[str, type, PreprocessType]) -> list[str]:
+    result = []
+
+    for item in to_normalize:
+        if isinstance(item, str):
+            result.append(item)
+        elif isinstance(item, PreprocessType):
+            result.append(item.value)
+        else:
+            result.append(item.__name__)
+
+    return result
 
 
 def is_config_used_for_dataset(config, dataset_database: str, dataset_source_type: SourceType, dataset_aggregation: AgreggationType) -> bool:
@@ -32,6 +55,26 @@ def is_config_used_for_dataset(config, dataset_database: str, dataset_source_typ
         return False
 
     return True
+
+
+def try_concatenate(*arrays) -> np.ndarray:
+
+    result = None
+
+    to_merge = []
+
+    for array in arrays:
+        if array is None or len(array) == 0:
+            continue
+
+        to_merge.append(array)
+
+    if len(to_merge) == 0:
+        result = np.array([])
+    else:
+        result = np.concatenate(to_merge)
+
+    return result
 
 
 @dataclass

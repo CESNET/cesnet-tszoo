@@ -1,11 +1,16 @@
 import atexit
 from abc import ABC, abstractmethod
+from copy import deepcopy
 
 from torch.utils.data import Dataset
 import torch
 import numpy as np
 import numpy.lib.recfunctions as rf
 
+from cesnet_tszoo.utils.enums import PreprocessType
+from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
+from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
+from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME
 from cesnet_tszoo.pytables_data.utils.utils import load_database
 
@@ -13,22 +18,15 @@ from cesnet_tszoo.pytables_data.utils.utils import load_database
 class InitializerDataset(Dataset, ABC):
     """Base class for initializer PyTable wrappers. Used for going through data to fit transformers, prepare fillers and validate thresholds."""
 
-    def __init__(self, database_path: str, table_data_path: str, ts_id_name: str, time_period: np.ndarray, features_to_take: list[str], indices_of_features_to_take_no_ids: list[int], default_values: np.ndarray):
+    def __init__(self, database_path: str, table_data_path: str, init_config: DatasetInitConfig):
         self.database_path = database_path
         self.table_data_path = table_data_path
-        self.ts_id_name = ts_id_name
+        self.init_config = deepcopy(init_config)
         self.table = None
         self.worker_id = None
         self.database = None
 
-        self.features_to_take = features_to_take
-        self.indices_of_features_to_take_no_ids = indices_of_features_to_take_no_ids
-
-        self.default_values = default_values
-
-        self.offset_exclude_feature_ids = len(self.features_to_take) - len(self.indices_of_features_to_take_no_ids)
-
-        self.time_period = time_period
+        self.offset_exclude_feature_ids = len(self.init_config.features_to_take) - len(self.init_config.indices_of_features_to_take_no_ids)
 
     def pytables_worker_init(self, worker_id=0) -> None:
         """Prepares this dataset for loading data. """
@@ -51,26 +49,21 @@ class InitializerDataset(Dataset, ABC):
 
         self.database.close()
 
-    def load_data_from_table(self, identifier_row_range_to_take: np.ndarray, idx: int) -> np.ndarray:
-        """Returns data from table. Missing values are filled fillers and `default_values`. Prepares fillers."""
+    def load_data_from_table(self, identifier_row_range_to_take: np.ndarray) -> np.ndarray:
+        """Returns data from the table and indices of rows where values exists."""
 
-        result = np.full((len(self.time_period), len(self.features_to_take)), fill_value=np.nan, dtype=np.float64)
+        result = np.full((len(self.init_config.time_period), len(self.init_config.features_to_take)), fill_value=np.nan, dtype=np.float64)
         result[:, self.offset_exclude_feature_ids:] = np.nan
 
-        expected_offset = np.uint32(len(self.time_period))
+        expected_offset = np.uint32(len(self.init_config.time_period))
         start = int(identifier_row_range_to_take[ROW_START])
         end = int(identifier_row_range_to_take[ROW_END])
-        first_time_index = self.time_period[0][ID_TIME_COLUMN_NAME]
-        last_time_index = self.time_period[-1][ID_TIME_COLUMN_NAME]
+        first_time_index = self.init_config.time_period[0][ID_TIME_COLUMN_NAME]
+        last_time_index = self.init_config.time_period[-1][ID_TIME_COLUMN_NAME]
 
         # No more existing values
         if start >= end:
-            missing_values_mask = np.ones(len(self.time_period), dtype=bool)
-
-            result[:, self.offset_exclude_feature_ids:] = self.default_values
-            count_values = self.fill_values(missing_values_mask, idx, result, None, None)
-
-            return result, count_values
+            return result, np.array([], dtype=int)
 
         # Expected range for times in time series
         if expected_offset + start >= end:
@@ -79,7 +72,7 @@ class InitializerDataset(Dataset, ABC):
         # Naive getting data from table
         rows = self.table[start: start + expected_offset]
 
-        # Getting more date if needed... if received data could contain more relevant data
+        # Getting more data if needed... if received data could contain more relevant data
         if rows[-1][ID_TIME_COLUMN_NAME] < first_time_index:
             if start + expected_offset + last_time_index - rows[-1][ID_TIME_COLUMN_NAME] >= end:
                 rows = self.table[start + expected_offset: end]
@@ -99,30 +92,70 @@ class InitializerDataset(Dataset, ABC):
         filtered_rows[ID_TIME_COLUMN_NAME] = filtered_rows[ID_TIME_COLUMN_NAME] - first_time_index
         existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
-        missing_values_mask = np.ones(len(self.time_period), dtype=bool)
-        missing_values_mask[existing_indices] = 0
-        missing_indices = np.nonzero(missing_values_mask)[0]
-
         if len(filtered_rows) > 0:
-            result[existing_indices, :] = rf.structured_to_unstructured(filtered_rows[:][self.features_to_take], dtype=np.float64, copy=False)
+            result[existing_indices, :] = rf.structured_to_unstructured(filtered_rows[:][self.init_config.features_to_take], dtype=np.float64, copy=False)
 
-        self.handle_anomalies(result, idx)
-
-        result[missing_indices, self.offset_exclude_feature_ids:] = self.default_values
-
-        count_values = self.fill_values(missing_values_mask, idx, result, None, None)
-
-        return result, count_values
+        return result, existing_indices
 
     @abstractmethod
-    def fill_values(self, missing_values_mask: np.ndarray, idx, result, first_next_existing_values, first_next_existing_values_distance):
+    def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
+        ...
+
+    def _handle_data_preprocess_order_group(self, preprocess_order_group: PreprocessOrderGroup, data: np.ndarray, idx: int) -> np.ndarray:
+        for preprocess_order in preprocess_order_group.preprocess_inner_orders:
+            if preprocess_order.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
+                data = self._handle_anomalies(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.FILLING_GAPS:
+                data = self._handle_filling(preprocess_order.holder, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.TRANSFORMING:
+                data = self._handle_transforming(preprocess_order.holder, preprocess_order.should_be_fitted, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.PER_SERIES_CUSTOM:
+                data = self._handle_per_series_custom_handler(preprocess_order.holder, preprocess_order.should_be_fitted, preprocess_order.can_be_applied, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.ALL_SERIES_CUSTOM:
+                data = self._handle_all_series_custom_handler(preprocess_order.holder, preprocess_order.can_be_applied, data, idx)
+            elif preprocess_order.preprocess_type == PreprocessType.NO_FIT_CUSTOM:
+                data = self._handle_no_fit_custom_handler(preprocess_order.holder, preprocess_order.can_be_applied, data, idx)
+            else:
+                raise NotImplementedError()
+
+        return data
+
+    @abstractmethod
+    def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int) -> np.ndarray:
         """Fills data. """
         ...
 
     @abstractmethod
-    def handle_anomalies(self, data: np.ndarray, idx: int):
+    def _handle_anomalies(self, anomaly_handler_holder: AnomalyHandlerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses anomaly handlers. """
         ...
+
+    @abstractmethod
+    def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        """Fits and uses transformers """
+        ...
+
+    def _handle_per_series_custom_handler(self, handler_holder: PerSeriesCustomHandlerHolder, should_fit: bool, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+
+        if should_fit:
+            handler_holder.fit(data, idx)
+
+        if can_apply:
+            data = handler_holder.apply(data, idx)
+
+        return data
+
+    def _handle_all_series_custom_handler(self, handler_holder: AllSeriesCustomHandlerHolder, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if can_apply:
+            data = handler_holder.apply(data, idx)
+
+        return data
+
+    def _handle_no_fit_custom_handler(self, handler_holder: NoFitCustomHandlerHolder, can_apply: bool, data: np.ndarray, idx: int) -> np.ndarray:
+        if can_apply:
+            data = handler_holder.apply(data, idx)
+
+        return data
 
     @staticmethod
     def worker_init_fn(worker_id) -> None:
