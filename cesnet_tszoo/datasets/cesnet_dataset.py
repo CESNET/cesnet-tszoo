@@ -1576,7 +1576,7 @@ Dataset details:
                                            annotations_time_name,
                                            annotations_both_name,
                                            related_results_identifier=self.related_to,
-                                           version=version.current_version)
+                                           version=version.config_and_benchmarks_current_version)
 
         # If the config was not imported, save it
         if self.dataset_config.import_identifier is None or self.dataset_config.export_update_needed:

@@ -160,7 +160,7 @@ class DatasetConfig(ABC):
         self.test_preprocess_order: list[PreprocessNote] = []
         self.all_preprocess_order: list[PreprocessNote] = []
         self.is_initialized: bool = False
-        self.version: str = version.current_version
+        self.version: str = version.config_and_benchmarks_current_version
         self.export_update_needed: bool = False
 
         self.features_to_take: list[str] = features_to_take

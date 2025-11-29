@@ -30,7 +30,7 @@ class ConfigUpdater:
 
         self.__validate_whether_config_update_possible_()
 
-        if self.config_to_update.version == version.current_version:
+        if self.config_to_update.version == version.config_and_benchmarks_current_version:
             self.updated_config = self.config_to_update
             return self.updated_config
 
@@ -67,8 +67,8 @@ class ConfigUpdater:
             self.config_to_update.version = version.VERSION_2_1_0
             self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_2_1_0)
 
-        self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.current_version)
-        self.config_to_update.version = version.current_version
+        self.logger.debug("Updating config version to %s, to match used cesnet-tszoo package config version.", version.config_and_benchmarks_current_version)
+        self.config_to_update.version = version.config_and_benchmarks_current_version
 
         self.updated_config = self.config_to_update
 
@@ -143,13 +143,13 @@ class ConfigUpdater:
             self.config_to_update.version = version.DEFAULT_VERSION
 
     def __validate_whether_config_update_possible_(self):
-        if Version(self.config_to_update.version) < Version(version.current_version):
-            self.logger.warning("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.config_to_update.version, version.current_version)
+        if Version(self.config_to_update.version) < Version(version.config_and_benchmarks_current_version):
+            self.logger.warning("Imported config was made for cesnet-tszoo configs of version '%s', but current supported cesnet-tszoo config version is '%s'!", self.config_to_update.version, version.config_and_benchmarks_current_version)
             self.logger.warning("Will try to update the config. It is recommended to recreate this config or at least export this config alone or through benchmark to create updated config file.")
-        elif Version(self.config_to_update.version) > Version(version.current_version):
-            self.logger.error("Imported config was made for cesnet-tszoo package of version '%s', but current used cesnet-tszoo package version is '%s'!", self.config_to_update.version, version.current_version)
+        elif Version(self.config_to_update.version) > Version(version.config_and_benchmarks_current_version):
+            self.logger.error("Imported config was made for cesnet-tszoo configs of version '%s', but current supported cesnet-tszoo config version is '%s'!", self.config_to_update.version, version.config_and_benchmarks_current_version)
             self.logger.error("Update cesnet-tszoo package to use this config.")
-            raise ValueError(f"Imported config was made for cesnet-tszoo package of version '{self.config_to_update.version}', but current used cesnet-tszoo package version is '{version.current_version}'!")
+            raise ValueError(f"Imported config was made for cesnet-tszoo configs of version '{self.config_to_update.version}', but current supported cesnet-tszoo config version is '{version.config_and_benchmarks_current_version}'!")
 
     def __scaler_to_transformer_version_update(self):
         self.logger.debug("Updating attributes from scaler variant to transformer variant.")
