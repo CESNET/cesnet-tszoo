@@ -4,6 +4,7 @@
 
 [![](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/CESNET/cesnet-tszoo/blob/main/LICENSE)
 [![](https://img.shields.io/badge/docs-cesnet--tszoo-blue.svg)](https://cesnet.github.io/cesnet-tszoo/)
+[![](https://img.shields.io/badge/tutorials-cesnet--tszoo-blue.svg)](https://github.com/CESNET/cesnet-ts-zoo-tutorials)
 [![](https://img.shields.io/badge/python->=3.10-blue.svg)](https://pypi.org/project/cesnet-tszoo/)
 [![](https://img.shields.io/pypi/v/cesnet-tszoo)](https://pypi.org/project/cesnet-tszoo/)
 
