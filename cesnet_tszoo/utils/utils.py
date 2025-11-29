@@ -119,6 +119,6 @@ class ExportBenchmark:
             del data["is_series_based"]
             data["dataset_type"] = None
 
-        data["version"] = version.current_version
+        data["version"] = version.config_and_benchmarks_current_version
 
         return data
