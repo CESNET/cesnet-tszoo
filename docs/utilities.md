@@ -26,7 +26,7 @@ logging.basicConfig(
 - Recommended to call at least once after download
 
 ```python
-from cesnet_tszoo.utils.enums import AgreggationType, SourceType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.datasets import CESNET_TimeSeries24                                                                
 
 # Can be called at dataset creation
@@ -71,7 +71,7 @@ Returns all data in dictionary related to set.
 from cesnet_tszoo.configs import TimeBasedConfig   
 
 config = TimeBasedConfig(20, train_time_period=0.5)
-time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details=False)
+time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details=None)
 
 time_based_dataset.get_data_about_set(about=SplitType.TRAIN)
 
@@ -148,7 +148,7 @@ dataset.plot(ts_id=10, plot_type="line", features="n_flows", feature_per_plot=Tr
 - You can check whether dataset has additional data, with method `display_dataset_details`.
 
 ```python
-from cesnet_tszoo.utils.enums import AgreggationType, SourceType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.datasets import CESNET_TimeSeries24                                                                
 
 time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.IP_ADDRESSES_SAMPLE, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED, display_details=True)

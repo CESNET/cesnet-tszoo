@@ -8,7 +8,7 @@
 ### Download a dataset
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 
 dataset = CESNET_TimeSeries24.get_dataset("/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED)
 ```
@@ -47,7 +47,7 @@ Set up logging to get more information from the package.
 #### Using [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset) dataset
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.configs import TimeBasedConfig
 
 dataset = CESNET_TimeSeries24.get_dataset("/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED)
@@ -71,7 +71,7 @@ Can load data using:
 #### Using [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset) dataset
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.configs import DisjointTimeBasedConfig
 
 dataset = CESNET_TimeSeries24.get_dataset("/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.DISJOINT_TIME_BASED)
@@ -97,7 +97,7 @@ Can load data using:
 #### Using [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) dataset
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.configs import SeriesBasedConfig
 
 dataset = CESNET_TimeSeries24.get_dataset("/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.SERIES_BASED)
