@@ -71,7 +71,7 @@ For detailed examples refer to [`Tutorial notebooks`](https://github.com/CESNET/
 
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.configs import TimeBasedConfig
 
 dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED)
@@ -93,7 +93,7 @@ Time-based datasets are configured with [`TimeBasedConfig`](https://cesnet.githu
 #### Using [`DisjointTimeBasedCesnetDataset`](https://cesnet.github.io/cesnet-tszoo/reference_disjoint_time_based_cesnet_dataset/) dataset
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.configs import DisjointTimeBasedConfig
 
 dataset = CESNET_TimeSeries24.get_dataset("/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.DISJOINT_TIME_BASED)
@@ -118,7 +118,7 @@ Disjoint-time-based datasets are configured with [`DisjointTimeBasedConfig`](htt
 
 ```python
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.configs import SeriesBasedConfig
 
 dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.INSTITUTIONS, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.SERIES_BASED)

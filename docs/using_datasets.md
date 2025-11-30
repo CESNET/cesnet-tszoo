@@ -17,11 +17,11 @@ from cesnet_tszoo.benchmarks import load_benchmark
 
 # Imports built-in benchmark
 benchmark = load_benchmark(identifier="2e92831cb502", data_root="/some_directory/")
-dataset = benchmark.get_initialized_dataset(display_config_details=True, check_errors=False, workers="config")
+dataset = benchmark.get_initialized_dataset(display_config_details="text", check_errors=False, workers="config")
 
 # Imports custom benchmark
 benchmark = load_benchmark(identifier="test2", data_root="/some_directory/")
-dataset = benchmark.get_initialized_dataset(display_config_details=True, check_errors=False, workers="config")
+dataset = benchmark.get_initialized_dataset(display_config_details="text", check_errors=False, workers="config")
 
 ```
 
@@ -36,7 +36,7 @@ from cesnet_tszoo.configs import TimeBasedConfig # For time-based dataset
 from cesnet_tszoo.configs import SeriesBasedConfig # For series-based dataset   
 from cesnet_tszoo.configs import DisjointTimeBasedConfig # For disjoint-time-based dataset
 
-from cesnet_tszoo.utils.enums import AgreggationType, SourceType # Used for specifying which dataset to use
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType # Used for specifying which dataset to use
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
 
 # Time-based

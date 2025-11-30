@@ -12,7 +12,7 @@ Benchmarks can consist of various parts:
 - identifier of used config
 - identifier of used annotations (for each AnnotationType)
 - identifier of related_results (only available for premade benchmarks)
-- Used SourceType and AggregationType
+- Used SourceType, AggregationType and DatasetType
 - Database name (here it would be CESNET_TimeSeries24)
 - Whether config or annotations are built-in
 
@@ -30,12 +30,12 @@ from cesnet_tszoo.benchmarks import load_benchmark
 # Can get related_results with `get_related_results` method.
 # Method `get_related_results` returns pandas Dataframe. 
 benchmark = load_benchmark(identifier="2e92831cb502", data_root="/some_directory/")
-dataset = benchmark.get_initialized_dataset(display_config_details=True, check_errors=False, workers="config")
+dataset = benchmark.get_initialized_dataset(display_config_details="text", check_errors=False, workers="config")
 
 # Imports custom benchmark
 # Looks for benchmark at: `os.path.join("/some_directory/", "tszoo", "benchmarks", identifier)`
 benchmark = load_benchmark(identifier="test2", data_root="/some_directory/")
-dataset = benchmark.get_initialized_dataset(display_config_details=True, check_errors=False, workers="config")
+dataset = benchmark.get_initialized_dataset(display_config_details="text", check_errors=False, workers="config")
 
 ```
 
@@ -55,13 +55,14 @@ dataset = benchmark.get_initialized_dataset(display_config_details=True, check_e
 ```python
 
 from cesnet_tszoo.datasets import CESNET_TimeSeries24
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 from cesnet_tszoo.configs import TimeBasedConfig                                                                            
 
 time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type=SourceType.IP_ADDRESSES_FULL, aggregation=AgreggationType.AGG_1_DAY, dataset_type=DatasetType.TIME_BASED, display_details=True)
 config = TimeBasedConfig([1548925, 443967], train_time_period=1.0, features_to_take=["n_flows", "n_packets", "n_bytes"], transform_with=None)
 
 # Call on time-based dataset to use created config -> must be done before saving exporting benchmark
-time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details=True)
+time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details="text")
 
 time_based_dataset.save_benchmark(identifier="test1", force_write=True)
 
@@ -84,13 +85,13 @@ from cesnet_tszoo.configs import TimeBasedConfig
 
 config = TimeBasedConfig([1548925, 443967], train_time_period=1.0, features_to_take=["n_flows", "n_packets", "n_bytes"], transform_with=None)
 
-time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details=True)
+time_based_dataset.set_dataset_config_and_initialize(config, workers=0, display_config_details="text")
 
 # Exports config
 time_based_dataset.save_config(identifier="test_config1", create_with_details_file=True, force_write=True)
 
 # Imports custom config
-time_based_dataset.import_config(identifier="test_config1", display_config_details=True, workers="config")
+time_based_dataset.import_config(identifier="test_config1", display_config_details="text", workers="config")
 
 ```
 
