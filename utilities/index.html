@@ -1825,7 +1825,7 @@
 <li>Can be called when creating dataset or with method <code>check_errors</code> on already create dataset.</li>
 <li>Recommended to call at least once after download</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.utils.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgreggationType</span><span class="p">,</span> <span class="n">SourceType</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.utils.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">SourceType</span><span class="p">,</span> <span class="n">AgreggationType</span><span class="p">,</span> <span class="n">DatasetType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">CESNET_TimeSeries24</span>                                                                
 
 <span class="c1"># Can be called at dataset creation</span>
@@ -1850,7 +1850,7 @@
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeBasedConfig</span>   
 
 <span class="n">config</span> <span class="o">=</span> <span class="n">TimeBasedConfig</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">train_time_period</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="n">time_based_dataset</span><span class="o">.</span><span class="n">set_dataset_config_and_initialize</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">display_config_details</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">time_based_dataset</span><span class="o">.</span><span class="n">set_dataset_config_and_initialize</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">display_config_details</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
 <span class="n">time_based_dataset</span><span class="o">.</span><span class="n">get_data_about_set</span><span class="p">(</span><span class="n">about</span><span class="o">=</span><span class="n">SplitType</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">)</span>
 </code></pre></div>
@@ -1906,7 +1906,7 @@
 <ul>
 <li>You can check whether dataset has additional data, with method <code>display_dataset_details</code>.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.utils.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgreggationType</span><span class="p">,</span> <span class="n">SourceType</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.utils.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">SourceType</span><span class="p">,</span> <span class="n">AgreggationType</span><span class="p">,</span> <span class="n">DatasetType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">CESNET_TimeSeries24</span>                                                                
 
 <span class="n">time_based_dataset</span> <span class="o">=</span> <span class="n">CESNET_TimeSeries24</span><span class="o">.</span><span class="n">get_dataset</span><span class="p">(</span><span class="n">data_root</span><span class="o">=</span><span class="s2">&quot;/some_directory/&quot;</span><span class="p">,</span> <span class="n">source_type</span><span class="o">=</span><span class="n">SourceType</span><span class="o">.</span><span class="n">IP_ADDRESSES_SAMPLE</span><span class="p">,</span> <span class="n">aggregation</span><span class="o">=</span><span class="n">AgreggationType</span><span class="o">.</span><span class="n">AGG_1_DAY</span><span class="p">,</span> <span class="n">dataset_type</span><span class="o">=</span><span class="n">DatasetType</span><span class="o">.</span><span class="n">TIME_BASED</span><span class="p">,</span> <span class="n">display_details</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
