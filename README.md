@@ -7,7 +7,7 @@
 [![](https://img.shields.io/badge/tutorials-cesnet--tszoo-blue.svg)](https://github.com/CESNET/cesnet-ts-zoo-tutorials)
 [![](https://img.shields.io/badge/python->=3.10-blue.svg)](https://pypi.org/project/cesnet-tszoo/)
 [![](https://img.shields.io/pypi/v/cesnet-tszoo)](https://pypi.org/project/cesnet-tszoo/)
-![Server Status](https://img.shields.io/uptimerobot/storage-status/m801936469-e8219ca3245b73b08cf33ef4)(https://stats.uptimerobot.com/6a75HRSoRU)
+![Server Status](https://img.shields.io/uptimerobot/status/m801936469-e8219ca3245b73b08cf33ef4)(https://stats.uptimerobot.com/6a75HRSoRU)
 
 The goal of `cesnet-tszoo` project is to provide time series datasets with useful tools for preprocessing and reproducibility. Such as:
 
