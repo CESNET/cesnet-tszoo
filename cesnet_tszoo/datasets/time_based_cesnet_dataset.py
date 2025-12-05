@@ -38,7 +38,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
     - **Numpy array**: For loading the entire training, validation, test or all set at once. 
     - See [loading data][loading-data] for more details.
 
-    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `TimeBasedDataset`, `SplittedDataset`, `TimeBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize)) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
+    The dataset is stored in a [PyTables](https://www.pytables.org/) dataset. The internal `TimeBasedSplittedDataset`, `TimeSplitBasedDataset` and `TimeBasedInitializerDataset` classes act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
     interface. These wrappers are compatible with PyTorch’s [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader), providing efficient parallel data loading. 
 
     The dataset configuration is done through the [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig) class.       
@@ -65,16 +65,16 @@ class TimeBasedCesnetDataset(CesnetDataset):
     """Configuration of the dataset."""
 
     train_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
-    """Training set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database."""
+    """Training set as a `TimeBasedSplittedDataset` instance wrapping multiple `TimeSplitBasedDataset` that wrap the PyTables dataset."""
 
     val_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
-    """Validation set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database."""
+    """Validation set as a `TimeBasedSplittedDataset` instance wrapping multiple `TimeSplitBasedDataset` that wrap the PyTables dataset."""
 
     test_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
-    """Test set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.  """
+    """Test set as a `TimeBasedSplittedDataset` instance wrapping multiple `TimeSplitBasedDataset` that wrap the PyTables dataset.  """
 
     all_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
-    """All set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.   """
+    """All set as a `TimeBasedSplittedDataset` instance wrapping multiple `TimeSplitBasedDataset` that wrap the PyTables dataset.   """
 
     train_dataloader: Optional[TimeBasedDataloader] = field(default=None, init=False)
     """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set."""
