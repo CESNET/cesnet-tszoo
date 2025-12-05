@@ -66,7 +66,7 @@ from cesnet_tszoo.datasets import CESNET_AGG23
 
 # Using dataset from CESNET_AGG23
 # Only time-based
-time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/")
+time_based_dataset = CESNET_AGG23.get_dataset(data_root="/some_directory/")
 config = TimeBasedConfig(ts_ids=1)
 time_based_dataset.set_dataset_config_and_initialize(config)
 
