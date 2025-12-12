@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block header %}
+
+<!-- Custom Banner -->
+<div id="librouter-status" class="banner" style="display:none;">
+    <p id="librouter-status-text" class="banner-text"></p>
+</div>
+
+<!-- Original Header -->
+{{ super() }}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+<script>
+    async function checkRouterUptime() {
+        try {
+            const result = await fetch("https://api.uptimerobot.com/v2/getMonitors?api_key=m801936469-e8219ca3245b73b08cf33ef4&monitors=801936469", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(res => res.json())
+
+            const storageStatusCode = result.monitors?.[0].status;
+            localStorage.setItem("lastStorageStatusCode", storageStatusCode);
+
+        } catch (e) {
+            const banner = document.getElementById("librouter-status");
+            const bannerText = document.getElementById("librouter-status-text");
+
+            bannerText.textContent = "Unexpected error when trying to fetch storage status";
+            banner.style.display = "block"
+        }
+    }
+
+    const lastCheck = parseInt(localStorage.getItem("lastStorageStatusCheck") || "0", 10);
+    const now = Date.now();
+    const FIVE_MINUTES = 5 * 60 * 1000;
+
+    if (!lastCheck || now - lastCheck > FIVE_MINUTES) {
+        checkRouterUptime();
+        localStorage.setItem("lastStorageStatusCheck", now);
+    }
+    else {
+        const banner = document.getElementById("librouter-status");
+        const bannerText = document.getElementById("librouter-status-text");
+
+        const storageStatusCode = parseInt(localStorage.getItem("lastStorageStatusCode") || "2", 10);
+
+        if (storageStatusCode == 2) {
+            bannerText.textContent = ""
+            banner.style.display = "none"
+        }
+        else {
+            bannerText.textContent = "Storage server is DOWN.";
+            banner.style.display = "block"
+        }
+    }
+
+</script>
+{% endblock %}
