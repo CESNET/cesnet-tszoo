@@ -15,6 +15,17 @@
 {{ super() }}
 
 <script>
+    function isLocalStorageAvailable() {
+        try {
+            const testKey = "permTest";
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     async function checkRouterUptime() {
         try {
             const result = await fetch("https://api.uptimerobot.com/v2/getMonitors?api_key=m801936469-e8219ca3245b73b08cf33ef4&monitors=801936469", {
@@ -29,29 +40,27 @@
             localStorage.setItem("lastStorageStatusCode", storageStatusCode);
 
         } catch (e) {
-            const banner = document.getElementById("librouter-status");
-            const bannerText = document.getElementById("librouter-status-text");
-
-            bannerText.textContent = "Unexpected error when trying to fetch storage status";
-            banner.style.display = "block"
+            localStorage.setItem("lastStorageStatusCode", -1);
+            console.warn("Unexpected error happened: ${e}")
         }
     }
 
-    const lastCheck = parseInt(localStorage.getItem("lastStorageStatusCheck") || "0", 10);
-    const now = Date.now();
-    const FIVE_MINUTES = 5 * 60 * 1000;
+    if (isLocalStorageAvailable()) {
+        const lastCheck = parseInt(localStorage.getItem("lastStorageStatusCheck") || "0", 10);
+        const now = Date.now();
+        const FIVE_MINUTES = 5 * 60 * 1000;
 
-    if (!lastCheck || now - lastCheck > FIVE_MINUTES) {
-        checkRouterUptime();
-        localStorage.setItem("lastStorageStatusCheck", now);
-    }
-    else {
+        if (now - lastCheck > FIVE_MINUTES) {
+            checkRouterUptime();
+            localStorage.setItem("lastStorageStatusCheck", now);
+        }
+
         const banner = document.getElementById("librouter-status");
         const bannerText = document.getElementById("librouter-status-text");
 
-        const storageStatusCode = parseInt(localStorage.getItem("lastStorageStatusCode") || "2", 10);
+        const storageStatusCode = parseInt(localStorage.getItem("lastStorageStatusCode") || "-1", 10);
 
-        if (storageStatusCode == 2) {
+        if (storageStatusCode == 2 || storageStatusCode == -1) {
             bannerText.textContent = ""
             banner.style.display = "none"
         }
@@ -59,6 +68,9 @@
             bannerText.textContent = "Storage server is DOWN.";
             banner.style.display = "block"
         }
+    }
+    else {
+        console.warn("Local storage is not available. Up status check skipped.");
     }
 
 </script>
