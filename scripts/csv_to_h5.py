@@ -97,7 +97,7 @@ def get_np_type(to_parse: str) -> np.dtype:
     if to_parse in types_mapping_to_np:
         return types_mapping_to_np[to_parse]
     elif "str" == to_parse[:3]:
-        return np.string_
+        return str
     else:
         raise NotImplementedError("Invalid type")
 
