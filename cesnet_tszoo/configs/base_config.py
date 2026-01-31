@@ -38,6 +38,7 @@ class DatasetConfig(ABC):
         transformer_factory: Represents factory used to create passed Transformer type.
         can_fit_fillers: Whether fillers in this config, can be fitted.
         logger: Logger for displaying information. 
+        subset: Subset of the used dataset.
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
@@ -145,6 +146,7 @@ class DatasetConfig(ABC):
         self.can_fit_fillers: bool = can_fit_fillers
         self.logger: logging.Logger = logger
 
+        self.subset: Optional[str] = None
         self.aggregation: Optional[AgreggationType] = None
         self.source_type: Optional[SourceType] = None
         self.database_name: Optional[str] = None
@@ -354,6 +356,7 @@ class DatasetConfig(ABC):
     def _update_identifiers_from_dataset_metadata(self, dataset_metadata: DatasetMetadata) -> None:
         """Updates identifying attributes from dataset metadata. """
 
+        self.subset = dataset_metadata.subset
         self.aggregation = dataset_metadata.aggregation
         self.source_type = dataset_metadata.source_type
         self.database_name = dataset_metadata.database_name
@@ -567,6 +570,9 @@ class DatasetConfig(ABC):
         attributes = [css_utils.StepAttribute("Database", self.database_name),
                       css_utils.StepAttribute("Aggregation", self.aggregation),
                       css_utils.StepAttribute("Source", self.source_type)]
+
+        if self.subset is not None:
+            attributes.insert(1, css_utils.StepAttribute("Subset", self.subset))
 
         return css_utils.SummaryDiagramStep("Load from dataset", attributes)
 

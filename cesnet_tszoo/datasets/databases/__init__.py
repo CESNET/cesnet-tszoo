@@ -1,3 +1,4 @@
 from cesnet_tszoo.datasets.databases.cesnet_agg23 import CESNET_AGG23
 from cesnet_tszoo.datasets.databases.cesnet_timeseries24 import CESNET_TimeSeries24
+from cesnet_tszoo.datasets.databases.vigo_network_operator_kpis import Vigo_NetworkOperatorKPIs
 from cesnet_tszoo.datasets.databases.cesnet_database import CesnetDatabase

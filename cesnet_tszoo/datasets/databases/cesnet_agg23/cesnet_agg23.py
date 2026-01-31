@@ -31,4 +31,4 @@ class CESNET_AGG23(CesnetDatabase):
             TimeBasedCesnetDataset
         """
 
-        return super(CESNET_AGG23, cls).get_dataset(data_root, SourceType.CESNET2, AgreggationType.AGG_1_MINUTE, DatasetType.TIME_BASED, check_errors, display_details)
+        return super(CESNET_AGG23, cls).get_dataset(data_root, None, SourceType.CESNET2, AgreggationType.AGG_1_MINUTE, DatasetType.TIME_BASED, check_errors, display_details, backward_compatibility=True)

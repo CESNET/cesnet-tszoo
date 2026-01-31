@@ -40,7 +40,7 @@ def get_benchmark_path_and_whether_it_is_built_in(identifier: str, data_root: st
     raise FileNotFoundError(f"No benchmark with identifer {identifier} was found.")
 
 
-def get_config_path_and_whether_it_is_built_in(identifier: str, custom_configs_root: str, dataset_database_name: str, dataset_source_type: SourceType, dataset_aggregation: AgreggationType, logger: logging.Logger) -> tuple[str, bool]:
+def get_config_path_and_whether_it_is_built_in(identifier: str, custom_configs_root: str, dataset_database_name: str, dataset_subset: str, dataset_source_type: SourceType, dataset_aggregation: AgreggationType, logger: logging.Logger) -> tuple[str, bool]:
     """Returns path for config if it exists and whether it is built-in."""
 
     logger.debug("Checking for built-in config.")
@@ -52,8 +52,11 @@ def get_config_path_and_whether_it_is_built_in(identifier: str, custom_configs_r
 
     if is_built_in:
         config = pickle_load(path_for_built_in_config)
-        if not is_config_used_for_dataset(config, dataset_database_name, dataset_source_type, dataset_aggregation):
-            logger.error("Config with identifier %s can't be used for this dataset. Config is used for dataset of database: %s, source_type: %s, aggregation: %s", identifier, config.database_name, config.source_type, config.aggregation)
+        if not is_config_used_for_dataset(config, dataset_database_name, dataset_subset, dataset_source_type, dataset_aggregation):
+            if dataset_subset is None:
+                logger.error("Config with identifier %s can't be used for this dataset. Config is used for dataset of database: %s, source_type: %s, aggregation: %s", identifier, config.database_name, config.source_type, config.aggregation)
+            else:
+                logger.error("Config with identifier %s can't be used for this dataset. Config is used for dataset of database: %s, subset: %s, source_type: %s, aggregation: %s", identifier, config.subset, config.database_name, config.source_type, config.aggregation)
             raise ValueError(f"Config with identifier {identifier} can't be used for this dataset.")
         return path_for_built_in_config, True
 
@@ -67,8 +70,11 @@ def get_config_path_and_whether_it_is_built_in(identifier: str, custom_configs_r
     if is_custom:
         logger.debug("Loading config file from '%s'.", path_for_custom_config)
         config = pickle_load(path_for_custom_config)
-        if not is_config_used_for_dataset(config, dataset_database_name, dataset_source_type, dataset_aggregation):
-            logger.error("Config with identifier %s can't be used for this dataset. Config is used for dataset of database: %s, source_type: %s, aggregation: %s", identifier, config.database_name, config.source_type, config.aggregation)
+        if not is_config_used_for_dataset(config, dataset_database_name, dataset_subset, dataset_source_type, dataset_aggregation):
+            if dataset_subset is None:
+                logger.error("Config with identifier %s can't be used for this dataset. Config is used for dataset of database: %s, source_type: %s, aggregation: %s", identifier, config.database_name, config.source_type, config.aggregation)
+            else:
+                logger.error("Config with identifier %s can't be used for this dataset. Config is used for dataset of database: %s, subset: %s, source_type: %s, aggregation: %s", identifier, config.subset, config.database_name, config.source_type, config.aggregation)
             raise ValueError(f"Config with identifier {identifier} can't be used for this dataset.")
         return path_for_custom_config, False
 

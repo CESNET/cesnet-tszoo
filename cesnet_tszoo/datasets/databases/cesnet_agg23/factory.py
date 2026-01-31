@@ -10,5 +10,5 @@ class CESNET_AGG23Factory(DatabaseFactory):
     def __init__(self):
         super().__init__(CESNET_AGG23.name)
 
-    def create_dataset(self, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool, display_details: bool) -> TimeBasedCesnetDataset:
+    def create_dataset(self, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool, display_details: bool) -> TimeBasedCesnetDataset:
         return CESNET_AGG23.get_dataset(data_root, check_errors, display_details)

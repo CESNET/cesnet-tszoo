@@ -58,4 +58,4 @@ class CESNET_TimeSeries24(CesnetDatabase):
             [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
         """
 
-        return super(CESNET_TimeSeries24, cls).get_dataset(data_root, source_type, aggregation, dataset_type, check_errors, display_details)
+        return super(CESNET_TimeSeries24, cls).get_dataset(data_root, None, source_type, aggregation, dataset_type, check_errors, display_details, backward_compatibility=True)

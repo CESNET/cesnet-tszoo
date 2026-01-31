@@ -43,9 +43,12 @@ def normalize_display_list(to_normalize: list[str, type, PreprocessType]) -> lis
     return result
 
 
-def is_config_used_for_dataset(config, dataset_database: str, dataset_source_type: SourceType, dataset_aggregation: AgreggationType) -> bool:
+def is_config_used_for_dataset(config, dataset_database: str, dataset_subset: str, dataset_source_type: SourceType, dataset_aggregation: AgreggationType) -> bool:
     """Checks whether config can be used for dataset. """
     if config.database_name != dataset_database:
+        return False
+
+    if config.subset != dataset_subset:
         return False
 
     if config.source_type != dataset_source_type:
@@ -82,6 +85,7 @@ class ExportBenchmark:
     """Used for exporting benchmark. """
 
     database_name: str
+    subset: Optional[str]
     source_type: SourceType
     aggregation: AgreggationType
     dataset_type: str
@@ -118,6 +122,9 @@ class ExportBenchmark:
         if Version(data["version"]) < Version(version.VERSION_0_1_3):
             del data["is_series_based"]
             data["dataset_type"] = None
+
+        if version(data["version"]) < Version(version.VERSION_2_2_0):
+            data["subset"] = None
 
         data["version"] = version.config_and_benchmarks_current_version
 

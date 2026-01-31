@@ -17,6 +17,7 @@ class DatasetMetadata:
         configs_root: Path to the folder where configurations are saved.
         benchmarks_root: Path to the folder where benchmarks are saved.
         annotations_root: Path to the folder where annotations are saved.
+        subset: Specific subset of the dataset.
         source_type: The source type of the dataset.
         aggregation: The aggregation type for the selected source type.
         ts_id_name: Name of the id used for time series.
@@ -35,6 +36,7 @@ class DatasetMetadata:
     configs_root: str
     benchmarks_root: str
     annotations_root: str
+    subset: str
     source_type: SourceType
     aggregation: AgreggationType
     ts_id_name: str

@@ -67,6 +67,7 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         display_all_time_period: Used to display the configured value of `all_time_period`.
         all_time_period: If no specific sets (train/val/test) are provided, all time IDs are used. When any set is defined, only the time IDs in defined sets are used.
         ts_row_ranges: Initialized when `ts_ids` is set. Contains time series IDs in `ts_ids` with their respective time ID ranges (same as `all_time_period`).
+        subset: Subset of the used dataset.
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
@@ -464,12 +465,21 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         else:
             time_part = f"Time included: {str(self.include_time)}"
 
+        if self.subset is None:
+            dataset_part = f'''Used for database: {self.database_name}
+        Aggregation: {str(self.aggregation)}
+        Source: {str(self.source_type)}
+            '''
+        else:
+            dataset_part = f'''Used for database: {self.database_name}
+        Subset: {self.subset}
+        Aggregation: {str(self.aggregation)}
+        Source: {str(self.source_type)}
+            '''
+
         return f'''
 Config Details
-    Used for database: {self.database_name}
-    Aggregation: {str(self.aggregation)}
-    Source: {str(self.source_type)}
-
+    {dataset_part}
     Time series
         Time series IDS: {get_abbreviated_list_string(self.ts_ids)}
     Time periods

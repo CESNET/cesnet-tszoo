@@ -11,7 +11,7 @@ class DatabaseFactory(ABC):
         self.database_name = database_name
 
     @abstractmethod
-    def create_dataset(self, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool, display_details: bool) -> CesnetDataset:
+    def create_dataset(self, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool, display_details: bool) -> CesnetDataset:
         """Creates databases dataset based on constructor parameters. """
         ...
 

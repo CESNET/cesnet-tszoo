@@ -182,7 +182,7 @@ def _get_dataset(data_root: str, export_benchmark: ExportBenchmark) -> TimeBased
 
     factory = database_factory.get_database_factory(export_benchmark.database_name)
 
-    dataset = factory.create_dataset(data_root, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
+    dataset = factory.create_dataset(data_root, export_benchmark.subset, export_benchmark.source_type, export_benchmark.aggregation, export_benchmark.dataset_type, False, False)
     dataset.related_to = export_benchmark.related_results_identifier
 
     return dataset
@@ -203,7 +203,7 @@ def _get_built_in_benchmark(identifier: str, data_root: str) -> Benchmark:
 
     config_root = CesnetDatabase.get_expected_paths(data_root, export_benchmark.database_name)["configs_root"]
 
-    config = load_config(export_benchmark.config_identifier, config_root, export_benchmark.database_name, SourceType(export_benchmark.source_type), AgreggationType(export_benchmark.aggregation), logger)
+    config = load_config(export_benchmark.config_identifier, config_root, export_benchmark.database_name, export_benchmark.subset, SourceType(export_benchmark.source_type), AgreggationType(export_benchmark.aggregation), logger)
 
     if export_benchmark.dataset_type is None:
         export_benchmark.dataset_type = config.dataset_type
@@ -264,7 +264,7 @@ def _get_custom_benchmark(identifier: str, data_root: str) -> Benchmark:
     config_root = CesnetDatabase.get_expected_paths(data_root, export_benchmark.database_name)["configs_root"]
 
     # Load config
-    config = load_config(export_benchmark.config_identifier, config_root, export_benchmark.database_name, SourceType(export_benchmark.source_type), AgreggationType(export_benchmark.aggregation), logger)
+    config = load_config(export_benchmark.config_identifier, config_root, export_benchmark.database_name, export_benchmark.subset, SourceType(export_benchmark.source_type), AgreggationType(export_benchmark.aggregation), logger)
 
     if export_benchmark.dataset_type is None:
         export_benchmark.dataset_type = config.dataset_type

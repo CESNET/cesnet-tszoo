@@ -1057,7 +1057,14 @@ class CesnetDataset(ABC):
 
         to_display = f'''
 Dataset details:
+        '''
 
+        if self.metadata.subset is not None:
+            to_display += f'''
+    Subset: {self.metadata.subset}
+            '''
+
+        to_display += f'''
     {self.metadata.aggregation}
         Time indices: {range(self.metadata.time_indices[ID_TIME_COLUMN_NAME][0], self.metadata.time_indices[ID_TIME_COLUMN_NAME][-1])}
         Datetime: {(datetime.fromtimestamp(self.metadata.time_indices['time'][0], tz=timezone.utc), datetime.fromtimestamp(self.metadata.time_indices['time'][-1], timezone.utc))}
@@ -1416,7 +1423,7 @@ Dataset details:
             display_config_details = DisplayType(display_config_details)
 
         # Load config
-        config = load_config(identifier, self.metadata.configs_root, self.metadata.database_name, self.metadata.source_type, self.metadata.aggregation, self.logger)
+        config = load_config(identifier, self.metadata.configs_root, self.metadata.database_name, self.metadata.subset, self.metadata.source_type, self.metadata.aggregation, self.logger)
 
         self.logger.info("Initializing dataset configuration with the imported config.")
         self.set_dataset_config_and_initialize(config, display_config_details, workers)
@@ -1568,6 +1575,7 @@ Dataset details:
         config_name = self.dataset_config.import_identifier if (self.dataset_config.import_identifier is not None and not self.dataset_config.export_update_needed) else identifier
 
         export_benchmark = ExportBenchmark(self.metadata.database_name,
+                                           self.metadata.subset,
                                            self.metadata.source_type.value,
                                            self.metadata.aggregation.value,
                                            self.metadata.dataset_type.value,

@@ -66,6 +66,7 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         test_ts_row_ranges: Initialized when `test_ts` is set. Contains time series IDs in test set with their respective time ID ranges.
         all_ts_row_ranges: Initialized when `all_ts` is set. Contains time series IDs in all set with their respective time ID ranges.
         display_time_period: Used to display the configured value of `time_period`.
+        subset: Subset of the used dataset.
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
@@ -368,12 +369,21 @@ class SeriesBasedConfig(SeriesBasedHandler, DatasetConfig):
         else:
             time_part = f"Time included: {str(self.include_time)}"
 
-        return f'''
-Config Details:
-    Used for database: {self.database_name}
-    Aggregation: {str(self.aggregation)}
-    Source: {str(self.source_type)}
+        if self.subset is None:
+            dataset_part = f'''Used for database: {self.database_name}
+        Aggregation: {str(self.aggregation)}
+        Source: {str(self.source_type)}
+            '''
+        else:
+            dataset_part = f'''Used for database: {self.database_name}
+        Subset: {self.subset}
+        Aggregation: {str(self.aggregation)}
+        Source: {str(self.source_type)}
+            '''
 
+        return f'''
+Config Details
+    {dataset_part}
     Time series
         Train time series IDS: {get_abbreviated_list_string(self.train_ts)}
         Val time series IDS: {get_abbreviated_list_string(self.val_ts)}
