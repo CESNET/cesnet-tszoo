@@ -139,7 +139,7 @@ class TimesDataset(tables.IsDescription):
 
 class Outputer:
     def __init__(self, ts_type: str, source_type: str, aggregation_type: str, input_path: str, output_path: str):
-        self.base_name = OUTPUT_H5_BASE_NAME.lower()
+        self.base_name = OUTPUT_H5_BASE_NAME
         self.ts_type = ts_type.lower()
         self.source_type = source_type.lower()
         self.aggregation_type = aggregation_type.lower()
@@ -308,7 +308,7 @@ class Outputer:
                 return int(x)
 
         df["time"] = df["time"].apply(lambda x: nan_datetime_handler(x)).astype(np.int32)
-        df["time_id"] = df["time_id"].astype(np.uint32)
+        df["id_time"] = df["id_time"].astype(np.uint32)
 
         times_table.append(list(df.itertuples(index=False, name=None)))
         times_table.flush()
