@@ -8,6 +8,7 @@ import gc
 import yaml
 import warnings
 import argparse
+import glob
 warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser(description="Dataset and output configuration")
@@ -198,9 +199,14 @@ class Outputer:
         number_of_rows = 0
 
         for ts_id, folder_id in identifiers:
-            if os.path.exists(f"{self.main_data_path}{folder_id}/{ts_id}.csv"):
-                df = pd.read_csv(f"{self.main_data_path}{folder_id}/{ts_id}.csv")
-                number_of_rows += len(df)
+            if os.path.exists(f"{self.main_data_path}{folder_id}/{ts_id}"):
+                iterated = 0
+                for data_file_path in glob.glob(f"{self.main_data_path}{folder_id}/{ts_id}/data_*.csv"):
+                    number_of_rows += self.get_number_of_rows(data_file_path)
+                    iterated += 1
+
+                if iterated == 0:
+                    raise ValueError(f"Did not found any data files in {self.main_data_path}{folder_id}/{ts_id}")
             else:
                 raise ValueError(f"{self.file_name} missing {ts_id} in folder {folder_id}")
 
@@ -209,40 +215,108 @@ class Outputer:
     def get_number_of_rows(self, path: str) -> int:
         return len(pd.read_csv(path))
 
-    def get_table_descriptor(self, path: str, add_id: bool) -> tables.IsDescription:
+    def get_table_descriptor(self, path: str, add_id: bool, do_matrices: bool = False) -> tables.IsDescription:
 
         with open(path) as ts_info:
-            columns_info = list(yaml.safe_load(ts_info).items())
+            columns_info = yaml.safe_load(ts_info)
 
             if add_id:
-                columns_info.insert(0, (TS_ID, "uint32"))
+                columns_info[TS_ID] = {"type": "uint32"}
 
             converted_columns_info = []
 
             for pos, column in enumerate(columns_info):
-                col_name, col_type = column
-                converted_columns_info.append((col_name, get_pytables_init_type(col_type, pos)))
+
+                if column == TS_ID:
+                    pos = 0
+                elif column == "id_time":
+                    pos = 1
+                else:
+                    pos += len([col for col in columns_info if col == TS_ID or col == "id_time"])
+
+                if do_matrices and "matrix" in columns_info[column]:
+                    converted_columns_info.append((column, (get_pytables_init_type(columns_info[column]["type"], 0), (int(columns_info[column]["matrix"]["rows"]), int(columns_info[column]["matrix"]["columns"])))))
+                elif not do_matrices and "matrix" not in columns_info[column]:
+                    converted_columns_info.append((column, get_pytables_init_type(columns_info[column]["type"], pos)))
 
             return dict(converted_columns_info)
 
         raise ValueError("Unexpected error")
 
-    def get_column_types(self, path: str, add_id: bool) -> dict[str, np.dtype]:
+    def get_column_types(self, path: str, add_id: bool, do_matrices: bool = False) -> dict[str, np.dtype]:
         with open(path) as ts_info:
-            columns_info = list(yaml.safe_load(ts_info).items())
+            columns_info = yaml.safe_load(ts_info)
 
             if add_id:
-                columns_info.insert(0, (TS_ID, "uint32"))
+                columns_info[TS_ID] = {"type": "uint32"}
 
             converted_columns_info = []
 
             for _, column in enumerate(columns_info):
-                col_name, col_type = column
-                converted_columns_info.append((col_name, get_np_type(col_type)))
+                if do_matrices and "matrix" in columns_info[column]:
+                    converted_columns_info.append((column, (get_np_type(columns_info[column]["type"]), (int(columns_info[column]["matrix"]["rows"]), int(columns_info[column]["matrix"]["columns"])))))
+                elif not do_matrices and "matrix" not in columns_info[column]:
+                    converted_columns_info.append((column, get_np_type(columns_info[column]["type"])))
 
             return dict(converted_columns_info)
 
         raise ValueError("Unexpected error")
+
+    def populate_table(self, identifiers: list, column_types, table: tables.Table):
+        for ts_id, folder_id in identifiers:
+            if os.path.exists(f"{self.main_data_path}{folder_id}/{ts_id}"):
+                iterated = 0
+                for i in range(1, len(glob.glob(f"{self.main_data_path}{folder_id}/{ts_id}/data_*.csv")) + 1):
+                    df = pd.read_csv(f"{self.main_data_path}{folder_id}/{ts_id}/data_{i}.csv")
+
+                    iterated += 1
+
+                    if len(df.values) <= 0:
+                        continue
+
+                    df.insert(loc=0, column=TS_ID, value=ts_id)
+
+                    for key in column_types.keys():
+                        df[key] = df[key].astype(column_types[key])
+
+                    table.append(list(df[table.colnames].itertuples(index=False, name=None)))
+                    table.flush()
+                    del df
+                    gc.collect()
+
+                if iterated == 0:
+                    raise ValueError(f"Did not found any data files in {self.main_data_path}{folder_id}/{ts_id}")
+            else:
+                raise ValueError(f"{self.file_name} missing {ts_id} in folder {folder_id}")
+
+    def create_main_data_matrices(self, identifiers: list, h5_file: tables.File, main_group: tables.Group, number_of_rows: int, fletcher_filter: tables.Filters):
+        matrix_types = self.get_column_types(self.ts_info_path, False, True)
+        matrix_descriptors = self.get_table_descriptor(self.ts_info_path, False, True)
+
+        for ts_id, folder_id in identifiers:
+            if os.path.exists(f"{self.main_data_path}{folder_id}/{ts_id}"):
+                for matrix_name in matrix_descriptors:
+                    matrix_rows, matrix_cols = matrix_descriptors[matrix_name][1]
+                    matrix = h5_file.create_carray(main_group, matrix_name, matrix_descriptors[matrix_name][0], (number_of_rows, matrix_rows, matrix_cols), matrix_name, filters=fletcher_filter)
+                    added_rows = 0
+
+                    for i in range(1, len(glob.glob(f"{self.main_data_path}{folder_id}/{ts_id}/{matrix_name}_*.txt")) + 1):
+                        df = pd.read_csv(f"{self.main_data_path}{folder_id}/{ts_id}/{matrix_name}_{i}.txt", header=None)
+
+                        if len(df.values) <= 0:
+                            continue
+
+                        df = df.astype(matrix_types[matrix_name][0])
+                        matrix[added_rows:len(df)] = df.to_numpy(matrix_types[matrix_name][0], na_value=np.nan).reshape((-1, matrix_rows, matrix_cols))
+                        added_rows += len(df)
+                        matrix.flush()
+                        del df
+                        gc.collect()
+
+                    matrix.flush()
+                    h5_file.flush()
+            else:
+                raise ValueError(f"{self.file_name} missing {ts_id} in folder {folder_id}")
 
     def create_main_data_table(self, h5_file: tables.File, main_group: tables.Group, fletcher_filter: tables.Filters, identifiers: list) -> tables.Table:
         number_of_rows = self.get_number_of_rows_of_main_data(identifiers)
@@ -251,22 +325,8 @@ class Outputer:
 
         table = h5_file.create_table(main_group, self.main_data_table_name, main_data_desciptor, self.main_data_table_name, expectedrows=number_of_rows, filters=fletcher_filter)
 
-        for ts_id, folder_id in identifiers:
-            if os.path.exists(f"{self.main_data_path}{folder_id}/{ts_id}.csv"):
-                df = pd.read_csv(f"{self.main_data_path}{folder_id}/{ts_id}.csv")
-
-                if len(df.values) <= 0:
-                    continue
-
-                df.insert(loc=0, column=TS_ID, value=ts_id)
-
-                for key in column_types.keys():
-                    df[key] = df[key].astype(column_types[key])
-
-                table.append(list(df.itertuples(index=False, name=None)))
-                table.flush()
-                del df
-                gc.collect()
+        self.populate_table(identifiers, column_types, table)
+        self.create_main_data_matrices(identifiers, h5_file, main_group, number_of_rows, fletcher_filter)
 
         table.cols.ts_id.create_csindex()
         table.flush()
@@ -316,22 +376,23 @@ class Outputer:
         h5_file.flush()
 
     def create_additional_data_group(self, h5_file: tables.File, fletcher_filter: tables.Filters):
-        for additional_data_csv in Path(self.additional_data_path).glob("*.csv"):
-            info_path = f"{self.additional_data_path}{additional_data_csv.stem}_info.yaml"
-            number_of_rows = self.get_number_of_rows(additional_data_csv)
-            column_types = self.get_column_types(info_path, True)
-            descriptor = self.get_table_descriptor(info_path, True)
+        for additional_data_folder in Path(self.additional_data_path).iterdir():
+            info_path = additional_data_folder.joinpath("data_info.yaml")
+            csv_path = additional_data_folder.joinpath("data.csv")
+            number_of_rows = self.get_number_of_rows(csv_path)
+            column_types = self.get_column_types(info_path, False)
+            descriptor = self.get_table_descriptor(info_path, False)
 
-            table = h5_file.create_table("/", additional_data_csv.stem.lower(), descriptor, additional_data_csv.stem.lower(), expectedrows=number_of_rows, filters=fletcher_filter)
+            table = h5_file.create_table("/", additional_data_folder.name.lower(), descriptor, additional_data_folder.name.lower(), expectedrows=number_of_rows, filters=fletcher_filter)
 
-            df = pd.read_csv(additional_data_csv)
+            df = pd.read_csv(csv_path)
             if len(df) <= 0:
                 continue
 
             for key in column_types.keys():
                 df[key] = df[key].astype(column_types[key])
 
-            table.append(list(df.itertuples(index=False, name=None)))
+            table.append(list(df[table.colnames].itertuples(index=False, name=None)))
             del df
             gc.collect()
 
