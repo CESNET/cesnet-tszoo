@@ -58,6 +58,8 @@ class SourceType(Enum):
 
     NETWORK_OPERATOR = "network_operator"
 
+    MININET_SIMULATOR = "mininet_simulator"
+
     CESNET2 = "CESNET2"
     """Traffic of CESNET2 network. """
 

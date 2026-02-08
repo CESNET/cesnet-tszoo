@@ -73,6 +73,7 @@ class CesnetDatabase(ABC):
     id_names: dict = None
     default_values: dict = None
     subsets: list[str] = None
+    matrix_feature_mappings = None
     source_types: list[SourceType] = []
     aggregations: list[AgreggationType] = []
     additional_data: dict[str, tuple] = {}
@@ -132,8 +133,6 @@ class CesnetDatabase(ABC):
             dataset_name = f"{cls.name}-{subset}-{source_type.value}-{name_aggregation}"
 
         dataset_path = os.path.join(cls.database_root, f"{dataset_name}.h5")
-
-        print(dataset_path)
 
         # Ensure necessary directories exist
         for directory in [cls.database_root, cls.configs_root, cls.annotations_root, cls.benchmarks_root]:
