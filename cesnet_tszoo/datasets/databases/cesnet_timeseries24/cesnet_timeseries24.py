@@ -20,7 +20,6 @@ class CESNET_TimeSeries24(CesnetDatabase):
     default_values = timeseries24_constants.DEFAULT_VALUES
     source_types = timeseries24_constants.SOURCE_TYPES
     aggregations = timeseries24_constants.AGGREGATIONS
-    additional_data = timeseries24_constants.ADDITIONAL_DATA
 
     @overload
     @classmethod

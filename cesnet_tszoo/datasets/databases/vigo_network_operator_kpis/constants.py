@@ -18,8 +18,3 @@ SOURCE_TYPES = {
 AGGREGATIONS = {
     AgreggationType.AGG_5_MINUTES
 }
-
-ADDITIONAL_DATA = {
-    "anomalies": (("ts_id", np.uint32), ("start", np.int64), ("end", np.int64)),
-    "original_indices": (("ts_id", np.uint32), ("s_ts_id", str), ("r_ts_id", str))
-}

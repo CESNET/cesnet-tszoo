@@ -28,8 +28,3 @@ SOURCE_TYPES = {
 AGGREGATIONS = {
     AgreggationType.AGG_1_MINUTE
 }
-
-ADDITIONAL_DATA = {
-    "links": (("from", np.uint32), ("to", np.uint32)),
-    "source_and_destination": (("ts_id", np.uint32), ("source", np.uint32), ("destination", np.uint32))
-}

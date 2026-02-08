@@ -1073,7 +1073,7 @@ Dataset details:
         Time series indices: {get_abbreviated_list_string(self.metadata.ts_indices[self.metadata.ts_id_name])}; use 'get_available_ts_indices' for full list
         Features with default values: {self.metadata.default_values}
         
-        Additional data: {list(self.metadata.additional_data.keys())}
+        Additional data: {self.metadata.additional_data}
         '''
 
         print(to_display)
@@ -1146,14 +1146,15 @@ Dataset details:
             self.logger.error("%s is not available for this dataset.", data_name)
             raise ValueError(f"{data_name} is not available for this dataset.", f"Possible options are: {self.metadata.additional_data}")
 
-        data = get_additional_data(self.metadata.dataset_path, data_name)
-        data_df = pd.DataFrame(data)
+        data, data_info = get_additional_data(self.metadata.dataset_path, data_name)
+        data_df = pd.DataFrame.from_records(data)
+        for column, column_type in data_info.items():
+            column_type = type(column_type)
 
-        for column, column_type in self.metadata.additional_data[data_name]:
-            if column_type == datetime:
+            if column_type == tb.Time32Col:
                 data_df[column] = data_df[column].apply(lambda x: datetime.fromtimestamp(x, tz=timezone.utc))
-            else:
-                data_df[column] = data_df[column].astype(column_type)
+            elif column_type == tb.StringCol:
+                data_df[column] = data_df[column].astype(str)
 
         return data_df
 

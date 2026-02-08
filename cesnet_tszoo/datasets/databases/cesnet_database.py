@@ -73,10 +73,9 @@ class CesnetDatabase(ABC):
     id_names: dict = None
     default_values: dict = None
     subsets: list[str] = None
-    matrix_feature_mappings = None
+    matrix_feature_mappings = {}
     source_types: list[SourceType] = []
     aggregations: list[AgreggationType] = []
-    additional_data: dict[str, tuple] = {}
 
     def __init__(self):
         raise ValueError("To create dataset instance use class method 'get_dataset' instead.")
@@ -143,7 +142,7 @@ class CesnetDatabase(ABC):
         if not cls._is_downloaded(dataset_path):
             cls._download(dataset_name, dataset_path)
 
-        dataset_metadata = DatasetMetadata(cls.name, dataset_type, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, subset, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
+        dataset_metadata = DatasetMetadata(cls.name, dataset_type, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, subset, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.matrix_feature_mappings)
 
         dataset_factory = dataset_factories.get_dataset_factory(dataset_type)
         dataset = dataset_factory.create_dataset(dataset_metadata)

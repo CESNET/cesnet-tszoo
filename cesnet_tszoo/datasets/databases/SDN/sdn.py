@@ -22,7 +22,6 @@ class SDN(CesnetDatabase):
     subsets = ["matrix", "node", "node2node"]
     source_types = sdn_constants.SOURCE_TYPES
     aggregations = sdn_constants.AGGREGATIONS
-    additional_data = sdn_constants.ADDITIONAL_DATA
 
     @overload
     @classmethod

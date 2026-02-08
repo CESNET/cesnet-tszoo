@@ -41,8 +41,9 @@ class DatasetMetadata:
     aggregation: AgreggationType
     ts_id_name: str
     default_values: dict
-    additional_data: dict[str, tuple]
+    matrix_feature_mappings: dict[str, str]
 
+    additional_data: list[str] = field(default=None, init=False)
     time_indices: np.ndarray = field(default=None, init=False)
     ts_indices: np.ndarray = field(default=None, init=False)
     ts_row_ranges: np.ndarray = field(default=None, init=False)
@@ -52,12 +53,19 @@ class DatasetMetadata:
     def __post_init__(self):
         self.logger = logging.getLogger("dataset_metadata")
 
+        self.__init_additional_data()
         self.__init_time_indices()
         self.__init_ts_indices()
         self.__init_ts_row_ranges()
         self.__init_features()
+        self.__update_matrix_mappings()
+        self.__update_features_by_matrix_mappings()
         self.__update_default_values()
         self.__init_table_data_path()
+
+    def __init_additional_data(self):
+        with tb.open_file(self.dataset_path, mode="r") as dataset:
+            self.additional_data = [node._v_name for node in dataset.list_nodes("/") if isinstance(node, tb.Table) and node._v_name not in self.matrix_feature_mappings.values()]
 
     def __init_time_indices(self):
         """Sets time indices used in dataset. """
@@ -98,6 +106,18 @@ class DatasetMetadata:
             self.features = result
 
         self.logger.debug("Features have been successfully set.")
+
+    def __update_matrix_mappings(self):
+        self.matrix_feature_mappings = {matrix_id: self.matrix_feature_mappings[matrix_id] for matrix_id in self.matrix_feature_mappings if matrix_id in self.features.keys()}
+
+    def __update_features_by_matrix_mappings(self):
+
+        with tb.open_file(self.dataset_path, mode="r") as dataset:
+            for matrix_id in self.matrix_feature_mappings:
+                del self.features[matrix_id]
+
+                matrix = dataset.get_node(f"/{self.source_type.value}/{self.matrix_feature_mappings[matrix_id]}")
+                self.features[self.matrix_feature_mappings[matrix_id]] = matrix.dtype
 
     def __update_default_values(self):
         """Updates to only relevant default values """

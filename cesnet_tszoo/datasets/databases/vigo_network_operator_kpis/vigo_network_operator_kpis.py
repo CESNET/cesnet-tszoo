@@ -21,7 +21,6 @@ class Vigo_NetworkOperatorKPIs(CesnetDatabase):
     subsets = ["downstream", "internet", "sessions", "vpn"]
     source_types = network_operator_kpis_constants.SOURCE_TYPES
     aggregations = network_operator_kpis_constants.AGGREGATIONS
-    additional_data = network_operator_kpis_constants.ADDITIONAL_DATA
 
     @overload
     @classmethod
