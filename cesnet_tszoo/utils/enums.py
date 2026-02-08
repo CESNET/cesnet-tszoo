@@ -10,6 +10,9 @@ class AgreggationType(Enum):
     AGG_1_HOUR = "1_hour"
     """1 hour aggregation for source type. """
 
+    AGG_15_MINUTES = "15_minutes"
+    """15 minutes aggregation for source type. """
+
     AGG_10_MINUTES = "10_minutes"
     """10 minutes aggregation for source type. """
 
@@ -29,7 +32,7 @@ class AgreggationType(Enum):
     def _to_str_without_number(aggregation_type) -> str:
         """For paths. """
 
-        if aggregation_type in [AgreggationType.AGG_10_MINUTES, AgreggationType.AGG_5_MINUTES]:
+        if aggregation_type in [AgreggationType.AGG_10_MINUTES, AgreggationType.AGG_5_MINUTES, AgreggationType.AGG_15_MINUTES]:
             return "minutes"
         elif aggregation_type == AgreggationType.AGG_1_HOUR:
             return "hour"
@@ -59,6 +62,8 @@ class SourceType(Enum):
     NETWORK_OPERATOR = "network_operator"
 
     MININET_SIMULATOR = "mininet_simulator"
+
+    BACKBONE_NETWORK = "backbone_network"
 
     CESNET2 = "CESNET2"
     """Traffic of CESNET2 network. """
