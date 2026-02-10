@@ -7,7 +7,7 @@ import numpy.lib.recfunctions as rf
 from torch.utils.data import Dataset
 import torch
 
-from cesnet_tszoo.pytables_data.utils.utils import load_database
+from cesnet_tszoo.pytables_data.utils.utils import load_database, load_arrays
 from cesnet_tszoo.utils.enums import PreprocessType
 from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, ROW_START, ROW_END
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
@@ -27,14 +27,16 @@ class BaseDataset(Dataset, ABC):
         self.worker_id = None
         self.database = None
         self.table = None
+        self.matrix_nodes = None
+        self.return_type = None
 
-        self.offset_exclude_feature_ids = len(self.load_config.features_to_take) - len(self.load_config.indices_of_features_to_take_no_ids)
+        self.offset_exclude_feature_ids = len(self.load_config.all_features_to_take_table) - self.load_config.non_id_scalar_features_count
 
         if self.load_config.include_time and self.load_config.time_format != TimeFormat.DATETIME:
-            self.time_col_index = self.load_config.features_to_take.index(ID_TIME_COLUMN_NAME)
+            self.time_col_index = self.load_config.all_features_to_take_table.index(ID_TIME_COLUMN_NAME)
 
         if self.load_config.include_ts_id:
-            self.ts_id_col_index = self.load_config.features_to_take.index(self.load_config.ts_id_name)
+            self.ts_id_col_index = self.load_config.all_features_to_take_table.index(self.load_config.ts_id_name)
             self.ts_id_fill = self.load_config.ts_row_ranges[self.load_config.ts_id_name].reshape((self.load_config.ts_row_ranges.shape[0], 1))
 
     @abstractmethod
@@ -51,6 +53,8 @@ class BaseDataset(Dataset, ABC):
         self.worker_id = worker_id
 
         self.database, self.table = load_database(dataset_path=self.database_path, table_data_path=self.table_data_path)
+        self.matrix_nodes = load_arrays(self.database, self.table._v_parent, self.load_config.matrix_features_to_take)
+
         atexit.register(self.cleanup)
 
     def cleanup(self) -> None:
@@ -61,7 +65,9 @@ class BaseDataset(Dataset, ABC):
     def load_data_from_table(self, ts_row_ranges_to_take: np.ndarray, time_indices_to_take: np.ndarray) -> np.ndarray:
         """Return data from table. Used preprocess will be applied. """
 
-        result = np.full((len(ts_row_ranges_to_take), len(time_indices_to_take), len(self.load_config.features_to_take)), fill_value=np.nan, dtype=np.float64)
+        result = np.full((len(ts_row_ranges_to_take), len(time_indices_to_take), len(self.load_config.non_matrix_features_to_take)), fill_value=np.nan, dtype=np.float64)
+
+        matrix_indices = np.full((len(ts_row_ranges_to_take), len(self.load_config.time_period), len(self.load_config.matrix_features_to_take)), fill_value=0, dtype=np.uint32)
 
         for i, range_data in enumerate(ts_row_ranges_to_take):
 
@@ -108,8 +114,14 @@ class BaseDataset(Dataset, ABC):
             existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
             if len(filtered_rows) > 0:
-                result[i, existing_indices] = rf.structured_to_unstructured(filtered_rows[:][self.load_config.features_to_take], dtype=np.float64, copy=False)
+                # result[i, existing_indices] = rf.structured_to_unstructured(filtered_rows[:][self.load_config.all_features_to_take_table], dtype=np.float64, copy=False)
+                all_features_rows = rf.structured_to_unstructured(filtered_rows[:][self.load_config.all_features_to_take_table], dtype=np.float64, copy=False)
+                result[i, existing_indices, :] = all_features_rows[:, self.load_config.non_matrix_feature_indices]
+                matrix_indices[i, existing_indices, :] = all_features_rows[:, self.load_config.matrix_feature_indices].astype(np.uint32)
+
                 real_offset = len(filtered_rows)
+
+            _ = self.load_matrices(i, existing_indices)
 
             result[i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[i, :, self.offset_exclude_feature_ids:].view(), i)
 
@@ -117,6 +129,9 @@ class BaseDataset(Dataset, ABC):
             ts_row_ranges_to_take[ROW_START][i] = start + real_offset
 
         return result
+
+    def load_matrices(self, ts_id: int, existing_indices: np.ndarray) -> list[np.ndarray]:
+        return None
 
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
         for preprocess_note in self.load_config.preprocess_order:
@@ -153,7 +168,7 @@ class BaseDataset(Dataset, ABC):
     def _handle_transforming(self, transfomer_holder: TransformerHolder, data: np.ndarray, idx: int) -> np.ndarray:
         """Uses transformers """
 
-        if len(self.load_config.indices_of_features_to_take_no_ids) == 1:
+        if self.load_config.non_id_scalar_features_count == 1:
             data = transfomer_holder.apply(data.reshape(-1, 1), idx)
         elif len(self.load_config.time_period) == 1:
             data = transfomer_holder.apply(data.reshape(1, -1), idx)

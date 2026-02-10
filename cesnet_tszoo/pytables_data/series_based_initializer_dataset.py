@@ -17,7 +17,7 @@ class SeriesBasedInitializerDataset(InitializerDataset):
 
     def __getitem__(self, idx) -> InitDatasetReturn:
 
-        data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
+        data, data_matrices, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
         is_under_nan_threshold = 1 - len(existing_indices) / len(self.init_config.time_period) <= self.init_config.nan_threshold
 
         preprocess_fitted_instances = []
@@ -26,7 +26,7 @@ class SeriesBasedInitializerDataset(InitializerDataset):
         if is_under_nan_threshold:
 
             # Prepare data from current time series for training
-            if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
+            if self.init_config.non_id_scalar_features_count == 1:
                 train_data = data[: len(self.init_config.time_period), self.offset_exclude_feature_ids:].reshape(-1, 1)
             elif len(self.init_config.time_period) == 1:
                 train_data = data[: len(self.init_config.time_period), self.offset_exclude_feature_ids:].reshape(1, -1)

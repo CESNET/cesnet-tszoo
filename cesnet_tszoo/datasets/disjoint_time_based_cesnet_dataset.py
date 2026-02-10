@@ -370,19 +370,19 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         """Called in [`set_dataset_config_and_initialize`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize), this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
-            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.TRAIN)
+            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.TRAIN, self.metadata)
             self.train_dataset = DisjointTimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.train_workers)
 
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
-            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.VAL)
+            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.VAL, self.metadata)
             self.val_dataset = DisjointTimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.val_workers)
 
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
-            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.TEST)
+            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.TEST, self.metadata)
             self.test_dataset = DisjointTimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.test_workers)
             self.logger.debug("test_dataset initiliazed.")
 
@@ -400,7 +400,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.logger.debug("Train set updated: %s time series left.", len(self.dataset_config.train_ts))
 
         if self.dataset_config.has_val():
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]))
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]), self.metadata)
 
             ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "val")
             self.dataset_config.val_ts = self.dataset_config.val_ts[ts_ids_to_take]
@@ -410,7 +410,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.logger.debug("Val set updated: %s time series left.", len(self.dataset_config.val_ts))
 
         if self.dataset_config.has_test():
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TEST, PreprocessOrderGroup([]))
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TEST, PreprocessOrderGroup([]), self.metadata)
 
             ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "test")
             self.dataset_config.test_ts = self.dataset_config.test_ts[ts_ids_to_take]
@@ -435,7 +435,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             ts_ids_to_take = []
             self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(groups))
 
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group)
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group, self.metadata)
             init_dataset = DisjointTimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
             sampler = SequentialSampler(init_dataset)

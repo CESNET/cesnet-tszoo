@@ -313,25 +313,25 @@ class TimeBasedCesnetDataset(CesnetDataset):
         """Called in [`set_dataset_config_and_initialize`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize), this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
-            load_config = TimeLoadConfig(self.dataset_config, SplitType.TRAIN)
+            load_config = TimeLoadConfig(self.dataset_config, SplitType.TRAIN, self.metadata)
             self.train_dataset = TimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.train_workers)
 
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
-            load_config = TimeLoadConfig(self.dataset_config, SplitType.VAL)
+            load_config = TimeLoadConfig(self.dataset_config, SplitType.VAL, self.metadata)
             self.val_dataset = TimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.val_workers)
 
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
-            load_config = TimeLoadConfig(self.dataset_config, SplitType.TEST)
+            load_config = TimeLoadConfig(self.dataset_config, SplitType.TEST, self.metadata)
             self.test_dataset = TimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.test_workers)
 
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all():
-            load_config = TimeLoadConfig(self.dataset_config, SplitType.ALL)
+            load_config = TimeLoadConfig(self.dataset_config, SplitType.ALL, self.metadata)
             self.all_dataset = TimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.all_workers)
 
             self.logger.debug("all_dataset initiliazed.")
@@ -361,7 +361,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
             self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(grouped))
 
-            init_config = TimeDatasetInitConfig(self.dataset_config, ts_ids_ignore, train_group, val_group, test_group)
+            init_config = TimeDatasetInitConfig(self.dataset_config, ts_ids_ignore, train_group, val_group, test_group, self.metadata)
             init_dataset = TimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
             sampler = SequentialSampler(init_dataset)

@@ -4,13 +4,14 @@ from copy import copy, deepcopy
 from cesnet_tszoo.configs import DisjointTimeBasedConfig
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
 from cesnet_tszoo.utils.enums import SplitType
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 class DisjointTimeLoadConfig(LoadConfig):
     """Base class for dataset configs that are used to pass values to load datasets. """
 
-    def __init__(self, config: DisjointTimeBasedConfig, limit_init_to_set: Optional[SplitType]):
-        super().__init__(config, limit_init_to_set)
+    def __init__(self, config: DisjointTimeBasedConfig, limit_init_to_set: Optional[SplitType], dataset_metadata: DatasetMetadata):
+        super().__init__(config, limit_init_to_set, dataset_metadata)
 
     def _init_train(self, config: DisjointTimeBasedConfig):
         """Initializes from train data of config """

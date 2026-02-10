@@ -5,15 +5,31 @@ import numpy as np
 
 from cesnet_tszoo.configs.base_config import DatasetConfig
 from cesnet_tszoo.utils.enums import SplitType
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 class DatasetInitConfig(ABC):
     """Base class for dataset init configs that are used to pass values to init datasets. """
 
-    def __init__(self, config: DatasetConfig, limit_init_to_set: Optional[SplitType]):
+    def __init__(self, config: DatasetConfig, limit_init_to_set: Optional[SplitType], dataset_metadata: DatasetMetadata):
         self.ts_id_name = config.ts_id_name
-        self.features_to_take = config.features_to_take
-        self.indices_of_features_to_take_no_ids = config.indices_of_features_to_take_no_ids
+
+        self.all_features_to_take_table = config.features_to_take.copy()
+        for i, feature in enumerate(self.all_features_to_take_table):
+            for feature_id in dataset_metadata.matrix_feature_mappings:
+                if feature == dataset_metadata.matrix_feature_mappings[feature_id]:
+                    self.all_features_to_take_table[i] = feature_id
+                    break
+
+        self.non_matrix_features_to_take = [feature for feature in config.features_to_take if feature not in dataset_metadata.matrix_feature_mappings.values()]
+        self.non_matrix_feature_indices = [index for index, feature in enumerate(config.features_to_take) if feature in self.non_matrix_features_to_take]
+
+        self.matrix_feature_indices = [index for index, feature in enumerate(config.features_to_take) if feature not in self.non_matrix_features_to_take]
+        self.matrix_feature_ids_to_take = [feature_id for feature_id in dataset_metadata.matrix_feature_mappings if dataset_metadata.matrix_feature_mappings[feature_id] in config.features_to_take]
+        self.matrix_features_to_take = [dataset_metadata.matrix_feature_mappings[feature_id] for feature_id in dataset_metadata.matrix_feature_mappings if dataset_metadata.matrix_feature_mappings[feature_id] in config.features_to_take]
+
+        self.non_id_scalar_features_count = len(config.indices_of_features_to_take_no_ids) - len(self.matrix_features_to_take)
+
         self.time_period = None
         self.nan_threshold = config.nan_threshold
 

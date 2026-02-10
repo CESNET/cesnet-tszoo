@@ -24,7 +24,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
         if self.init_config.ts_ids_ignore[idx]:
             return None
 
-        data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
+        data, data_matrices, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
 
         shared_offset = 0
         active_sets = 0
@@ -79,7 +79,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
         if can_preprocess:
 
             # Prepare data from current time series for training
-            if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
+            if self.init_config.non_id_scalar_features_count == 1:
                 train_data = data[:, self.offset_exclude_feature_ids:].reshape(-1, 1)
             elif len(self.init_config.time_period) == 1:
                 train_data = data[:, self.offset_exclude_feature_ids:].reshape(1, -1)
@@ -197,7 +197,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
         """Fits and uses transformers. """
 
         if self.init_config.train_time_period is not None:
-            if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
+            if self.init_config.non_id_scalar_features_count == 1:
                 train_data = data[: len(self.init_config.train_time_period), :].reshape(-1, 1)
             elif len(self.init_config.train_time_period) == 1:
                 train_data = data[: len(self.init_config.train_time_period), :].reshape(1, -1)
