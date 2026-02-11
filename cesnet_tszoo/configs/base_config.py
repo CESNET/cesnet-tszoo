@@ -668,20 +668,23 @@ class DatasetConfig(ABC):
 
         return np.dtype(dtype_body)
 
-    def _get_dataloader_return_size(self, dataset_metadata: DatasetMetadata) -> int:
-        size = 0
+    def _get_dataloader_return_dtype_fill_values(self, dataset_metadata: DatasetMetadata) -> tuple:
+        return_dtype = self._get_dataloader_return_dtype(dataset_metadata)
+        fill_values = []
 
-        if self.include_time and self.time_format == TimeFormat.DATETIME:
-            size += 1
+        for field_name in return_dtype.names:
 
-        if any(feature in dataset_metadata.scalar_features for feature in self.features_to_take):
-            size += 1
+            if return_dtype[field_name].subdtype is None:
+                field_type = return_dtype[field_name]
+            else:
+                field_type = return_dtype[field_name].subdtype[0]
 
-        for feature in self.features_to_take_without_ids:
-            if feature in dataset_metadata.matrix_features:
-                size += 1
+            if np.issubdtype(field_type, np.floating) or np.issubdtype(field_type, np.complexfloating):
+                fill_values.append(np.nan)
+            else:
+                fill_values.append(np.zeros((), dtype=field_type).item())
 
-        return size
+        return np.array(tuple(fill_values), dtype=return_dtype)
 
     @abstractmethod
     def _get_summary_loader(self) -> list[css_utils.SummaryDiagramStep]:
