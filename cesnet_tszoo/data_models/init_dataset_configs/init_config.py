@@ -30,6 +30,9 @@ class DatasetInitConfig(ABC):
 
         self.non_id_scalar_features_count = len(config.indices_of_features_to_take_no_ids) - len(self.matrix_features_to_take)
 
+        self.return_dtype = config._get_dataloader_return_dtype(dataset_metadata)
+        self.return_dtype_fill_values = config._get_dataloader_return_dtype_fill_values(dataset_metadata)
+
         self.time_period = None
         self.nan_threshold = config.nan_threshold
 

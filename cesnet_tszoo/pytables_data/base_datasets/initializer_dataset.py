@@ -11,7 +11,7 @@ from cesnet_tszoo.utils.enums import PreprocessType
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
-from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME
+from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME, BASE_DATA_DTYPE_PART
 from cesnet_tszoo.pytables_data.utils.utils import load_database, load_arrays
 
 
@@ -55,9 +55,7 @@ class InitializerDataset(Dataset, ABC):
     def load_data_from_table(self, identifier_row_range_to_take: np.ndarray) -> np.ndarray:
         """Returns data from the table and indices of rows where values exists."""
 
-        result = np.full((len(self.init_config.time_period), len(self.init_config.non_matrix_features_to_take)), fill_value=np.nan, dtype=np.float64)
-
-        matrix_indices = np.full((len(self.init_config.time_period), len(self.init_config.matrix_features_to_take)), fill_value=0, dtype=np.uint32)
+        result = np.full(len(self.init_config.time_period), fill_value=self.init_config.return_dtype_fill_values, dtype=self.init_config.return_dtype)
 
         expected_offset = np.uint32(len(self.init_config.time_period))
         start = int(identifier_row_range_to_take[ROW_START])
@@ -98,26 +96,25 @@ class InitializerDataset(Dataset, ABC):
 
         if len(filtered_rows) > 0:
             all_features_rows = rf.structured_to_unstructured(filtered_rows[:][self.init_config.all_features_to_take_table], dtype=np.float64, copy=False)
-            result[existing_indices, :] = all_features_rows[:, self.init_config.non_matrix_feature_indices]
-            matrix_indices[existing_indices, :] = all_features_rows[:, self.init_config.matrix_feature_indices].astype(np.uint32)
-            # result[existing_indices, :] = rf.structured_to_unstructured(filtered_rows[:][self.init_config.non_matrix_features_to_take], dtype=np.float64, copy=False)
+            self.__try_add_base_data(all_features_rows, result, existing_indices)
+            self.__try_add_matrices(all_features_rows, result, existing_indices)
 
-        result_matrices = self.load_matrices(matrix_indices, existing_indices)
+        return result, existing_indices
 
-        return result, result_matrices, existing_indices
+    def __try_add_base_data(self, to_take_from: np.ndarray, to_add_to: np.ndarray, existing_indices: np.ndarray):
+        if BASE_DATA_DTYPE_PART in self.init_config.return_dtype.names:
+            to_add_to[BASE_DATA_DTYPE_PART][existing_indices] = to_take_from[:, self.init_config.non_matrix_feature_indices]
 
-    def load_matrices(self, matrix_indices: np.ndarray, existing_indices: np.ndarray) -> list[np.ndarray]:
-        result_matrices = []
+    def __try_add_matrices(self, to_take_from: np.ndarray, to_add_to: np.ndarray, existing_indices: np.ndarray):
+        if len(self.matrix_nodes) == 0:
+            return
+
+        matrix_indices = to_take_from[:, self.init_config.matrix_feature_indices].astype(np.uint32)
 
         for i, matrix_node in enumerate(self.matrix_nodes):
-            result_matrix = np.full((len(self.init_config.time_period), *matrix_node.shape[1:]), fill_value=np.nan, dtype=np.float64)
-
             if len(existing_indices) > 0:
-                result_matrix[existing_indices] = matrix_node[matrix_indices[existing_indices, i], :, :]
-
-            result_matrices.append(result_matrix)
-
-        return result_matrices
+                feature_name = self.init_config.matrix_features_to_take[i]
+                to_add_to[feature_name][existing_indices] = matrix_node[matrix_indices[:, i], :, :]
 
     @abstractmethod
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:

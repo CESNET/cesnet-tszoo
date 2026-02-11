@@ -9,6 +9,7 @@ from cesnet_tszoo.data_models.fitted_preprocess_instance import FittedPreprocess
 from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
 from cesnet_tszoo.utils.enums import PreprocessType
+from cesnet_tszoo.utils.constants import BASE_DATA_DTYPE_PART
 
 
 class TimeBasedInitializerDataset(InitializerDataset):
@@ -24,7 +25,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
         if self.init_config.ts_ids_ignore[idx]:
             return None
 
-        data, data_matrices, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
+        data, existing_indices = self.load_data_from_table(self.init_config.ts_row_ranges[idx])
 
         shared_offset = 0
         active_sets = 0
@@ -78,20 +79,21 @@ class TimeBasedInitializerDataset(InitializerDataset):
         train_data = np.array([])
         if can_preprocess:
 
-            # Prepare data from current time series for training
-            if self.init_config.non_id_scalar_features_count == 1:
-                train_data = data[:, self.offset_exclude_feature_ids:].reshape(-1, 1)
-            elif len(self.init_config.time_period) == 1:
-                train_data = data[:, self.offset_exclude_feature_ids:].reshape(1, -1)
-            else:
-                train_data = data[:, self.offset_exclude_feature_ids:]
+            if BASE_DATA_DTYPE_PART in self.init_config.return_dtype.names:  # TO-DO
+                train_data = data[BASE_DATA_DTYPE_PART][:, self.offset_exclude_feature_ids:].view()
 
-            train_data = self._handle_data_preprocess(train_data, idx)
+                # Prepare data from current time series for training
+                if self.init_config.non_id_scalar_features_count == 1:
+                    train_data = train_data.reshape(-1, 1)
+                elif len(self.init_config.time_period) == 1:
+                    train_data = train_data.reshape(1, -1)
 
-            if self.init_config.train_time_period is not None:
-                train_data = train_data[: len(self.init_config.train_time_period)]
-            else:
-                train_data = np.array([])
+                train_data = self._handle_data_preprocess(train_data, idx)
+
+                if self.init_config.train_time_period is not None:
+                    train_data = train_data[: len(self.init_config.train_time_period)]
+                else:
+                    train_data = np.array([])
 
             for preprocess_order in self.init_config.train_preprocess_order_group.preprocess_inner_orders:
                 if preprocess_order.should_be_fitted and not preprocess_order.holder.is_empty():
