@@ -48,6 +48,8 @@ class DatasetMetadata:
     ts_indices: np.ndarray = field(default=None, init=False)
     ts_row_ranges: np.ndarray = field(default=None, init=False)
     features: dict[str, np.dtype] = field(default=None, init=False)
+    matrix_features: dict[str, np.dtype] = field(default=None, init=False)
+    scalar_features: dict[str, np.dtype] = field(default=None, init=False)
     data_table_path: str = field(default=None, init=False)
 
     def __post_init__(self):
@@ -104,6 +106,7 @@ class DatasetMetadata:
                 result[key] = table.coldescrs[key].dtype
 
             self.features = result
+            self.scalar_features = {feature: result[feature] for feature in result if feature not in self.matrix_feature_mappings}
 
         self.logger.debug("Features have been successfully set.")
 
@@ -111,13 +114,14 @@ class DatasetMetadata:
         self.matrix_feature_mappings = {matrix_id: self.matrix_feature_mappings[matrix_id] for matrix_id in self.matrix_feature_mappings if matrix_id in self.features.keys()}
 
     def __update_features_by_matrix_mappings(self):
-
+        self.matrix_features = {}
         with tb.open_file(self.dataset_path, mode="r") as dataset:
             for matrix_id in self.matrix_feature_mappings:
                 del self.features[matrix_id]
 
                 matrix = dataset.get_node(f"/{self.source_type.value}/{self.matrix_feature_mappings[matrix_id]}")
-                self.features[self.matrix_feature_mappings[matrix_id]] = matrix.dtype
+                self.features[self.matrix_feature_mappings[matrix_id]] = np.dtype((matrix.dtype, matrix.shape[1:]))
+                self.matrix_features[self.matrix_feature_mappings[matrix_id]] = np.dtype((matrix.dtype, matrix.shape[1:]))
 
     def __update_default_values(self):
         """Updates to only relevant default values """

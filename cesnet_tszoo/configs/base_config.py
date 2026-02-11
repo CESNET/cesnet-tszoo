@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 
 import cesnet_tszoo.version as version
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER, MANDATORY_PREPROCESSES_ORDER_ENUM
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, MANDATORY_PREPROCESSES_ORDER, MANDATORY_PREPROCESSES_ORDER_ENUM, BASE_DATA_DTYPE_PART, TIME_DTYPE_PART
 from cesnet_tszoo.utils.enums import FillerType, TimeFormat, TransformerType, DataloaderOrder, DatasetType, AnomalyHandlerType, PreprocessType, AgreggationType, SourceType
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
@@ -651,6 +651,37 @@ class DatasetConfig(ABC):
             steps.append(step)
 
         return steps
+
+    def _get_dataloader_return_dtype(self, dataset_metadata: DatasetMetadata):
+        dtype_body = []
+
+        if self.include_time and self.time_format == TimeFormat.DATETIME:
+            dtype_body.append((TIME_DTYPE_PART, np.object_))
+
+        base_features = [feature for feature in self.features_to_take if feature in dataset_metadata.scalar_features]
+        if len(base_features) > 0:
+            dtype_body.append((BASE_DATA_DTYPE_PART, np.float64, len(base_features)))
+
+        for feature in self.features_to_take_without_ids:
+            if feature in dataset_metadata.matrix_features:
+                dtype_body.append((feature, dataset_metadata.matrix_features[feature]))
+
+        return dtype_body
+
+    def _get_dataloader_return_size(self, dataset_metadata: DatasetMetadata):
+        size = 0
+
+        if self.include_time and self.time_format == TimeFormat.DATETIME:
+            size += 1
+
+        if any(feature in dataset_metadata.scalar_features for feature in self.features_to_take):
+            size += 1
+
+        for feature in self.features_to_take_without_ids:
+            if feature in dataset_metadata.matrix_features:
+                size += 1
+
+        return size
 
     @abstractmethod
     def _get_summary_loader(self) -> list[css_utils.SummaryDiagramStep]:
