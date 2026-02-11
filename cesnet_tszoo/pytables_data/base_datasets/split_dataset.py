@@ -1,7 +1,7 @@
 from typing import Any
 from copy import deepcopy
 
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, TIME_COLUMN_NAME, BASE_DATA_DTYPE_PART, TIME_DTYPE_PART
 from cesnet_tszoo.pytables_data.base_datasets.base_dataset import BaseDataset
 from cesnet_tszoo.utils.enums import TimeFormat
 
@@ -21,17 +21,16 @@ class SplitDataset(BaseDataset):
 
         if self.load_config.include_time:
             if self.load_config.time_format == TimeFormat.ID_TIME:
-                data[:, :, self.time_col_index] = self.load_config.time_period[batch_idx][ID_TIME_COLUMN_NAME]
+                data[BASE_DATA_DTYPE_PART][:, :, self.time_col_index] = self.load_config.time_period[batch_idx][ID_TIME_COLUMN_NAME]
             elif self.load_config.time_format == TimeFormat.UNIX_TIME or self.load_config.time_format == TimeFormat.SHIFTED_UNIX_TIME:
-                data[:, :, self.time_col_index] = self.load_config.time_period[batch_idx][TIME_COLUMN_NAME]
+                data[BASE_DATA_DTYPE_PART][:, :, self.time_col_index] = self.load_config.time_period[batch_idx][TIME_COLUMN_NAME]
+            elif self.load_config.time_format == TimeFormat.DATETIME:
+                data[TIME_DTYPE_PART] = self.load_config.time_period[batch_idx][TIME_COLUMN_NAME]
 
         if self.load_config.include_ts_id:
-            data[:, :, self.ts_id_col_index] = self.ts_id_fill
+            data[BASE_DATA_DTYPE_PART][:, :, self.ts_id_col_index] = self.ts_id_fill
 
-        if self.load_config.include_time and self.load_config.time_format == TimeFormat.DATETIME:
-            return data, self.load_config.time_period[batch_idx][TIME_COLUMN_NAME].copy()
-        else:
-            return data
+        return data
 
     def __len__(self) -> int:
         return len(self.load_config.time_period)

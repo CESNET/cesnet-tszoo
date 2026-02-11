@@ -9,7 +9,7 @@ import torch
 
 from cesnet_tszoo.pytables_data.utils.utils import load_database, load_arrays
 from cesnet_tszoo.utils.enums import PreprocessType
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, ROW_START, ROW_END
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, ROW_START, ROW_END, BASE_DATA_DTYPE_PART
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
 from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.utils.enums import TimeFormat
@@ -28,7 +28,6 @@ class BaseDataset(Dataset, ABC):
         self.database = None
         self.table = None
         self.matrix_nodes = None
-        self.return_type = None
 
         self.offset_exclude_feature_ids = len(self.load_config.all_features_to_take_table) - self.load_config.non_id_scalar_features_count
 
@@ -65,9 +64,7 @@ class BaseDataset(Dataset, ABC):
     def load_data_from_table(self, ts_row_ranges_to_take: np.ndarray, time_indices_to_take: np.ndarray) -> np.ndarray:
         """Return data from table. Used preprocess will be applied. """
 
-        result = np.full((len(ts_row_ranges_to_take), len(time_indices_to_take), len(self.load_config.non_matrix_features_to_take)), fill_value=np.nan, dtype=np.float64)
-
-        matrix_indices = np.full((len(ts_row_ranges_to_take), len(self.load_config.time_period), len(self.load_config.matrix_features_to_take)), fill_value=0, dtype=np.uint32)
+        result = np.full((len(ts_row_ranges_to_take), len(time_indices_to_take)), fill_value=self.load_config.return_dtype_fill_values, dtype=self.load_config.return_dtype)
 
         for i, range_data in enumerate(ts_row_ranges_to_take):
 
@@ -80,7 +77,8 @@ class BaseDataset(Dataset, ABC):
 
             # No more existing values
             if start >= end:
-                result[i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[i, :, self.offset_exclude_feature_ids:].view(), i)
+                if BASE_DATA_DTYPE_PART in self.load_config.return_dtype.names:  # TO-DO
+                    result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:].view(), i)
 
                 continue
 
@@ -114,24 +112,33 @@ class BaseDataset(Dataset, ABC):
             existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
             if len(filtered_rows) > 0:
-                # result[i, existing_indices] = rf.structured_to_unstructured(filtered_rows[:][self.load_config.all_features_to_take_table], dtype=np.float64, copy=False)
                 all_features_rows = rf.structured_to_unstructured(filtered_rows[:][self.load_config.all_features_to_take_table], dtype=np.float64, copy=False)
-                result[i, existing_indices, :] = all_features_rows[:, self.load_config.non_matrix_feature_indices]
-                matrix_indices[i, existing_indices, :] = all_features_rows[:, self.load_config.matrix_feature_indices].astype(np.uint32)
+                self.__try_add_base_data(all_features_rows, result, i, existing_indices)
+                self.__try_add_matrices(all_features_rows, result, i, existing_indices)
 
                 real_offset = len(filtered_rows)
 
-            _ = self.load_matrices(i, existing_indices)
-
-            result[i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[i, :, self.offset_exclude_feature_ids:].view(), i)
+            if BASE_DATA_DTYPE_PART in self.load_config.return_dtype.names:  # TO-DO
+                result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:].view(), i)
 
             # Update ranges
             ts_row_ranges_to_take[ROW_START][i] = start + real_offset
 
         return result
 
-    def load_matrices(self, ts_id: int, existing_indices: np.ndarray) -> list[np.ndarray]:
-        return None
+    def __try_add_base_data(self, to_take_from: np.ndarray, to_add_to: np.ndarray, ts_id: int, existing_indices: np.ndarray):
+        if BASE_DATA_DTYPE_PART in self.load_config.return_dtype.names:
+            to_add_to[BASE_DATA_DTYPE_PART][ts_id, existing_indices] = to_take_from[:, self.load_config.non_matrix_feature_indices]
+
+    def __try_add_matrices(self, to_take_from: np.ndarray, to_add_to: np.ndarray, ts_id: int, existing_indices: np.ndarray):
+        if len(self.matrix_nodes) == 0:
+            return
+
+        matrix_indices = to_take_from[:, self.load_config.matrix_feature_indices].astype(np.uint32)
+
+        for i, matrix_node in enumerate(self.matrix_nodes):
+            feature_name = self.load_config.matrix_features_to_take[i]
+            to_add_to[feature_name][ts_id, existing_indices] = matrix_node[matrix_indices[:, i], :, :]
 
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
         for preprocess_note in self.load_config.preprocess_order:

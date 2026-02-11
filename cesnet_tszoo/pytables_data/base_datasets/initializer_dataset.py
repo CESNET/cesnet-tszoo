@@ -112,9 +112,8 @@ class InitializerDataset(Dataset, ABC):
         matrix_indices = to_take_from[:, self.init_config.matrix_feature_indices].astype(np.uint32)
 
         for i, matrix_node in enumerate(self.matrix_nodes):
-            if len(existing_indices) > 0:
-                feature_name = self.init_config.matrix_features_to_take[i]
-                to_add_to[feature_name][existing_indices] = matrix_node[matrix_indices[:, i], :, :]
+            feature_name = self.init_config.matrix_features_to_take[i]
+            to_add_to[feature_name][existing_indices] = matrix_node[matrix_indices[:, i], :, :]
 
     @abstractmethod
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
