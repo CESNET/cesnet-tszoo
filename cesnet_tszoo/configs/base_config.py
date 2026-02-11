@@ -652,7 +652,7 @@ class DatasetConfig(ABC):
 
         return steps
 
-    def _get_dataloader_return_dtype(self, dataset_metadata: DatasetMetadata):
+    def _get_dataloader_return_dtype(self, dataset_metadata: DatasetMetadata) -> np.dtype:
         dtype_body = []
 
         if self.include_time and self.time_format == TimeFormat.DATETIME:
@@ -666,9 +666,9 @@ class DatasetConfig(ABC):
             if feature in dataset_metadata.matrix_features:
                 dtype_body.append((feature, dataset_metadata.matrix_features[feature]))
 
-        return dtype_body
+        return np.dtype(dtype_body)
 
-    def _get_dataloader_return_size(self, dataset_metadata: DatasetMetadata):
+    def _get_dataloader_return_size(self, dataset_metadata: DatasetMetadata) -> int:
         size = 0
 
         if self.include_time and self.time_format == TimeFormat.DATETIME:
