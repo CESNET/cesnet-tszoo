@@ -29,7 +29,7 @@ class SeriesBasedDataset(BaseDataset):
         if self.load_config.include_ts_id:
             data[BASE_DATA_DTYPE_PART][:, :, self.ts_id_col_index] = self.ts_id_fill[batch_idx]
 
-        return data
+        return data if len(self.load_config.return_dtype.names) > 1 else data[self.load_config.return_dtype.names[0]]
 
     def __len__(self) -> int:
         return len(self.load_config.ts_row_ranges)

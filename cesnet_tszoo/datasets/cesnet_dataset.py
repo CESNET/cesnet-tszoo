@@ -1756,6 +1756,7 @@ Dataset details:
             self.logger.debug("Returning a single DataFrame with all features for all time series.")
             return dataset_loaders.create_single_df_from_dataloader(
                 dataloader,
+                self.metadata,
                 ts_ids,
                 self.dataset_config.features_to_take,
                 self.dataset_config.time_format,
@@ -1768,6 +1769,7 @@ Dataset details:
             self.logger.debug("Returning multiple DataFrames, one per time series.")
             return dataset_loaders.create_multiple_df_from_dataloader(
                 dataloader,
+                self.metadata,
                 ts_ids,
                 self.dataset_config.features_to_take,
                 self.dataset_config.time_format,
