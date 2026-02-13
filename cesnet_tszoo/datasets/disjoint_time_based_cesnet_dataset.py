@@ -584,7 +584,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
-        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.load_config.time_format, dataset.load_config.include_time, DatasetType.TIME_BASED, True)
+        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), DatasetType.TIME_BASED, True)
 
         if (dataset.load_config.time_format == TimeFormat.DATETIME and dataset.load_config.include_time):
             temp_data = temp_data[0]

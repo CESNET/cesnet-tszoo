@@ -1791,8 +1791,6 @@ Dataset details:
         return dataset_loaders.create_numpy_from_dataloader(
             dataloader,
             ts_ids,
-            self.dataset_config.time_format,
-            self.dataset_config.include_time,
             self.dataset_config.dataset_type,
             True
         )

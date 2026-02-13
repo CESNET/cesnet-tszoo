@@ -533,7 +533,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
         dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
-        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.load_config.time_format, dataset.load_config.include_time, DatasetType.SERIES_BASED, True)
+        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), DatasetType.SERIES_BASED, True)
 
         if (dataset.load_config.time_format == TimeFormat.DATETIME and dataset.load_config.include_time):
             temp_data = temp_data[0]
