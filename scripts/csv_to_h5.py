@@ -113,12 +113,10 @@ def get_pytables_init_type(to_parse: str, pos: int) -> tables.DTypeLike:
             return tb_type(pos=pos)
 
     elif "str" == to_parse[:3]:
-        splits = to_parse.split(",")
-
-        if len(splits) != 2:
+        if len(str) > 3:
             raise NotImplementedError("Invalid type")
 
-        return tables.StringCol(int(splits[1]), pos=pos)
+        return tables.StringCol(int(to_parse[3:]), pos=pos)
     else:
         raise NotImplementedError("Invalid type")
 
