@@ -9,7 +9,7 @@ import torch
 
 from cesnet_tszoo.pytables_data.utils.utils import load_database, load_arrays
 from cesnet_tszoo.utils.enums import PreprocessType
-from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, ROW_START, ROW_END, BASE_DATA_DTYPE_PART
+from cesnet_tszoo.utils.constants import ID_TIME_COLUMN_NAME, ROW_START, ROW_END, BASE_DATA_DTYPE_PART, TIME_DTYPE_PART
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
 from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.utils.enums import TimeFormat
@@ -28,6 +28,7 @@ class BaseDataset(Dataset, ABC):
         self.database = None
         self.table = None
         self.matrix_nodes = None
+        self.preprocess_template_array = None
 
         self.offset_exclude_feature_ids = len(self.load_config.all_features_to_take_table) - self.load_config.non_id_scalar_features_count
 
@@ -45,6 +46,12 @@ class BaseDataset(Dataset, ABC):
     @abstractmethod
     def __len__(self):
         ...
+
+    def _create_preprocess_template_array(self, shape: tuple[int]):
+        if self.preprocess_template_array is None or self.preprocess_template_array.shape != shape:
+            return np.zeros(shape, dtype=self.load_config.preprocess_dtype)
+        else:
+            return self.preprocess_template_array
 
     def pytables_worker_init(self, worker_id: int = 0) -> None:
         """Prepare this dataset for loading data. """
@@ -77,9 +84,9 @@ class BaseDataset(Dataset, ABC):
 
             # No more existing values
             if start >= end:
-                if BASE_DATA_DTYPE_PART in self.load_config.return_dtype.names:  # TO-DO
-                    result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:].view(), i)
-
+                # if BASE_DATA_DTYPE_PART in self.load_config.return_dtype.names:  # TO-DO
+                #    result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:].view(), i)
+                result[i] = self._handle_data_preprocess(result[i], i)
                 continue
 
             # Expected range for times in time series
@@ -118,8 +125,9 @@ class BaseDataset(Dataset, ABC):
 
                 real_offset = len(filtered_rows)
 
-            if BASE_DATA_DTYPE_PART in self.load_config.return_dtype.names:  # TO-DO
-                result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:].view(), i)
+            # if BASE_DATA_DTYPE_PART in self.load_config.return_dtype.names:  # TO-DO
+            #    result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:] = self._handle_data_preprocess(result[BASE_DATA_DTYPE_PART][i, :, self.offset_exclude_feature_ids:].view(), i)
+            result[i] = self._handle_data_preprocess(result[i], i)
 
             # Update ranges
             ts_row_ranges_to_take[ROW_START][i] = start + real_offset
@@ -140,7 +148,30 @@ class BaseDataset(Dataset, ABC):
             feature_name = self.load_config.matrix_features_to_take[i]
             to_add_to[feature_name][ts_id, existing_indices] = matrix_node[matrix_indices[:, i], :, :]
 
+    def _data_to_preprocess_shape(self, data: np.ndarray, idx: int) -> np.ndarray:
+        self.preprocess_template_array = self._create_preprocess_template_array(data.shape)
+
+        for name in self.load_config.preprocess_dtype.names:
+            if name == BASE_DATA_DTYPE_PART:
+                self.preprocess_template_array[BASE_DATA_DTYPE_PART] = data[BASE_DATA_DTYPE_PART][:, self.offset_exclude_feature_ids:]
+            elif name != TIME_DTYPE_PART:
+                self.preprocess_template_array[name] = data[name]
+
+        return self.preprocess_template_array
+
+    def _data_from_preprocess_shape(self, data: np.ndarray, original_data: np.ndarray, idx: int) -> np.ndarray:
+        for name in self.load_config.preprocess_dtype.names:
+            if name == BASE_DATA_DTYPE_PART:
+                original_data[BASE_DATA_DTYPE_PART][:, self.offset_exclude_feature_ids:] = data[BASE_DATA_DTYPE_PART]
+            elif name != TIME_DTYPE_PART:
+                original_data[name] = self.preprocess_template_array[name]
+
+        return original_data
+
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
+        original_data = data
+        data = self._data_to_preprocess_shape(data, idx)
+
         for preprocess_note in self.load_config.preprocess_order:
             if preprocess_note.preprocess_type == PreprocessType.HANDLING_ANOMALIES:
                 data = self._handle_anomalies(preprocess_note.holder, data, idx)
@@ -156,6 +187,8 @@ class BaseDataset(Dataset, ABC):
                 data = self._handle_no_fit_custom_handler(preprocess_note.holder, preprocess_note.can_be_applied, data, idx)
             else:
                 raise NotImplementedError()
+
+        data = self._data_from_preprocess_shape(data, original_data, idx)
 
         return data
 
@@ -175,12 +208,12 @@ class BaseDataset(Dataset, ABC):
     def _handle_transforming(self, transfomer_holder: TransformerHolder, data: np.ndarray, idx: int) -> np.ndarray:
         """Uses transformers """
 
-        if self.load_config.non_id_scalar_features_count == 1:
-            data = transfomer_holder.apply(data.reshape(-1, 1), idx)
-        elif len(self.load_config.time_period) == 1:
-            data = transfomer_holder.apply(data.reshape(1, -1), idx)
-        else:
-            data = transfomer_holder.apply(data, idx)
+        # if self.load_config.non_id_scalar_features_count == 1:
+        #    data = transfomer_holder.apply(data.reshape(-1, 1), idx)
+        # elif len(self.load_config.time_period) == 1:
+        #    data = transfomer_holder.apply(data.reshape(1, -1), idx)
+        # else:
+        data = transfomer_holder.apply(data, idx)
 
         return data
 

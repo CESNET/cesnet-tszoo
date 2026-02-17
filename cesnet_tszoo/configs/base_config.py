@@ -368,7 +368,7 @@ class DatasetConfig(ABC):
 
         self.ts_id_name = dataset_metadata.ts_id_name
 
-        self._set_features_to_take(dataset_metadata.features)
+        self._set_features_to_take(dataset_metadata.features, dataset_metadata)
         self.logger.debug("Features to take have been successfully set.")
 
         self._set_ts(dataset_metadata.ts_indices, dataset_metadata.ts_row_ranges, rd)
@@ -386,7 +386,7 @@ class DatasetConfig(ABC):
         self._validate_finalization()
         self.logger.debug("Finalization and validation completed successfully.")
 
-    def _set_features_to_take(self, all_dataset_features: dict[str, np.dtype]) -> None:
+    def _set_features_to_take(self, all_dataset_features: dict[str, np.dtype], dataset_metadata: DatasetMetadata) -> None:
         """Validates and filters the input `features_to_take` based on the `dataset`, `source_type`, and `aggregation`. """
 
         if self.features_to_take == "all":
@@ -414,7 +414,11 @@ class DatasetConfig(ABC):
 
         # Filtering features based on available dataset features
         temp = list(self.features_to_take)
-        self.features_to_take = [feature for feature in self.features_to_take if feature in all_dataset_features or feature == ID_TIME_COLUMN_NAME or feature == self.ts_id_name]
+
+        # to keep scalar features first and then matrix features
+        scalar_features = [feature for feature in self.features_to_take if (feature in all_dataset_features or feature == ID_TIME_COLUMN_NAME or feature == self.ts_id_name) and feature not in dataset_metadata.matrix_features]
+        matrix_features = [feature for feature in self.features_to_take if feature in dataset_metadata.matrix_features]
+        self.features_to_take = scalar_features + matrix_features
 
         if len(temp) != len(self.features_to_take):
             self.logger.warning("Some features were removed as they are not available in the dataset.")
@@ -659,6 +663,19 @@ class DatasetConfig(ABC):
             dtype_body.append((TIME_DTYPE_PART, np.object_))
 
         base_features = [feature for feature in self.features_to_take if feature in dataset_metadata.scalar_features]
+        if len(base_features) > 0:
+            dtype_body.append((BASE_DATA_DTYPE_PART, np.float64, len(base_features)))
+
+        for feature in self.features_to_take_without_ids:
+            if feature in dataset_metadata.matrix_features:
+                dtype_body.append((feature, dataset_metadata.matrix_features[feature]))
+
+        return np.dtype(dtype_body)
+
+    def _get_dataloader_preprocess_dtype(self, dataset_metadata: DatasetMetadata) -> np.dtype:
+        dtype_body = []
+
+        base_features = [feature for feature in self.features_to_take if feature in dataset_metadata.scalar_features and feature in self.features_to_take_without_ids]
         if len(base_features) > 0:
             dtype_body.append((BASE_DATA_DTYPE_PART, np.float64, len(base_features)))
 

@@ -33,6 +33,8 @@ class DatasetInitConfig(ABC):
         self.return_dtype = config._get_dataloader_return_dtype(dataset_metadata)
         self.return_dtype_fill_values = config._get_dataloader_return_dtype_fill_values(dataset_metadata)
 
+        self.preprocess_dtype = config._get_dataloader_preprocess_dtype(dataset_metadata)
+
         self.time_period = None
         self.nan_threshold = config.nan_threshold
 

@@ -26,16 +26,18 @@ class DisjointTimeBasedInitializerDataset(InitializerDataset):
 
         if is_under_nan_threshold:
 
-            if BASE_DATA_DTYPE_PART in self.init_config.return_dtype.names:  # TO-DO
-                train_data = data[BASE_DATA_DTYPE_PART][: len(self.init_config.time_period), self.offset_exclude_feature_ids:].view()
+            # if BASE_DATA_DTYPE_PART in self.init_config.return_dtype.names:  # TO-DO
+            #    train_data = data[BASE_DATA_DTYPE_PART][: len(self.init_config.time_period), self.offset_exclude_feature_ids:].view()
 
-                # Prepare data from current time series for training
-                if self.init_config.non_id_scalar_features_count == 1:
-                    train_data = train_data.reshape(-1, 1)
-                elif len(self.init_config.time_period) == 1:
-                    train_data = train_data.reshape(1, -1)
+            #    # Prepare data from current time series for training
+            #    if self.init_config.non_id_scalar_features_count == 1:
+            #        train_data = train_data.reshape(-1, 1)
+            #    elif len(self.init_config.time_period) == 1:
+            #        train_data = train_data.reshape(1, -1)
 
-                train_data = self._handle_data_preprocess(train_data, idx)
+            #    train_data = self._handle_data_preprocess(train_data, idx)
+
+            train_data = self._handle_data_preprocess(data, idx)
 
             for preprocess_order in self.init_config.preprocess_order_group.preprocess_inner_orders:
                 if preprocess_order.should_be_fitted and not preprocess_order.holder.is_empty():
@@ -47,6 +49,7 @@ class DisjointTimeBasedInitializerDataset(InitializerDataset):
         return len(self.init_config.ts_row_ranges)
 
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
+        data = self._data_to_train_shape(data, idx)
         return self._handle_data_preprocess_order_group(self.init_config.preprocess_order_group, data, idx)
 
     def _handle_filling(self, filling_holder: FillingHolder, data: np.ndarray, idx: int) -> np.ndarray:

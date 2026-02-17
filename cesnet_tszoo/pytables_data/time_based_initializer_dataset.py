@@ -79,21 +79,28 @@ class TimeBasedInitializerDataset(InitializerDataset):
         train_data = np.array([])
         if can_preprocess:
 
-            if BASE_DATA_DTYPE_PART in self.init_config.return_dtype.names:  # TO-DO
-                train_data = data[BASE_DATA_DTYPE_PART][:, self.offset_exclude_feature_ids:].view()
+            # if BASE_DATA_DTYPE_PART in self.init_config.return_dtype.names:  # TO-DO
+            #    train_data = data[BASE_DATA_DTYPE_PART][:, self.offset_exclude_feature_ids:].view()
 
-                # Prepare data from current time series for training
-                if self.init_config.non_id_scalar_features_count == 1:
-                    train_data = train_data.reshape(-1, 1)
-                elif len(self.init_config.time_period) == 1:
-                    train_data = train_data.reshape(1, -1)
+            # Prepare data from current time series for training
+            #    if self.init_config.non_id_scalar_features_count == 1:
+            #        train_data = train_data.reshape(-1, 1)
+            #    elif len(self.init_config.time_period) == 1:
+            #        train_data = train_data.reshape(1, -1)
 
-                train_data = self._handle_data_preprocess(train_data, idx)
+            #    train_data = self._handle_data_preprocess(train_data, idx)
 
-                if self.init_config.train_time_period is not None:
-                    train_data = train_data[: len(self.init_config.train_time_period)]
-                else:
-                    train_data = np.array([])
+            #    if self.init_config.train_time_period is not None:
+            #        train_data = train_data[: len(self.init_config.train_time_period)]
+            #    else:
+            #        train_data = np.array([])
+
+            train_data = self._handle_data_preprocess(data, idx)
+
+            if self.init_config.train_time_period is not None:
+                train_data = train_data[: len(self.init_config.train_time_period)]
+            else:
+                train_data = np.array([])
 
             for preprocess_order in self.init_config.train_preprocess_order_group.preprocess_inner_orders:
                 if preprocess_order.should_be_fitted and not preprocess_order.holder.is_empty():
@@ -113,6 +120,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
         return len(self.init_config.ts_row_ranges)
 
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> tuple[np.ndarray, np.ndarray]:
+        data = self._data_to_train_shape(data, idx)
 
         train_preprocess_inner_orders = self.init_config.train_preprocess_order_group.preprocess_inner_orders
         val_preprocess_inner_orders = self.init_config.val_preprocess_order_group.preprocess_inner_orders

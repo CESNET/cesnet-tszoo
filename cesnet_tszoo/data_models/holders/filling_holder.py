@@ -3,6 +3,7 @@ from copy import copy
 
 import numpy as np
 
+from cesnet_tszoo.utils.constants import BASE_DATA_DTYPE_PART
 from cesnet_tszoo.data_models.holders.holder import Holder
 from cesnet_tszoo.utils.filler import Filler
 
@@ -35,11 +36,26 @@ class FillingHolder(Holder):
 
     def apply(self, data: np.ndarray, idx: int, **kwargs) -> np.ndarray:
 
-        mask = np.isnan(data)
-        data[mask] = np.take(self.default_values, np.nonzero(mask)[1])
+        features_offset = 0
 
-        self.get_instance(idx).fill(data, mask, default_values=self.default_values)
+        masks = []
 
+        for name in data.dtype.names:
+            mask = np.isnan(data[name])  # TO-DO ... different types can have different missing values
+
+            if name == BASE_DATA_DTYPE_PART:
+                offset_by = data[name].shape[1]
+                data[name][mask] = np.take(self.default_values[features_offset:features_offset + offset_by], np.nonzero(mask)[1])
+
+            else:
+                offset_by = 1
+                data[name][mask] = self.default_values[features_offset]
+
+            features_offset += offset_by
+
+            masks.append(mask)
+
+        self.get_instance(idx).fill(data, masks, default_values=self.default_values)
         return data
 
     def update_instance(self, update_with: Filler, idx: int):

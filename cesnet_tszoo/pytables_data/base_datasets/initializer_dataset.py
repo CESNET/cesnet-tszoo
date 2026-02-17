@@ -11,7 +11,7 @@ from cesnet_tszoo.utils.enums import PreprocessType
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
-from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME, BASE_DATA_DTYPE_PART
+from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME, BASE_DATA_DTYPE_PART, TIME_DTYPE_PART
 from cesnet_tszoo.pytables_data.utils.utils import load_database, load_arrays
 
 
@@ -26,6 +26,7 @@ class InitializerDataset(Dataset, ABC):
         self.worker_id = None
         self.database = None
         self.matrix_nodes = None
+        self.preprocess_template_array = np.zeros(len(self.init_config.time_period), dtype=self.init_config.preprocess_dtype)
 
         self.offset_exclude_feature_ids = len(self.init_config.all_features_to_take_table) - self.init_config.non_id_scalar_features_count
 
@@ -114,6 +115,15 @@ class InitializerDataset(Dataset, ABC):
         for i, matrix_node in enumerate(self.matrix_nodes):
             feature_name = self.init_config.matrix_features_to_take[i]
             to_add_to[feature_name][existing_indices] = matrix_node[matrix_indices[:, i], :, :]
+
+    def _data_to_train_shape(self, data: np.ndarray, idx: int) -> np.ndarray:
+        for name in self.init_config.preprocess_dtype.names:
+            if name == BASE_DATA_DTYPE_PART:
+                self.preprocess_template_array[BASE_DATA_DTYPE_PART] = data[BASE_DATA_DTYPE_PART][:, self.offset_exclude_feature_ids:]
+            elif name != TIME_DTYPE_PART:
+                self.preprocess_template_array[name] = data[name]
+
+        return self.preprocess_template_array
 
     @abstractmethod
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:

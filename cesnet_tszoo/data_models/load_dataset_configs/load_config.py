@@ -38,6 +38,8 @@ class LoadConfig(ABC):
         self.return_dtype = config._get_dataloader_return_dtype(dataset_metadata)
         self.return_dtype_fill_values = config._get_dataloader_return_dtype_fill_values(dataset_metadata)
 
+        self.preprocess_dtype = config._get_dataloader_preprocess_dtype(dataset_metadata)
+
         if limit_init_to_set == SplitType.TRAIN:
             self._init_train(config)
         elif limit_init_to_set == SplitType.VAL:
