@@ -346,25 +346,25 @@ class TimeBasedConfig(TimeBasedHandler, DatasetConfig):
         train_fillers = None
         # Set the fillers for the training set
         if self.has_train():
-            train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
+            train_fillers = np.array([self.filler_factory.create_filler() for _ in self.ts_ids])
             self.logger.debug("Fillers for training set are set.")
 
         val_fillers = None
         # Set the fillers for the validation set
         if self.has_val():
-            val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
+            val_fillers = np.array([self.filler_factory.create_filler() for _ in self.ts_ids])
             self.logger.debug("Fillers for validation set are set.")
 
         test_fillers = None
         # Set the fillers for the test set
         if self.has_test():
-            test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
+            test_fillers = np.array([self.filler_factory.create_filler() for _ in self.ts_ids])
             self.logger.debug("Fillers for test set are set.")
 
         all_fillers = None
         # Set the fillers for the all set
         if self.has_all():
-            all_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.ts_ids])
+            all_fillers = np.array([self.filler_factory.create_filler() for _ in self.ts_ids])
             self.logger.debug("Fillers for all set are set.")
 
         self.logger.debug("Using filler %s", self.filler_factory.name)

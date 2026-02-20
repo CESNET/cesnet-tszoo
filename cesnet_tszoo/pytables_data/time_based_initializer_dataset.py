@@ -206,16 +206,9 @@ class TimeBasedInitializerDataset(InitializerDataset):
     def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses transformers. """
 
-        if self.init_config.train_time_period is not None:
-            if self.init_config.non_id_scalar_features_count == 1:
-                train_data = data[: len(self.init_config.train_time_period), :].reshape(-1, 1)
-            elif len(self.init_config.train_time_period) == 1:
-                train_data = data[: len(self.init_config.train_time_period), :].reshape(1, -1)
-            else:
-                train_data = data[: len(self.init_config.train_time_period), :]
-
-            if should_fit:
-                transfomer_holder.fit(train_data, idx)
+        if self.init_config.train_time_period is not None and should_fit:
+            train_data = data[: len(self.init_config.train_time_period)]
+            transfomer_holder.fit(train_data, idx)
 
         return transfomer_holder.apply(data, idx)
 

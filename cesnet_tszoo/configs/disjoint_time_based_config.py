@@ -321,19 +321,19 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         train_fillers = None
         # Set the fillers for the training set
         if self.has_train():
-            train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.train_ts])
+            train_fillers = np.array([self.filler_factory.create_filler() for _ in self.train_ts])
             self.logger.debug("Fillers for training set are set.")
 
         val_fillers = None
         # Set the fillers for the validation set
         if self.has_val():
-            val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.val_ts])
+            val_fillers = np.array([self.filler_factory.create_filler() for _ in self.val_ts])
             self.logger.debug("Fillers for validation set are set.")
 
         test_fillers = None
         # Set the fillers for the test set
         if self.has_test():
-            test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.test_ts])
+            test_fillers = np.array([self.filler_factory.create_filler() for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
 
         self.logger.debug("Using filler %s", self.filler_factory.name)
