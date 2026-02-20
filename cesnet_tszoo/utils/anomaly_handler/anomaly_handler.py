@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import warnings
 
+from cesnet_tszoo.utils.constants import BASE_DATA_DTYPE_PART
+
 import numpy as np
 
 
@@ -72,24 +74,35 @@ class ZScore(AnomalyHandler):
     """
 
     def __init__(self):
-        self.mean = None
-        self.std = None
+        self.mean = {}
+        self.std = {}
         self.threshold = 3
 
     def fit(self, data: np.ndarray) -> None:
+
         warnings.filterwarnings("ignore")
-        self.mean = np.nanmean(data, axis=0)
-        self.std = np.nanstd(data, axis=0)
+
+        for name in data.dtype.names:
+            self.mean[name] = np.nanmean(data[name], axis=0)
+            self.std[name] = np.nanstd(data[name], axis=0)
+
         warnings.filterwarnings("always")
 
     def transform_anomalies(self, data: np.ndarray):
-        temp = data - self.mean
-        z_score = np.divide(temp, self.std, out=np.zeros_like(temp, dtype=float), where=self.std != 0)
-        mask_outliers = np.abs(z_score) > self.threshold
 
-        clipped_values = self.mean + np.sign(z_score) * self.threshold * self.std
+        for name in data.dtype.names:
 
-        data[mask_outliers] = clipped_values[mask_outliers]
+            mean = self.mean[name]
+            std = self.std[name]
+            current_data = data[name].view()
+
+            temp = current_data - mean
+            z_score = np.divide(temp, std, out=np.zeros_like(temp, dtype=float), where=std != 0)
+            mask_outliers = np.abs(z_score) > self.threshold
+
+            clipped_values = mean + np.sign(z_score) * self.threshold * std
+
+            current_data[mask_outliers] = clipped_values[mask_outliers]
 
 
 class InterquartileRange(AnomalyHandler):
@@ -101,23 +114,39 @@ class InterquartileRange(AnomalyHandler):
     """
 
     def __init__(self):
-        self.lower_bound = None
-        self.upper_bound = None
-        self.iqr = None
+        self.lower_bound = {}
+        self.upper_bound = {}
 
     def fit(self, data: np.ndarray) -> None:
-        q25, q75 = np.percentile(data, [25, 75], axis=0)
-        self.iqr = q75 - q25
 
-        self.lower_bound = q25 - 1.5 * self.iqr
-        self.upper_bound = q75 + 1.5 * self.iqr
+        warnings.filterwarnings("ignore")
+
+        for name in data.dtype.names:
+            current_data = data[name]
+
+            q25, q75 = np.nanpercentile(current_data, [25, 75], axis=0)
+            iqr = q75 - q25
+
+            self.lower_bound[name] = q25 - 1.5 * iqr
+            self.upper_bound[name] = q75 + 1.5 * iqr
+
+        warnings.filterwarnings("always")
 
     def transform_anomalies(self, data: np.ndarray):
-        mask_lower_outliers = data < self.lower_bound
-        mask_upper_outliers = data > self.upper_bound
 
-        data[mask_lower_outliers] = np.take(self.lower_bound, np.where(mask_lower_outliers)[1])
-        data[mask_upper_outliers] = np.take(self.upper_bound, np.where(mask_upper_outliers)[1])
+        for name in data.dtype.names:
+            lower_bound = self.lower_bound[name]
+            upper_bound = self.upper_bound[name]
+            current_data = data[name]
+
+            lb_broadcast = np.broadcast_to(lower_bound, current_data.shape)
+            ub_broadcast = np.broadcast_to(upper_bound, current_data.shape)
+
+            mask_lower = current_data < lb_broadcast
+            mask_upper = current_data > ub_broadcast
+
+            current_data[mask_lower] = lb_broadcast[mask_lower]
+            current_data[mask_upper] = ub_broadcast[mask_upper]
 
 
 class NoAnomalyHandler(AnomalyHandler):
