@@ -113,9 +113,6 @@ def get_pytables_init_type(to_parse: str, pos: int) -> tables.DTypeLike:
             return tb_type(pos=pos)
 
     elif "str" == to_parse[:3]:
-        if len(str) > 3:
-            raise NotImplementedError("Invalid type")
-
         return tables.StringCol(int(to_parse[3:]), pos=pos)
     else:
         raise NotImplementedError("Invalid type")
@@ -295,7 +292,12 @@ class Outputer:
             if os.path.exists(f"{self.main_data_path}{folder_id}/{ts_id}"):
                 for matrix_name in matrix_descriptors:
                     matrix_rows, matrix_cols = matrix_descriptors[matrix_name][1]
-                    matrix = h5_file.create_carray(main_group, matrix_name, matrix_descriptors[matrix_name][0], (number_of_rows, matrix_rows, matrix_cols), matrix_name, filters=fletcher_filter)
+
+                    if matrix_name in main_group:
+                        matrix = h5_file.get_node(main_group, matrix_name)
+                    else:
+                        matrix = h5_file.create_carray(main_group, matrix_name, matrix_descriptors[matrix_name][0], (number_of_rows, matrix_rows, matrix_cols), matrix_name, filters=fletcher_filter)
+
                     added_rows = 0
 
                     for i in range(1, len(glob.glob(f"{self.main_data_path}{folder_id}/{ts_id}/{matrix_name}_*.txt")) + 1):
