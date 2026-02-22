@@ -40,7 +40,7 @@ class DatasetMetadata:
     source_type: SourceType
     aggregation: AgreggationType
     ts_id_name: str
-    default_values: dict
+    default_values: dict | float | int
     matrix_feature_mappings: dict[str, str]
 
     additional_data: list[str] = field(default=None, init=False)
@@ -126,7 +126,10 @@ class DatasetMetadata:
     def __update_default_values(self):
         """Updates to only relevant default values """
 
-        self.default_values = {feature: self.default_values[feature] for feature in self.default_values if feature in self.features.keys()}
+        if isinstance(self.default_values, dict):
+            self.default_values = {feature: self.default_values[feature] for feature in self.default_values if feature in self.features.keys()}
+        else:
+            self.default_values = {feature: self.default_values for feature in self.features}
 
         self.logger.debug("Default values for features updated.")
 
