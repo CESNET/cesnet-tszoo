@@ -65,6 +65,8 @@ class SourceType(Enum):
 
     BACKBONE_NETWORK = "backbone_network"
 
+    SERVICE_PROVIDER = "service_provider"
+
     CESNET2 = "CESNET2"
     """Traffic of CESNET2 network. """
 
