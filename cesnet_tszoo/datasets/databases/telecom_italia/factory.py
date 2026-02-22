@@ -9,7 +9,7 @@ from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
 
 
 class TelecomItaliaFactory(DatabaseFactory):
-    """Dataset factory for Abilene database. """
+    """Dataset factory for Telecom Italia database. """
 
     def __init__(self):
         super().__init__(TelecomItalia.name)
