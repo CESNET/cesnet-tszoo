@@ -14,11 +14,11 @@ class TelecomItalia(CesnetDatabase):
 
     Use class method [`get_dataset`][cesnet_tszoo.datasets.telecom_italia.get_dataset] to create a dataset instance.
     """
-    name = "Telecom Italia"
+    name = "TelecomItalia"
     bucket_url = None  # TO-DO
     id_names = constants.ID_NAMES
     default_values = constants.DEFAULT_VALUES
-    subsets = ["Telecommunications"]
+    subsets = ["telecommunications"]
     source_types = constants.SOURCE_TYPES
     aggregations = constants.AGGREGATIONS
 
@@ -51,4 +51,4 @@ class TelecomItalia(CesnetDatabase):
             [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
         """
 
-        return super(TelecomItalia, cls).get_dataset(data_root, "Telecommunications", SourceType.SERVICE_PROVIDER, AgreggationType.AGG_10_MINUTES, dataset_type, check_errors, display_details)
+        return super(TelecomItalia, cls).get_dataset(data_root, "telecommunications", SourceType.SERVICE_PROVIDER, AgreggationType.AGG_10_MINUTES, dataset_type, check_errors, display_details)
