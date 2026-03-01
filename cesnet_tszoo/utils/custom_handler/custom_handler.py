@@ -20,10 +20,11 @@ class CustomHandler(ABC):
         Applies on the input data for a given time series part.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.   
 
         Returns:
-            The changed data, with the same shape as the input `(times, features)`.            
+            The changed data, with the same shape and dtype as the input `(times)`.            
         """
         ...
 
@@ -68,7 +69,8 @@ class PerSeriesCustomHandler(CustomHandler):
         Sets the PerSeriesCustomHandler values for a given time series data. Usually train set part of the time series.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.
         """
         ...
 
@@ -78,10 +80,11 @@ class PerSeriesCustomHandler(CustomHandler):
         Applies on the input data for a given time series part.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.  
 
         Returns:
-            The changed data, with the same shape as the input `(times, features)`.            
+            The changed data, with the same shape and dtype as the input `(times)`.            
         """
         ...
 
@@ -102,22 +105,24 @@ class AllSeriesCustomHandler(CustomHandler):
 
         import numpy as np
 
-        class AllFitTest(AllSeriesCustomHandler):
+        class PerFitTest(PerSeriesCustomHandler):
 
             def __init__(self):
                 self.count = 0
                 super().__init__()
 
-            def partial_fit(self, data: np.ndarray) -> None:
+            def fit(self, data: np.ndarray) -> None:
                 self.count += 1
 
             def apply(self, data: np.ndarray) -> np.ndarray:
-                data[:, :] = self.count
+                for name in data.dtype.names:
+                    data[name][:, :] = self.count       
+
                 return data
 
             @staticmethod
             def get_target_sets():
-                return ["train"]
+                return ["val"]
 
     """
 
@@ -127,7 +132,8 @@ class AllSeriesCustomHandler(CustomHandler):
         Sets the AllSeriesCustomHandler values for a given time series data. Usually train set part of some time series.
 
         Parameters:
-            data: A numpy array representing data for a time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data. 
         """
         ...
 
@@ -137,10 +143,11 @@ class AllSeriesCustomHandler(CustomHandler):
         Applies on the input data for a given time series part.
 
         Parameters:
-            data: A numpy array representing data for a time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.
 
         Returns:
-            The changed data, with the same shape as the input `(times, features)`.            
+            The changed data, with the same shape and dtype as the input `(times)`.            
         """
         ...
 
@@ -163,7 +170,8 @@ class NoFitCustomHandler(CustomHandler):
 
         class NoFitTest(NoFitCustomHandler):
             def apply(self, data: np.ndarray) -> np.ndarray:
-                data[:, :] = -1
+                for name in data.dtype.names:
+                    data[name][:, :] = -1
                 return data
 
             @staticmethod
@@ -178,10 +186,11 @@ class NoFitCustomHandler(CustomHandler):
         Applies on the input data for a given time series part.
 
         Parameters:
-            data: A numpy array representing data for a time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.
 
         Returns:
-            The changed data, with the same shape as the input `(times, features)`.            
+            The changed data, with the same shape and dtype as the input `(times)`.            
         """
         ...
 

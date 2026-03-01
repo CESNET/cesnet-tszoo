@@ -56,9 +56,10 @@ class CesnetDatabase(ABC):
         annotations_root: Path to the folder where annotations are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.
         id_names: Names for time series IDs for each `source_type`.
         default_values: Default values for each available feature.
+        subsets: Available subsets for the database.
+        matrix_feature_mappings: Which matrix ids maps to which matrices.
         source_types: Available source types for the database.
         aggregations: Available aggregations for the database.   
-        additional_data: Available small datasets for each dataset. 
     """
 
     name: str
@@ -73,7 +74,7 @@ class CesnetDatabase(ABC):
     id_names: dict = None
     default_values: dict = None
     subsets: list[str] = None
-    matrix_feature_mappings = {}
+    matrix_feature_mappings: dict[str, str] = {}
     source_types: list[SourceType] = []
     aggregations: list[AgreggationType] = []
 
@@ -100,7 +101,7 @@ class CesnetDatabase(ABC):
 
         logger = logging.getLogger("wrapper_dataset")
 
-        subset = subset.lower() if subset is not None else subset
+        subset = subset.lower().strip() if subset is not None else subset
         source_type = SourceType(source_type)
         aggregation = AgreggationType(aggregation)
         dataset_type = DatasetType(dataset_type)

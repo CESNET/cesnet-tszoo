@@ -17,27 +17,41 @@ class Filler(ABC):
 
         class ForwardFiller(Filler):
 
-            def __init__(self, features):
-                super().__init__(features)
+            def __init__(self):
+                self.last_values = {}
+                self.initialized = False
 
-                self.last_values = None
+            def __init_attributes(self, batch_values: np.ndarray):
+                for name in batch_values.dtype.names:
+                    self.last_values[name] = None
 
-            def fill(self, batch_values: np.ndarray, missing_mask: np.ndarray, **kwargs) -> None:
-                if self.last_values is not None and np.any(missing_mask[0]):
-                    batch_values[0, missing_mask[0]] = self.last_values[missing_mask[0]]
+                self.initialized = True
 
-                mask = missing_mask.T
+            def __fill_section(self, values: np.ndarray, missing_mask: np.ndarray, last_values: np.ndarray, name: str) -> np.ndarray:
+                if last_values is not None and np.any(missing_mask[0]):
+                    values[0, missing_mask[0]] = last_values[missing_mask[0]]
+
+                orig_shape = values.shape
+                t = orig_shape[0]
+                flat_size = int(np.prod(orig_shape[1:]))
+
+                values_2d = values.reshape(t, flat_size)
+                mask_2d = missing_mask.reshape(t, flat_size)
+
+                mask = mask_2d.T
+                values_t = values_2d.T
 
                 idx = np.where(~mask, np.arange(mask.shape[1]), 0)
                 np.maximum.accumulate(idx, axis=1, out=idx)
 
-                batch_values = batch_values.T
-                batch_values[mask] = batch_values[np.nonzero(mask)[0], idx[mask]]
-                batch_values = batch_values.T
+                values_t[mask] = values_t[np.nonzero(mask)[0], idx[mask]]
+                values_t = values_t.T
 
-                self.last_values = np.copy(batch_values[-1])
+                values = values_2d.reshape(orig_shape)
 
-                return batch_values
+                self.last_values[name] = np.copy(values[-1])
+
+                return values
             """
 
     @abstractmethod
@@ -47,9 +61,13 @@ class Filler(ABC):
         This method is responsible for filling missing data within a single time series.
 
         Parameters:
-            batch_values: Data of a single time series with shape `(times, features)` excluding IDs.
-            missing_mask: Mask of missing values in batch_values.
-            kwargs: first_next_existing_values, first_next_existing_values_distance, default_values 
+            batch_values: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                          For matrix features use their name instead of base_data. 
+            missing_masks: Masks of missing values in batch_values. Keys is "base_data" and names of matrix features.
+            kwargs: default_values 
+
+        Returns:
+            The filled data, with the same shape and dtype as the input `(times)`.               
         """
         ...
 
@@ -175,7 +193,6 @@ class ForwardFiller(Filler):
         return batch_values
 
 
-# TO-DO support for matrices
 class LinearInterpolationFiller(Filler):
     """
     Fills values with linear interpolation. 
