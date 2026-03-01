@@ -50,7 +50,7 @@ For detailed information about the dataset, please refer to the the linked paper
     - Aggregation windows: 15 minutes, 1 hour, 1 day
     - Subsets: Matrix, Node2Node, Node
 
-This dataset was published in *"Providing public intradomain traffic matrices to the research community"* ([DOI](https://dl.acm.org/doi/10.1145/1111322.1111341)). It contains traffic volume between origin-destination node pairs for the GÉANT network.
+This dataset was published in *"Providing public intradomain traffic matrices to the research community"* ([DOI](https://dl.acm.org/doi/10.1145/1111322.1111341)). It contains traffic volume between OD node pairs for the GÉANT network.
 
 For detailed information about the dataset, please refer to the the linked paper and the [GÉANT][geant_page] page.
 

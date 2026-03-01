@@ -96,8 +96,56 @@ from cesnet_tszoo.utils.filler import Filler
 from cesnet_tszoo.configs import TimeBasedConfig
 
 class CustomFiller(Filler):
-    def fill(self, batch_values: np.ndarray, existing_indices: np.ndarray, missing_indices: np.ndarray, **kwargs):
-        batch_values[missing_indices] = -1
+    def __init__(self):
+        self.last_values = {}
+        self.initialized = False
+
+    def __init_attributes(self, batch_values: np.ndarray):
+        for name in batch_values.dtype.names:
+            self.last_values[name] = None
+
+        self.initialized = True
+
+    def __fill_section(self, values: np.ndarray, missing_mask: np.ndarray, last_values: np.ndarray, name: str) -> np.ndarray:
+        if last_values is not None and np.any(missing_mask[0]):
+            values[0, missing_mask[0]] = last_values[missing_mask[0]]
+
+        orig_shape = values.shape
+        t = orig_shape[0]
+        flat_size = int(np.prod(orig_shape[1:]))
+
+        values_2d = values.reshape(t, flat_size)
+        mask_2d = missing_mask.reshape(t, flat_size)
+
+        mask = mask_2d.T
+        values_t = values_2d.T
+
+        idx = np.where(~mask, np.arange(mask.shape[1]), 0)
+        np.maximum.accumulate(idx, axis=1, out=idx)
+
+        values_t[mask] = values_t[np.nonzero(mask)[0], idx[mask]]
+        values_t = values_t.T
+
+        values = values_2d.reshape(orig_shape)
+
+        self.last_values[name] = np.copy(values[-1])
+
+        return values
+
+    def fill(self, batch_values: np.ndarray, missing_masks: dict[str, np.ndarray], **kwargs) -> np.ndarray:
+
+        if not self.initialized:
+            self.__init_attributes(batch_values)
+
+        for name in batch_values.dtype.names:
+
+            values = batch_values[name].view()
+            missing_mask = missing_masks[name]
+            last_values = self.last_values[name]
+
+            self.__fill_section(values, missing_mask, last_values, name)
+
+        return batch_values
 
 config = TimeBasedConfig(ts_ids=[1200], train_time_period=range(0, 30), test_time_period=range(30, 80), features_to_take=['n_flows', 'n_packets'],
                          default_values=None, fill_missing_with=CustomFiller)                                                                            

@@ -62,37 +62,64 @@ To check Transformer base class refer to [`Transformer`](reference_transformers.
 
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.configs import TimeBasedConfig
+import sklearn.preprocessing as sk
 
 class CustomTransformer(Transformer):
     def __init__(self):
-        super().__init__()
-        
-        self.max = None
-        self.min = None
-    
-    def transform(self, data):
-        return (data - self.min) / (self.max - self.min)
-    
-    def fit(self, data):
-        self.partial_fit(data)
-    
-    def partial_fit(self, data):
-        
-        if self.max is None and self.min is None:
-            self.max = np.max(data, axis=0)
-            self.min = np.min(data, axis=0)
-            return
-        
-        temp_max = np.max(data, axis=0)
-        temp = np.vstack((self.max, temp_max)) 
-        self.max = np.max(temp, axis=0)
-        
-        temp_min = np.min(data, axis=0)
-        temp = np.vstack((self.min, temp_min)) 
-        self.min = np.min(temp, axis=0)      
+        self.transformers: dict[str, sk.MinMaxScaler] = {}
 
-    def inverse_transform(self, transformed_data):
-        return transformed_data * (self.max - self.min) + self.min           
+    def fit(self, data: np.ndarray) -> None:
+        self.partial_fit(data)
+
+    def partial_fit(self, data: np.ndarray) -> None:
+
+        is_init = len(self.transformers) == 0
+
+        for name in data.dtype.names:
+
+            if is_init:
+                transformer = self.transformers[name] = sk.MinMaxScaler()
+            else:
+                transformer = self.transformers[name]
+                
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            transformer.partial_fit(current_data)
+
+    def transform(self, data: np.ndarray) -> np.ndarray:
+
+        for name in data.dtype.names:
+
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if names is not None else self.transformers.keys()
+
+        for name in names:
+
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data       
 
 config = TimeBasedConfig(ts_ids=[1367, 1368], train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
                          transform_with=CustomTransformer, create_transformer_per_time_series=True)                                                                        
@@ -240,37 +267,64 @@ To check Transformer base class refer to [`Transformer`](reference_transformers.
 
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.configs import DisjointTimeBasedConfig
+import sklearn.preprocessing as sk
 
 class CustomTransformer(Transformer):
     def __init__(self):
-        super().__init__()
-        
-        self.max = None
-        self.min = None
-    
-    def transform(self, data):
-        return (data - self.min) / (self.max - self.min)
-    
-    def fit(self, data):
-        self.partial_fit(data)
-    
-    def partial_fit(self, data):
-        
-        if self.max is None and self.min is None:
-            self.max = np.max(data, axis=0)
-            self.min = np.min(data, axis=0)
-            return
-        
-        temp_max = np.max(data, axis=0)
-        temp = np.vstack((self.max, temp_max)) 
-        self.max = np.max(temp, axis=0)
-        
-        temp_min = np.min(data, axis=0)
-        temp = np.vstack((self.min, temp_min)) 
-        self.min = np.min(temp, axis=0)      
+        self.transformers: dict[str, sk.MinMaxScaler] = {}
 
-    def inverse_transform(self, transformed_data):
-        return transformed_data * (self.max - self.min) + self.min           
+    def fit(self, data: np.ndarray) -> None:
+        self.partial_fit(data)
+
+    def partial_fit(self, data: np.ndarray) -> None:
+
+        is_init = len(self.transformers) == 0
+
+        for name in data.dtype.names:
+
+            if is_init:
+                transformer = self.transformers[name] = sk.MinMaxScaler()
+            else:
+                transformer = self.transformers[name]
+                
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            transformer.partial_fit(current_data)
+
+    def transform(self, data: np.ndarray) -> np.ndarray:
+
+        for name in data.dtype.names:
+
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if names is not None else self.transformers.keys()
+
+        for name in names:
+
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data           
 
 config = DisjointTimeBasedConfig(train_ts=500, val_ts=None, test_ts=None, train_time_period=0.5, features_to_take=["n_flows", "n_packets"],
                                  transform_with=CustomTransformer, nan_threshold=0.5, random_state=1500)                                                                      
@@ -413,37 +467,64 @@ To check Transformer base class refer to [`Transformer`](reference_transformers.
 
 from cesnet_tszoo.utils.transformer import Transformer
 from cesnet_tszoo.configs import SeriesBasedConfig
+import sklearn.preprocessing as sk
 
 class CustomTransformer(Transformer):
     def __init__(self):
-        super().__init__()
-        
-        self.max = None
-        self.min = None
-    
-    def transform(self, data):
-        return (data - self.min) / (self.max - self.min)
-    
-    def fit(self, data):
-        self.partial_fit(data)
-    
-    def partial_fit(self, data):
-        
-        if self.max is None and self.min is None:
-            self.max = np.max(data, axis=0)
-            self.min = np.min(data, axis=0)
-            return
-        
-        temp_max = np.max(data, axis=0)
-        temp = np.vstack((self.max, temp_max)) 
-        self.max = np.max(temp, axis=0)
-        
-        temp_min = np.min(data, axis=0)
-        temp = np.vstack((self.min, temp_min)) 
-        self.min = np.min(temp, axis=0)      
+        self.transformers: dict[str, sk.MinMaxScaler] = {}
 
-    def inverse_transform(self, transformed_data):
-        return transformed_data * (self.max - self.min) + self.min           
+    def fit(self, data: np.ndarray) -> None:
+        self.partial_fit(data)
+
+    def partial_fit(self, data: np.ndarray) -> None:
+
+        is_init = len(self.transformers) == 0
+
+        for name in data.dtype.names:
+
+            if is_init:
+                transformer = self.transformers[name] = sk.MinMaxScaler()
+            else:
+                transformer = self.transformers[name]
+                
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            transformer.partial_fit(current_data)
+
+    def transform(self, data: np.ndarray) -> np.ndarray:
+
+        for name in data.dtype.names:
+
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if names is not None else self.transformers.keys()
+
+        for name in names:
+
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data            
 
 config = SeriesBasedConfig(time_period=0.5, train_ts=500, features_to_take=["n_flows", "n_packets"],
                            transform_with=CustomTransformer, nan_threshold=0.5, random_state=1500)                                                                    
