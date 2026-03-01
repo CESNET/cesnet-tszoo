@@ -123,7 +123,7 @@ class ExportBenchmark:
             del data["is_series_based"]
             data["dataset_type"] = None
 
-        if version(data["version"]) < Version(version.VERSION_2_2_0):
+        if Version(data["version"]) < Version(version.VERSION_2_2_0):
             data["subset"] = None
 
         data["version"] = version.config_and_benchmarks_current_version
