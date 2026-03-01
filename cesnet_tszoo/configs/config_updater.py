@@ -67,6 +67,15 @@ class ConfigUpdater:
             self.config_to_update.version = version.VERSION_2_1_0
             self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_2_1_0)
 
+        if Version(self.config_to_update.version) < Version(version.VERSION_2_2_0):
+            self.logger.warning("Config version is lower than '%s', updating config to match it.", version.VERSION_2_2_0)
+
+            self.__add_dataset_subset()
+
+            self.config_to_update.export_update_needed = True
+            self.config_to_update.version = version.VERSION_2_2_0
+            self.logger.debug("Updating config version to %s used cesnet-tszoo package version.", version.VERSION_2_2_0)
+
         self.logger.debug("Updating config version to %s, to match used cesnet-tszoo package config version.", version.config_and_benchmarks_current_version)
         self.config_to_update.version = version.config_and_benchmarks_current_version
 
@@ -220,3 +229,8 @@ class ConfigUpdater:
         self.config_to_update.is_anomaly_handler_custom = False
         self.config_to_update.anomaly_handlers = None
         self.config_to_update.used_anomaly_handlers = None
+
+    def __add_dataset_subset(self):
+        self.logger.debug("Adding dataset subset attribute.")
+
+        self.config_to_update.subset = None

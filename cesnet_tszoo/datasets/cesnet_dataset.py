@@ -1057,7 +1057,14 @@ class CesnetDataset(ABC):
 
         to_display = f'''
 Dataset details:
+        '''
 
+        if self.metadata.subset is not None:
+            to_display += f'''
+    Subset: {self.metadata.subset}
+            '''
+
+        to_display += f'''
     {self.metadata.aggregation}
         Time indices: {range(self.metadata.time_indices[ID_TIME_COLUMN_NAME][0], self.metadata.time_indices[ID_TIME_COLUMN_NAME][-1])}
         Datetime: {(datetime.fromtimestamp(self.metadata.time_indices['time'][0], tz=timezone.utc), datetime.fromtimestamp(self.metadata.time_indices['time'][-1], timezone.utc))}
@@ -1066,7 +1073,7 @@ Dataset details:
         Time series indices: {get_abbreviated_list_string(self.metadata.ts_indices[self.metadata.ts_id_name])}; use 'get_available_ts_indices' for full list
         Features with default values: {self.metadata.default_values}
         
-        Additional data: {list(self.metadata.additional_data.keys())}
+        Additional data: {self.metadata.additional_data}
         '''
 
         print(to_display)
@@ -1139,14 +1146,15 @@ Dataset details:
             self.logger.error("%s is not available for this dataset.", data_name)
             raise ValueError(f"{data_name} is not available for this dataset.", f"Possible options are: {self.metadata.additional_data}")
 
-        data = get_additional_data(self.metadata.dataset_path, data_name)
-        data_df = pd.DataFrame(data)
+        data, data_info = get_additional_data(self.metadata.dataset_path, data_name)
+        data_df = pd.DataFrame.from_records(data)
+        for column, column_type in data_info.items():
+            column_type = type(column_type)
 
-        for column, column_type in self.metadata.additional_data[data_name]:
-            if column_type == datetime:
+            if column_type == tb.Time32Col:
                 data_df[column] = data_df[column].apply(lambda x: datetime.fromtimestamp(x, tz=timezone.utc))
-            else:
-                data_df[column] = data_df[column].astype(column_type)
+            elif column_type == tb.StringCol:
+                data_df[column] = data_df[column].astype(str)
 
         return data_df
 
@@ -1416,7 +1424,7 @@ Dataset details:
             display_config_details = DisplayType(display_config_details)
 
         # Load config
-        config = load_config(identifier, self.metadata.configs_root, self.metadata.database_name, self.metadata.source_type, self.metadata.aggregation, self.logger)
+        config = load_config(identifier, self.metadata.configs_root, self.metadata.database_name, self.metadata.subset, self.metadata.source_type, self.metadata.aggregation, self.logger)
 
         self.logger.info("Initializing dataset configuration with the imported config.")
         self.set_dataset_config_and_initialize(config, display_config_details, workers)
@@ -1568,6 +1576,7 @@ Dataset details:
         config_name = self.dataset_config.import_identifier if (self.dataset_config.import_identifier is not None and not self.dataset_config.export_update_needed) else identifier
 
         export_benchmark = ExportBenchmark(self.metadata.database_name,
+                                           self.metadata.subset,
                                            self.metadata.source_type.value,
                                            self.metadata.aggregation.value,
                                            self.metadata.dataset_type.value,
@@ -1747,6 +1756,7 @@ Dataset details:
             self.logger.debug("Returning a single DataFrame with all features for all time series.")
             return dataset_loaders.create_single_df_from_dataloader(
                 dataloader,
+                self.metadata,
                 ts_ids,
                 self.dataset_config.features_to_take,
                 self.dataset_config.time_format,
@@ -1759,6 +1769,7 @@ Dataset details:
             self.logger.debug("Returning multiple DataFrames, one per time series.")
             return dataset_loaders.create_multiple_df_from_dataloader(
                 dataloader,
+                self.metadata,
                 ts_ids,
                 self.dataset_config.features_to_take,
                 self.dataset_config.time_format,
@@ -1782,8 +1793,6 @@ Dataset details:
         return dataset_loaders.create_numpy_from_dataloader(
             dataloader,
             ts_ids,
-            self.dataset_config.time_format,
-            self.dataset_config.include_time,
             self.dataset_config.dataset_type,
             True
         )

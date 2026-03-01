@@ -71,4 +71,4 @@ dev = [
 
 [tool.setuptools.packages.find]
 include = ["cesnet_tszoo*"]
-exclude = ["docs*", "tutorial_notebooks*"]
+exclude = ["docs*", "tutorial_notebooks*", "scripts*"]

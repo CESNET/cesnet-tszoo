@@ -15,18 +15,18 @@ class CESNET_TimeSeries24Factory(DatabaseFactory):
         super().__init__(CESNET_TimeSeries24.name)
 
     @overload
-    def create_dataset(self, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: Literal[DatasetType.TIME_BASED, "time_based"],
+    def create_dataset(self, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: Literal[DatasetType.TIME_BASED, "time_based"],
                        check_errors: bool, display_details: bool) -> TimeBasedCesnetDataset: ...
 
     @overload
-    def create_dataset(self, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: Literal[DatasetType.SERIES_BASED, "series_based"],
+    def create_dataset(self, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: Literal[DatasetType.SERIES_BASED, "series_based"],
                        check_errors: bool, display_details: bool) -> SeriesBasedCesnetDataset: ...
 
     @overload
-    def create_dataset(self, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: Literal[DatasetType.DISJOINT_TIME_BASED, "disjoint_time_based"],
+    def create_dataset(self, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: Literal[DatasetType.DISJOINT_TIME_BASED, "disjoint_time_based"],
                        check_errors: bool, display_details: bool) -> DisjointTimeBasedCesnetDataset: ...
 
-    def create_dataset(self, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"],
+    def create_dataset(self, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"],
                        check_errors: bool, display_details: bool) -> Union[TimeBasedCesnetDataset, SeriesBasedCesnetDataset, DisjointTimeBasedCesnetDataset]:
 
         return CESNET_TimeSeries24.get_dataset(data_root, source_type, aggregation, dataset_type, check_errors, display_details)

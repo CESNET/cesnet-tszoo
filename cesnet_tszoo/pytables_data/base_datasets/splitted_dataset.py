@@ -8,6 +8,7 @@ import numpy as np
 from cesnet_tszoo.pytables_data.base_datasets.split_dataset import SplitDataset
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
 from cesnet_tszoo.utils.enums import TimeFormat
+import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 
 
 class SplittedDataset(Dataset):
@@ -78,6 +79,7 @@ class SplittedDataset(Dataset):
                 dataset,
                 num_workers=dataloader_workers,
                 worker_init_fn=SplitDataset.worker_init_fn,
+                collate_fn=dataset_loaders.collate_fn_simple,
                 persistent_workers=False,
                 batch_size=None,
                 prefetch_factor=dataloader_prefetch_factor,
@@ -184,9 +186,6 @@ class SplittedDataset(Dataset):
     def _get_data(self, batch_idx):
         """Returns concantated data from each dataset/worker."""
 
-        batch_parts = []
-        times = None
-
         if batch_idx[0] == 0:
             self.dataloaders_iters = []
 
@@ -207,14 +206,4 @@ class SplittedDataset(Dataset):
         for worker in workers:
             worker.join()
 
-        for batch_part in results:
-            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-                batch_parts.append(batch_part[0])
-                times = batch_part[1]
-            else:
-                batch_parts.append(batch_part)
-
-        if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-            return np.concatenate(batch_parts, axis=0), times
-        else:
-            return np.concatenate(batch_parts, axis=0)
+        return np.concatenate(results, axis=0)

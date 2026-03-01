@@ -17,6 +17,7 @@ class DatasetMetadata:
         configs_root: Path to the folder where configurations are saved.
         benchmarks_root: Path to the folder where benchmarks are saved.
         annotations_root: Path to the folder where annotations are saved.
+        subset: Specific subset of the dataset.
         source_type: The source type of the dataset.
         aggregation: The aggregation type for the selected source type.
         ts_id_name: Name of the id used for time series.
@@ -35,27 +36,38 @@ class DatasetMetadata:
     configs_root: str
     benchmarks_root: str
     annotations_root: str
+    subset: str
     source_type: SourceType
     aggregation: AgreggationType
     ts_id_name: str
-    default_values: dict
-    additional_data: dict[str, tuple]
+    default_values: dict | float | int
+    matrix_feature_mappings: dict[str, str]
 
+    additional_data: list[str] = field(default=None, init=False)
     time_indices: np.ndarray = field(default=None, init=False)
     ts_indices: np.ndarray = field(default=None, init=False)
     ts_row_ranges: np.ndarray = field(default=None, init=False)
     features: dict[str, np.dtype] = field(default=None, init=False)
+    matrix_features: dict[str, np.dtype] = field(default=None, init=False)
+    scalar_features: dict[str, np.dtype] = field(default=None, init=False)
     data_table_path: str = field(default=None, init=False)
 
     def __post_init__(self):
         self.logger = logging.getLogger("dataset_metadata")
 
+        self.__init_additional_data()
         self.__init_time_indices()
         self.__init_ts_indices()
         self.__init_ts_row_ranges()
         self.__init_features()
+        self.__update_matrix_mappings()
+        self.__update_features_by_matrix_mappings()
         self.__update_default_values()
         self.__init_table_data_path()
+
+    def __init_additional_data(self):
+        with tb.open_file(self.dataset_path, mode="r") as dataset:
+            self.additional_data = [node._v_name for node in dataset.list_nodes("/") if isinstance(node, tb.Table) and node._v_name not in self.matrix_feature_mappings.values()]
 
     def __init_time_indices(self):
         """Sets time indices used in dataset. """
@@ -94,13 +106,30 @@ class DatasetMetadata:
                 result[key] = table.coldescrs[key].dtype
 
             self.features = result
+            self.scalar_features = {feature: result[feature] for feature in result if feature not in self.matrix_feature_mappings}
 
         self.logger.debug("Features have been successfully set.")
+
+    def __update_matrix_mappings(self):
+        self.matrix_feature_mappings = {matrix_id: self.matrix_feature_mappings[matrix_id] for matrix_id in self.matrix_feature_mappings if matrix_id in self.features.keys()}
+
+    def __update_features_by_matrix_mappings(self):
+        self.matrix_features = {}
+        with tb.open_file(self.dataset_path, mode="r") as dataset:
+            for matrix_id in self.matrix_feature_mappings:
+                del self.features[matrix_id]
+
+                matrix = dataset.get_node(f"/{self.source_type.value}/{self.matrix_feature_mappings[matrix_id]}")
+                self.features[self.matrix_feature_mappings[matrix_id]] = np.dtype((matrix.dtype, matrix.shape[1:]))
+                self.matrix_features[self.matrix_feature_mappings[matrix_id]] = np.dtype((matrix.dtype, matrix.shape[1:]))
 
     def __update_default_values(self):
         """Updates to only relevant default values """
 
-        self.default_values = {feature: self.default_values[feature] for feature in self.default_values if feature in self.features.keys()}
+        if isinstance(self.default_values, dict):
+            self.default_values = {feature: self.default_values[feature] for feature in self.default_values if feature in self.features.keys()}
+        else:
+            self.default_values = {feature: self.default_values for feature in self.features}
 
         self.logger.debug("Default values for features updated.")
 

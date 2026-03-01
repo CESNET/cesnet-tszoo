@@ -4,17 +4,18 @@ from cesnet_tszoo.configs import DisjointTimeBasedConfig
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 from cesnet_tszoo.utils.enums import SplitType
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 class DisjointTimeDatasetInitConfig(DatasetInitConfig):
     """For disjoint time based init datasets. """
 
-    def __init__(self, config: DisjointTimeBasedConfig, limit_init_to_set: SplitType, group: PreprocessOrderGroup):
+    def __init__(self, config: DisjointTimeBasedConfig, limit_init_to_set: SplitType, group: PreprocessOrderGroup, dataset_metadata: DatasetMetadata):
         self.ts_row_ranges = None
         self.ts_ids = None
         self.preprocess_order_group = deepcopy(group)
 
-        super().__init__(config, limit_init_to_set)
+        super().__init__(config, limit_init_to_set, dataset_metadata)
 
     def _init_train(self, config: DisjointTimeBasedConfig):
         """Initializes from train data of config """

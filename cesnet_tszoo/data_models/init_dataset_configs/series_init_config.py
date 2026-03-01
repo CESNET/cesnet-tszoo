@@ -4,17 +4,18 @@ from cesnet_tszoo.configs import SeriesBasedConfig
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 from cesnet_tszoo.utils.enums import SplitType
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 class SeriesDatasetInitConfig(DatasetInitConfig):
     """For series based init datasets. """
 
-    def __init__(self, config: SeriesBasedConfig, limit_init_to_set: SplitType, group: PreprocessOrderGroup):
+    def __init__(self, config: SeriesBasedConfig, limit_init_to_set: SplitType, group: PreprocessOrderGroup, dataset_metadata: DatasetMetadata):
         self.ts_row_ranges = None
         self.ts_ids = None
         self.preprocess_order_group = deepcopy(group)
 
-        super().__init__(config, limit_init_to_set)
+        super().__init__(config, limit_init_to_set, dataset_metadata)
 
         self.time_period = config.time_period
 
