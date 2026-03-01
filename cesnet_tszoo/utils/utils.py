@@ -48,7 +48,7 @@ def is_config_used_for_dataset(config, dataset_database: str, dataset_subset: st
     if config.database_name != dataset_database:
         return False
 
-    if config.subset != dataset_subset:
+    if hasattr(config, "subset") and config.subset != dataset_subset:
         return False
 
     if config.source_type != dataset_source_type:
@@ -123,7 +123,7 @@ class ExportBenchmark:
             del data["is_series_based"]
             data["dataset_type"] = None
 
-        if version(data["version"]) < Version(version.VERSION_2_2_0):
+        if Version(data["version"]) < Version(version.VERSION_2_2_0):
             data["subset"] = None
 
         data["version"] = version.config_and_benchmarks_current_version
