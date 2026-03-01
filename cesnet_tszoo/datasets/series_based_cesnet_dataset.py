@@ -39,7 +39,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     - **Numpy array**: For loading the entire training, validation, test or all set at once.      
     - See [loading data][loading-data] for more details.
 
-    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `SeriesBasedDataset` and `SeriesBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize)) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
+    The dataset is stored in a [PyTables](https://www.pytables.org/) dataset. The internal `SeriesBasedDataset` and `SeriesBasedInitializerDataset` classes act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
     interface. These wrappers are compatible with PyTorch’s [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader), providing efficient parallel data loading. 
 
     The dataset configuration is done through the [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig) class.     
@@ -66,13 +66,13 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     """Configuration of the dataset."""
 
     train_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
-    """Training set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
+    """Training set as a `SeriesBasedDataset` instance wrapping the PyTables dataset."""
     val_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
-    """Validation set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
+    """Validation set as a `SeriesBasedDataset` instance wrapping the PyTables dataset."""
     test_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
-    """Test set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
+    """Test set as a `SeriesBasedDataset` instance wrapping the PyTables dataset."""
     all_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
-    """All set as a `SeriesBasedDataset` instance wrapping the PyTables database.  """
+    """All set as a `SeriesBasedDataset` instance wrapping the PyTables dataset.  """
 
     train_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
     """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set."""

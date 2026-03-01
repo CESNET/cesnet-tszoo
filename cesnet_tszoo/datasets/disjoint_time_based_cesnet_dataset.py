@@ -37,7 +37,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     - **Numpy array**: For loading the entire training, validation or test set at once. 
     - See [loading data][loading-data] for more details.
 
-    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `TimeBasedDataset`, `SplittedDataset`, `TimeBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize)) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
+    The dataset is stored in a [PyTables](https://www.pytables.org/) dataset. The internal `DisjointTimeBasedSplittedDataset`, `DisjointTimeBasedSplitDataset` and `DisjointTimeBasedInitializerDataset` classes act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
     interface. These wrappers are compatible with PyTorch’s [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader), providing efficient parallel data loading. 
 
     The dataset configuration is done through the [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) class.       
@@ -64,11 +64,11 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     """Configuration of the dataset."""
 
     train_dataset: Optional[DisjointTimeBasedSplittedDataset] = field(default=None, init=False)
-    """Training set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database."""
+    """Training set as a `DisjointTimeBasedSplittedDataset` instance wrapping multiple `DisjointTimeBasedSplitDataset` that wrap the PyTables dataset."""
     val_dataset: Optional[DisjointTimeBasedSplittedDataset] = field(default=None, init=False)
-    """Validation set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database."""
+    """Validation set as a `DisjointTimeBasedSplittedDataset` instance wrapping multiple `DisjointTimeBasedSplitDataset` that wrap the PyTables dataset."""
     test_dataset: Optional[DisjointTimeBasedSplittedDataset] = field(default=None, init=False)
-    """Test set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database. """
+    """Test set as a `DisjointTimeBasedSplittedDataset` instance wrapping multiple `DisjointTimeBasedSplitDataset` that wrap the PyTables dataset. """
 
     train_dataloader: Optional[DisjointTimeBasedDataloader] = field(default=None, init=False)
     """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set."""
