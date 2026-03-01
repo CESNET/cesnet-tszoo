@@ -15,7 +15,7 @@ class SDN(CesnetDatabase):
     Use class method [`get_dataset`][cesnet_tszoo.datasets.SDN.get_dataset] to create a dataset instance.
     """
     name = "SDN"
-    bucket_url = None  # TO-DO
+    bucket_url = "https://liberouter.org/datazoo/download?bucket=sdn"
     id_names = sdn_constants.ID_NAMES
     default_values = sdn_constants.DEFAULT_VALUES
     matrix_feature_mappings = sdn_constants.MATRIX_FEATURE_MAPPINGS

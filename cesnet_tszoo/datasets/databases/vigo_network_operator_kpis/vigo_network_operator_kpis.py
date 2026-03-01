@@ -15,7 +15,7 @@ class Vigo_NetworkOperatorKPIs(CesnetDatabase):
     Use class method [`get_dataset`][cesnet_tszoo.datasets.Vigo_NetworkOperatorKPIs.get_dataset] to create a dataset instance.
     """
     name = "Vigo-NetworkOperatorKPIs"
-    bucket_url = None  # TO-DO
+    bucket_url = "https://liberouter.org/datazoo/download?bucket=vigo-networkoperatorkpis"
     id_names = network_operator_kpis_constants.ID_NAMES
     default_values = network_operator_kpis_constants.DEFAULT_VALUES
     subsets = ["downstream", "internet", "sessions", "vpn"]

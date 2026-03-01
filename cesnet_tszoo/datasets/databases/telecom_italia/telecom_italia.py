@@ -15,7 +15,7 @@ class TelecomItalia(CesnetDatabase):
     Use class method [`get_dataset`][cesnet_tszoo.datasets.telecom_italia.get_dataset] to create a dataset instance.
     """
     name = "TelecomItalia"
-    bucket_url = None  # TO-DO
+    bucket_url = "https://liberouter.org/datazoo/download?bucket=telecom-italia"
     id_names = constants.ID_NAMES
     default_values = constants.DEFAULT_VALUES
     subsets = ["telecommunications"]

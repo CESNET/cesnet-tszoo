@@ -15,7 +15,7 @@ class GEANT(CesnetDatabase):
     Use class method [`get_dataset`][cesnet_tszoo.datasets.GEANT.get_dataset] to create a dataset instance.
     """
     name = "GEANT"
-    bucket_url = None  # TO-DO
+    bucket_url = "https://liberouter.org/datazoo/download?bucket=geant"
     id_names = geant_constants.ID_NAMES
     default_values = geant_constants.DEFAULT_VALUES
     matrix_feature_mappings = geant_constants.MATRIX_FEATURE_MAPPINGS
