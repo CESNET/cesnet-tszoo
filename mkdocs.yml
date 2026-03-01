@@ -4,12 +4,17 @@ repo_url: https://github.com/CESNET/cesnet-tszoo
 
 theme:
   name: "material"
+  custom_dir: docs/overrides
   palette:
-    primary: white
+    primary: white   
   features:
     - navigation.sections
+    - announce.autohide  
   logo: images/tszoo_logo.svg
   favicon: images/tszoo_logo.svg
+  
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - search
