@@ -100,7 +100,7 @@ class CesnetDatabase(ABC):
 
         logger = logging.getLogger("wrapper_dataset")
 
-        subset = subset.lower() if subset is not None else subset
+        subset = subset.lower().strip() if subset is not None else subset
         source_type = SourceType(source_type)
         aggregation = AgreggationType(aggregation)
         dataset_type = DatasetType(dataset_type)
