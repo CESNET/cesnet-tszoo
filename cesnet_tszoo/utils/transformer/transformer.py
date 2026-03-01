@@ -18,19 +18,35 @@ class Transformer(ABC):
 
         class LogTransformer(Transformer):
 
-            def fit(self, data: np.ndarray):
-                ...
+            def __init__(self):
+                self.names = None
+
+            def fit(self, data: np.ndarray) -> None:
+                self.partial_fit(data)
 
             def partial_fit(self, data: np.ndarray) -> None:
-                ...
+                self.names = data.dtype.names
 
-            def transform(self, data: np.ndarray):
-                log_data = np.ma.log(data)
+            def transform(self, data: np.ndarray) -> np.ndarray:
 
-                return log_data.filled(np.nan)
+                for name in data.dtype.names:
 
-            def inverse_transform(self, transformed_data):
-                return np.exp(transformed_data)                
+                    current_data = data[name]
+                    log_data = np.ma.log(current_data)
+                    current_data[:] = log_data.filled(np.nan)
+
+                return data
+
+            def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+                names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.names
+
+                for name in names:
+
+                    current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+                    current_data[:] = np.exp(current_data)
+
+                return transformed_data               
     """
 
     @abstractmethod
@@ -41,7 +57,8 @@ class Transformer(ABC):
         This method must be implemented if using multiple transformers that have not been pre-fitted.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.
         """
         ...
 
@@ -53,7 +70,8 @@ class Transformer(ABC):
         This method must be implemented if using a single transformer that is not pre-fitted for all time series, or when using pre-fitted transformer(s) with `partial_fit_initialized_transformers` set to `True`.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.        
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.   
         """
         ...
 
@@ -65,10 +83,11 @@ class Transformer(ABC):
         This method must always be implemented.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.
 
         Returns:
-            The transformed data, with the same shape as the input `(times, features)`.            
+            The transformed data, with the same shape and dtype as the input `(times)`.            
         """
         ...
 
@@ -77,10 +96,11 @@ class Transformer(ABC):
         Transforms the input transformed data to their original representation for a given time series part.
 
         Parameters:
-            transformed_data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            transformed_data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                              For matrix features use their name instead of base_data. 
 
         Returns:
-            The original representation of transformed data, with the same shape as the input `(times, features)`.            
+            The original representation of transformed data, with the same shape and dtype as the input `(times)`.            
         """
         return transformed_data
 

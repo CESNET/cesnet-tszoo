@@ -60,12 +60,16 @@ class SourceType(Enum):
     """Traffic Institutions of CESNET3 network. """
 
     NETWORK_OPERATOR = "network_operator"
+    """Data from the operator of the network. """
 
     MININET_SIMULATOR = "mininet_simulator"
+    """Created via Mininet simulator. """
 
     BACKBONE_NETWORK = "backbone_network"
+    """Traffic from backbone network. """
 
     SERVICE_PROVIDER = "service_provider"
+    """Data from the service provider. """
 
     CESNET2 = "CESNET2"
     """Traffic of CESNET2 network. """

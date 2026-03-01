@@ -155,23 +155,13 @@ class CesnetDataset(ABC):
         The `DataLoader` is created on the first call and cached for subsequent use. <br/>
         The cached dataloader is cleared when either [`get_train_df`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_df) or [`get_train_numpy`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_numpy) is called.
 
-        The structure of the returned batch depends on the `time_format` and whether `sliding_window_size` is used:
+        The structure of the returned batch depends on whether `sliding_window_size` is used:
 
         - When `sliding_window_size` is used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
-                - `np.ndarray` of times with shape `(times - 1)`
-                - `np.ndarray` of time with shape `(1)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
+            - `np.ndarray` of shape `(num_time_series, times - sliding_window_prediction_size, features)` or `(num_time_series, times - sliding_window_prediction_size)`
+            - `np.ndarray` of shape `(num_time_series, sliding_window_prediction_size, features)` or `(num_time_series, sliding_window_prediction_size)`
         - When `sliding_window_size` is not used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
-                - `np.ndarray` of time with shape `(times)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
+            - `np.ndarray` of shape `(num_time_series, times, features)` or `(num_time_series, times)`
 
         The `DataLoader` is configured with the following config attributes:
 
@@ -261,23 +251,13 @@ class CesnetDataset(ABC):
         The `DataLoader` is created on the first call and cached for subsequent use. <br/>
         The cached dataloader is cleared when either [`get_val_df`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_df) or [`get_val_numpy`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_numpy) is called.
 
-        The structure of the returned batch depends on the `time_format` and whether `sliding_window_size` is used:
+        The structure of the returned batch depends on whether `sliding_window_size` is used:
 
         - When `sliding_window_size` is used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
-                - `np.ndarray` of times with shape `(times - 1)`
-                - `np.ndarray` of time with shape `(1)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
+            - `np.ndarray` of shape `(num_time_series, times - sliding_window_prediction_size, features)` or `(num_time_series, times - sliding_window_prediction_size)`
+            - `np.ndarray` of shape `(num_time_series, sliding_window_prediction_size, features)` or `(num_time_series, sliding_window_prediction_size)`
         - When `sliding_window_size` is not used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
-                - `np.ndarray` of time with shape `(times)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
+            - `np.ndarray` of shape `(num_time_series, times, features)` or `(num_time_series, times)`
 
         The `DataLoader` is configured with the following config attributes:
 
@@ -366,23 +346,13 @@ class CesnetDataset(ABC):
         The `DataLoader` is created on the first call and cached for subsequent use. <br/>
         The cached dataloader is cleared when either [`get_test_df`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_df) or [`get_test_numpy`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_numpy) is called.
 
-        The structure of the returned batch depends on the `time_format` and whether `sliding_window_size` is used:
+        The structure of the returned batch depends on whether `sliding_window_size` is used:
 
         - When `sliding_window_size` is used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
-                - `np.ndarray` of times with shape `(times - 1)`
-                - `np.ndarray` of time with shape `(1)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
+            - `np.ndarray` of shape `(num_time_series, times - sliding_window_prediction_size, features)` or `(num_time_series, times - sliding_window_prediction_size)`
+            - `np.ndarray` of shape `(num_time_series, sliding_window_prediction_size, features)` or `(num_time_series, sliding_window_prediction_size)`
         - When `sliding_window_size` is not used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
-                - `np.ndarray` of time with shape `(times)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
+            - `np.ndarray` of shape `(num_time_series, times, features)` or `(num_time_series, times)`
 
         The `DataLoader` is configured with the following config attributes:
 
@@ -471,23 +441,13 @@ class CesnetDataset(ABC):
         The `DataLoader` is created on the first call and cached for subsequent use. <br/>
         The cached dataloader is cleared when either [`get_all_df`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_all_df) or [`get_all_numpy`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_all_numpy) is called.
 
-        The structure of the returned batch depends on the `time_format` and whether `sliding_window_size` is used:
+        The structure of the returned batch depends on whether `sliding_window_size` is used:
 
         - When `sliding_window_size` is used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
-                - `np.ndarray` of times with shape `(times - 1)`
-                - `np.ndarray` of time with shape `(1)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times - 1, features)`
-                - `np.ndarray` of shape `(num_time_series, 1, features)`
+            - `np.ndarray` of shape `(num_time_series, times - sliding_window_prediction_size, features)` or `(num_time_series, times - sliding_window_prediction_size)`
+            - `np.ndarray` of shape `(num_time_series, sliding_window_prediction_size, features)` or `(num_time_series, sliding_window_prediction_size)`
         - When `sliding_window_size` is not used:
-            - With `time_format` == TimeFormat.DATETIME and included time:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
-                - `np.ndarray` of time with shape `(times)`
-            - When `time_format` != TimeFormat.DATETIME or time is not included:
-                - `np.ndarray` of shape `(num_time_series, times, features)`
+            - `np.ndarray` of shape `(num_time_series, times, features)` or `(num_time_series, times)`
 
         The `DataLoader` is configured with the following config attributes:
 
