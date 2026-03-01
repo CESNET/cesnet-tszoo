@@ -1,7 +1,7 @@
 # SDN { #sdn_page }
 
 #### Data capture
-The dataset was generated in a software‑defined network (SDN) emulation environment built using the Mininet simulator and managed by a POX SDN controller. Traffic matrix measurements were obtained by periodically polling flow statistics from OpenFlow switches deployed in a simulated network topology based on the BSO Network 2011 topology. Hosts in the SDN testbed replayed modified traffic capture (pcap) files to generate controlled traffic flows between all pairs of nodes. Traffic matrices were recorded at regular intervals over a multi‑day test run, producing thousands of measured matrices.
+The dataset was generated in a software‑defined network (SDN) emulation environment built using the Mininet simulator and managed by a POX SDN controller. Traffic matrix measurements were obtained by periodically polling flow statistics from OpenFlow switches deployed in a simulated network topology based on the BSO Network 2011 topology. Hosts in the SDN testbed replayed modified traffic capture (pcap) files to generate controlled traffic flows between all pairs of nodes. Traffic matrices were recorded at regular intervals over a 4‑day test run, producing thousands of measured matrices.
 
 #### Data description
 The dataset consists of traffic matrices capturing the volume of network traffic between origin–destination (OD) node pairs in the SDN testbed at each measurement interval. The created datapoints represent a summarized traffic volumes between origin–destination node pairs within a defined time window of 1 minute.

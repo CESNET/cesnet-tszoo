@@ -37,7 +37,7 @@ nav:
     - CESNET-TimeSeries24: cesnet_timeseries24.md
     - CESNET-AGG23: cesnet_agg23.md
     - Abilene: abilene.md
-    - GEANT: geant.md
+    - GÉANT: geant.md
     - SDN: sdn.md
     - Telecom Italia: telecom-italia.md
     - Vigo NetworkOperator KPIs: vigo-networkoperatorkpis.md
