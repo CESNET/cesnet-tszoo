@@ -100,9 +100,15 @@ class MinMaxScaler(Transformer):
 
     def partial_fit(self, data: np.ndarray) -> None:
 
+        is_init = len(self.transformers) == 0
+
         for name in data.dtype.names:
 
-            transformer = self.transformers[name] = sk.MinMaxScaler()
+            if is_init:
+                transformer = self.transformers[name] = sk.MinMaxScaler()
+            else:
+                transformer = self.transformers[name]
+
             current_data = data[name]
             flat_size = int(np.prod(current_data.shape[1:]))
 
@@ -158,9 +164,15 @@ class StandardScaler(Transformer):
 
     def partial_fit(self, data: np.ndarray) -> None:
 
+        is_init = len(self.transformers) == 0
+
         for name in data.dtype.names:
 
-            transformer = self.transformers[name] = sk.StandardScaler()
+            if is_init:
+                transformer = self.transformers[name] = sk.StandardScaler()
+            else:
+                transformer = self.transformers[name]
+
             current_data = data[name]
             flat_size = int(np.prod(current_data.shape[1:]))
 
@@ -216,9 +228,15 @@ class MaxAbsScaler(Transformer):
 
     def partial_fit(self, data: np.ndarray) -> None:
 
+        is_init = len(self.transformers) == 0
+
         for name in data.dtype.names:
 
-            transformer = self.transformers[name] = sk.MaxAbsScaler()
+            if is_init:
+                transformer = self.transformers[name] = sk.MaxAbsScaler()
+            else:
+                transformer = self.transformers[name]
+
             current_data = data[name]
             flat_size = int(np.prod(current_data.shape[1:]))
 
