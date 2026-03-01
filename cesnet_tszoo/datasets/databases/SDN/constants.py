@@ -6,19 +6,14 @@ ID_NAMES = {
     SourceType.MININET_SIMULATOR: "ts_id"
 }
 
-DEFAULT_VALUES = {
-    'matrix_traffic_volume': 0,
-    'average_from_traffic_volume': 0,
-    'average_to_traffic_volume': 0,
-    'std_from_traffic_volume': 0,
-    'std_to_traffic_volume': 0,
-    'sum_from_traffic_volume': 0,
-    'sum_to_traffic_volume': 0,
-    'traffic_volume': 0
-}
+DEFAULT_VALUES = 0
 
 MATRIX_FEATURE_MAPPINGS = {
-    "id_matrix_traffic_volume": "matrix_traffic_volume"
+    "id_matrix_traffic_volume": "matrix_traffic_volume",
+
+    "id_matrix_avg_traffic_volume": "matrix_avg_traffic_volume",
+    "id_matrix_std_traffic_volume": "matrix_std_traffic_volume",
+    "id_matrix_sum_traffic_volume": "matrix_sum_traffic_volume",
 }
 
 SOURCE_TYPES = {
@@ -26,5 +21,8 @@ SOURCE_TYPES = {
 }
 
 AGGREGATIONS = {
-    AgreggationType.AGG_1_MINUTE
+    AgreggationType.AGG_1_MINUTE,
+    AgreggationType.AGG_10_MINUTES,
+    AgreggationType.AGG_1_HOUR,
+    AgreggationType.AGG_1_DAY
 }

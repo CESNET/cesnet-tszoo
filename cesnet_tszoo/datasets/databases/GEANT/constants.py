@@ -6,19 +6,14 @@ ID_NAMES = {
     SourceType.BACKBONE_NETWORK: "ts_id"
 }
 
-DEFAULT_VALUES = {
-    'matrix_bandwidth_kbps': 0,
-    'average_from_bandwidth_kbps': 0,
-    'average_to_bandwidth_kbps': 0,
-    'std_from_bandwidth_kbps': 0,
-    'std_to_bandwidth_kbps': 0,
-    'sum_from_bandwidth_kbps': 0,
-    'sum_to_bandwidth_kbps': 0,
-    'bandwidth_kbps': 0
-}
+DEFAULT_VALUES = 0
 
 MATRIX_FEATURE_MAPPINGS = {
-    "id_matrix_bandwidth_kbps": "matrix_bandwidth_kbps"
+    "id_matrix_bandwidth_kbps": "matrix_bandwidth_kbps",
+
+    "id_matrix_avg_bandwidth_kbps": "matrix_avg_bandwidth_kbps",
+    "id_matrix_std_bandwidth_kbps": "matrix_std_bandwidth_kbps",
+    "id_matrix_sum_bandwidth_kbps": "matrix_sum_bandwidth_kbps"
 }
 
 SOURCE_TYPES = {
@@ -26,5 +21,7 @@ SOURCE_TYPES = {
 }
 
 AGGREGATIONS = {
-    AgreggationType.AGG_15_MINUTES
+    AgreggationType.AGG_15_MINUTES,
+    AgreggationType.AGG_1_HOUR,
+    AgreggationType.AGG_1_DAY
 }

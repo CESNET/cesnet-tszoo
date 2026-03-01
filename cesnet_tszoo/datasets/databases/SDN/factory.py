@@ -14,19 +14,7 @@ class SDNFactory(DatabaseFactory):
     def __init__(self):
         super().__init__(SDN.name)
 
-    @overload
-    def create_dataset(self, data_root: str, subset: str, dataset_type: Literal[DatasetType.TIME_BASED, "time_based"],
-                       check_errors: bool, display_details: bool) -> TimeBasedCesnetDataset: ...
-
-    @overload
-    def create_dataset(self, data_root: str, subset: str, dataset_type: Literal[DatasetType.SERIES_BASED, "series_based"],
-                       check_errors: bool, display_details: bool) -> SeriesBasedCesnetDataset: ...
-
-    @overload
-    def create_dataset(self, data_root: str, subset: str, dataset_type: Literal[DatasetType.DISJOINT_TIME_BASED, "disjoint_time_based"],
-                       check_errors: bool, display_details: bool) -> DisjointTimeBasedCesnetDataset: ...
-
-    def create_dataset(self, data_root: str, subset: str, dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"],
+    def create_dataset(self, data_root: str, subset: str, aggregation: AgreggationType, dataset_type: DatasetType,
                        check_errors: bool, display_details: bool) -> Union[TimeBasedCesnetDataset, SeriesBasedCesnetDataset, DisjointTimeBasedCesnetDataset]:
 
-        return SDN.get_dataset(data_root, subset, SourceType.MININET_SIMULATOR, AgreggationType.AGG_1_MINUTE, dataset_type, check_errors, display_details)
+        return SDN.get_dataset(data_root, subset, SourceType.MININET_SIMULATOR, aggregation, dataset_type, check_errors, display_details)

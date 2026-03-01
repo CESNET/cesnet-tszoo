@@ -11,5 +11,7 @@ SOURCE_TYPES = {
 }
 
 AGGREGATIONS = {
-    AgreggationType.AGG_10_MINUTES
+    AgreggationType.AGG_10_MINUTES,
+    AgreggationType.AGG_1_HOUR,
+    AgreggationType.AGG_1_DAY
 }

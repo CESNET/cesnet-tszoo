@@ -25,18 +25,21 @@ class GEANT(CesnetDatabase):
 
     @overload
     @classmethod
-    def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], dataset_type: Literal[DatasetType.TIME_BASED, "time_based"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset: ...
+    def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], aggregation: AgreggationType | Literal["15_minutes", "1_hour", "1_day"],
+                    dataset_type: Literal[DatasetType.TIME_BASED, "time_based"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset: ...
 
     @overload
     @classmethod
-    def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], dataset_type: Literal[DatasetType.SERIES_BASED, "series_based"], check_errors: bool = False, display_details: bool = False) -> SeriesBasedCesnetDataset: ...
+    def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], aggregation: AgreggationType | Literal["15_minutes", "1_hour", "1_day"],
+                    dataset_type: Literal[DatasetType.SERIES_BASED, "series_based"], check_errors: bool = False, display_details: bool = False) -> SeriesBasedCesnetDataset: ...
 
     @overload
     @classmethod
-    def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], dataset_type: Literal[DatasetType.DISJOINT_TIME_BASED, "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> DisjointTimeBasedCesnetDataset: ...
+    def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], aggregation: AgreggationType | Literal["15_minutes", "1_hour", "1_day"],
+                    dataset_type: Literal[DatasetType.DISJOINT_TIME_BASED, "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> DisjointTimeBasedCesnetDataset: ...
 
     @classmethod
-    def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"],
+    def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], aggregation: AgreggationType | Literal["15_minutes", "1_hour", "1_day"],
                     dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> Union[TimeBasedCesnetDataset, SeriesBasedCesnetDataset, DisjointTimeBasedCesnetDataset]:
         """
         Create new dataset instance.
@@ -52,4 +55,4 @@ class GEANT(CesnetDatabase):
             [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
         """
 
-        return super(GEANT, cls).get_dataset(data_root, subset, SourceType.BACKBONE_NETWORK, AgreggationType.AGG_15_MINUTES, dataset_type, check_errors, display_details)
+        return super(GEANT, cls).get_dataset(data_root, subset, SourceType.BACKBONE_NETWORK, aggregation, dataset_type, check_errors, display_details)

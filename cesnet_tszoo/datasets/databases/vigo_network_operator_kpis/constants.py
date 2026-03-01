@@ -6,15 +6,15 @@ ID_NAMES = {
     SourceType.NETWORK_OPERATOR: "ts_id"
 }
 
-DEFAULT_VALUES = {
-    'scaled_bts': 0,
-    'scaled_active_client_sessions': 0
-}
+DEFAULT_VALUES = 0
 
 SOURCE_TYPES = {
     SourceType.NETWORK_OPERATOR
 }
 
 AGGREGATIONS = {
-    AgreggationType.AGG_5_MINUTES
+    AgreggationType.AGG_5_MINUTES,
+    AgreggationType.AGG_10_MINUTES,
+    AgreggationType.AGG_1_HOUR,
+    AgreggationType.AGG_1_DAY
 }
