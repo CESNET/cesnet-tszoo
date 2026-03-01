@@ -48,7 +48,7 @@ def is_config_used_for_dataset(config, dataset_database: str, dataset_subset: st
     if config.database_name != dataset_database:
         return False
 
-    if config.subset != dataset_subset:
+    if hasattr(config, "subset") and config.subset != dataset_subset:
         return False
 
     if config.source_type != dataset_source_type:
