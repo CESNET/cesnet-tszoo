@@ -153,7 +153,7 @@ class MinMaxScaler(Transformer):
 
     def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
 
-        names = transformed_data.dtype.names if names is not None else self.transformers.keys()
+        names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.transformers.keys()
 
         for name in names:
 
