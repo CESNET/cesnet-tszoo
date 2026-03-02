@@ -54,6 +54,8 @@ To check AnomalyHandler base class refer to [`AnomalyHandler`](reference_anomaly
 ```python
 
 import numpy as np
+import warnings
+
 from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
 from cesnet_tszoo.configs import TimeBasedConfig
 
