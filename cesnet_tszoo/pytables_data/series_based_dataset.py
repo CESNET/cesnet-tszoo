@@ -24,7 +24,7 @@ class SeriesBasedDataset(BaseDataset):
             elif self.load_config.time_format == TimeFormat.UNIX_TIME or self.load_config.time_format == TimeFormat.SHIFTED_UNIX_TIME:
                 data[BASE_DATA_DTYPE_PART][:, :, self.time_col_index] = self.load_config.time_period[TIME_COLUMN_NAME]
             elif self.load_config.time_format == TimeFormat.DATETIME:
-                data[TIME_DTYPE_PART] = self.load_config.time_period[batch_idx][TIME_COLUMN_NAME]
+                data[TIME_DTYPE_PART] = self.load_config.time_period[TIME_COLUMN_NAME]
 
         if self.load_config.include_ts_id:
             data[BASE_DATA_DTYPE_PART][:, :, self.ts_id_col_index] = self.ts_id_fill[batch_idx]
