@@ -158,7 +158,7 @@ class CesnetDataset(ABC):
         The structure of the returned batch depends on whether `sliding_window_size` is used:
 
         - When `sliding_window_size` is used:
-            - `np.ndarray` of shape `(num_time_series, times - sliding_window_prediction_size, features)` or `(num_time_series, times - sliding_window_prediction_size)`
+            - `np.ndarray` of shape `(num_time_series, sliding_window_size, features)` or `(num_time_series, sliding_window_size)`
             - `np.ndarray` of shape `(num_time_series, sliding_window_prediction_size, features)` or `(num_time_series, sliding_window_prediction_size)`
         - When `sliding_window_size` is not used:
             - `np.ndarray` of shape `(num_time_series, times, features)` or `(num_time_series, times)`
@@ -254,7 +254,7 @@ class CesnetDataset(ABC):
         The structure of the returned batch depends on whether `sliding_window_size` is used:
 
         - When `sliding_window_size` is used:
-            - `np.ndarray` of shape `(num_time_series, times - sliding_window_prediction_size, features)` or `(num_time_series, times - sliding_window_prediction_size)`
+            - `np.ndarray` of shape `(num_time_series, sliding_window_size, features)` or `(num_time_series, sliding_window_size)`
             - `np.ndarray` of shape `(num_time_series, sliding_window_prediction_size, features)` or `(num_time_series, sliding_window_prediction_size)`
         - When `sliding_window_size` is not used:
             - `np.ndarray` of shape `(num_time_series, times, features)` or `(num_time_series, times)`
@@ -349,7 +349,7 @@ class CesnetDataset(ABC):
         The structure of the returned batch depends on whether `sliding_window_size` is used:
 
         - When `sliding_window_size` is used:
-            - `np.ndarray` of shape `(num_time_series, times - sliding_window_prediction_size, features)` or `(num_time_series, times - sliding_window_prediction_size)`
+            - `np.ndarray` of shape `(num_time_series, sliding_window_size, features)` or `(num_time_series, sliding_window_size)`
             - `np.ndarray` of shape `(num_time_series, sliding_window_prediction_size, features)` or `(num_time_series, sliding_window_prediction_size)`
         - When `sliding_window_size` is not used:
             - `np.ndarray` of shape `(num_time_series, times, features)` or `(num_time_series, times)`
@@ -444,7 +444,7 @@ class CesnetDataset(ABC):
         The structure of the returned batch depends on whether `sliding_window_size` is used:
 
         - When `sliding_window_size` is used:
-            - `np.ndarray` of shape `(num_time_series, times - sliding_window_prediction_size, features)` or `(num_time_series, times - sliding_window_prediction_size)`
+            - `np.ndarray` of shape `(num_time_series, sliding_window_size, features)` or `(num_time_series, sliding_window_size)`
             - `np.ndarray` of shape `(num_time_series, sliding_window_prediction_size, features)` or `(num_time_series, sliding_window_prediction_size)`
         - When `sliding_window_size` is not used:
             - `np.ndarray` of shape `(num_time_series, times, features)` or `(num_time_series, times)`
