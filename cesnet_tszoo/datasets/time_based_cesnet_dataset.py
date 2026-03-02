@@ -519,8 +519,10 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
         temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), DatasetType.TIME_BASED, True)
 
-        if (dataset.load_config.time_format == TimeFormat.DATETIME and dataset.load_config.include_time):
-            temp_data = temp_data[0]
+        if (temp_data.dtype.names is not None):
+            if "base_data" not in temp_data.dtype.names:
+                raise NotImplementedError("Plotting support only non matrix features.")
+            temp_data = temp_data["base_data"]
 
         temp_data = temp_data[0][:, feature_indices]
 
