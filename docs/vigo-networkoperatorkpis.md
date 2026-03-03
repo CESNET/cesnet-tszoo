@@ -84,4 +84,6 @@ In this subset, time series are of VPN traffic. Contains 11 time series.
 | std_scaled_bts               | Standard deviation of VPN traffic over the aggregation interval.                                 |
 | sum_scaled_bts               | Sum of VPN traffic over the aggregation interval.                                              |
 
-More detailed description is available on the [page](https://zenodo.org/records/8147768).
+### Links
+
+More detailed description is available on the [Zenodo](https://doi.org/10.5281/zenodo.8147768). Original dataset can be downloaded at [https://doi.org/10.5281/zenodo.8147768](https://doi.org/10.5281/zenodo.8147768).

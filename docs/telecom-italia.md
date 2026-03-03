@@ -45,4 +45,6 @@ Additionaly to prevent lot of empty time series, every pair of (square, country 
 | std_internet_traffic          | Standard deviation of Internet traffic volume of specific country code within the cell over the aggregation interval.                 |
 | sum_internet_traffic          | Sum of Internet traffic volume of specific country code within the cell over the aggregation interval.                                 |
 
-More detailed description is available in the [paper](https://www.nature.com/articles/sdata201555).
+### Links
+
+More detailed description is available in the [paper](https://doi.org/10.1038/sdata.2015.55). Original dataset can be downloaded at [https://dataverse.harvard.edu](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/EGZHFV).

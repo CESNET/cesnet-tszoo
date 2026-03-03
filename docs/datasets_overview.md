@@ -63,7 +63,7 @@ For detailed information about the dataset, please refer to the the linked paper
     - Aggregation windows: 1 minute, 10 minutes, 1 hour, 1 day
     - Subsets: Matrix, Node2Node, Node
 
-This dataset was published in *“An AI-based Traffic Matrix Prediction Solution for Software-Defined Network”* ([paper](https://ieeexplore.ieee.org/document/9500331)). It contains traffic matrices for OD node pairs in a simulated SDN environment.
+This dataset was published in *“An AI-based Traffic Matrix Prediction Solution for Software-Defined Network”* ([DOI](https://doi.org/10.1109/ICC42927.2021.9500331)). It contains traffic matrices for OD node pairs in a simulated SDN environment.
 
 For detailed information about the dataset, please refer to the linked paper and the [SDN][sdn_page] page.
 
@@ -74,9 +74,9 @@ For detailed information about the dataset, please refer to the linked paper and
 !!! info inline end "Telecom Italia"
     - Collected in 2013-2024
     - Spans 2 months
-    - Aggregation windows: 5 minutes, 10 minutes, 1 hour, 1 day
+    - Aggregation windows: 10 minutes, 1 hour, 1 day
 
-This dataset was published as part of the Telecom Italia Big Data Challenge. It contains time-series measurements of SMS, call, and internet traffic per cell in Milan.
+This dataset was published in *"A multi-source dataset of urban life in the city of Milan and the Province of Trentino"* ([DOI](https://doi.org/10.1038/sdata.2015.55)) as part of the Telecom Italia Big Data Challenge. It contains time-series measurements of SMS, call, and internet traffic per cell in Milan.
 
 For detailed information about the dataset, please refer to the [Telecom Italia][telecom_italia_page] page.
 
@@ -89,6 +89,6 @@ For detailed information about the dataset, please refer to the [Telecom Italia]
     - Aggregation windows: 5 minutes, 10 minutes, 1 hour, 1 day
     - Subsets: Downstream, Internet, Sessions, VPN
 
-This dataset contains time-series of key performance indicators (KPIs) for a network operator, with metrics like downstream throughput, internet traffic, number of active client sessions, and VPN traffic.
+This dataset was published as *"Network operator KPIs time series dataset"* on Zenodo ([DOI](https://doi.org/10.5281/zenodo.8147768)). It contains time-series of key performance indicators (KPIs) for a network operator, with metrics like downstream throughput, internet traffic, number of active client sessions, and VPN traffic.
 
 For detailed information about the dataset, please refer to the [Vigo-Network operators KPIs][vigo_networkoperatorkpis_page] page.

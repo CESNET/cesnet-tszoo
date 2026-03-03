@@ -62,4 +62,6 @@ In this subset, each time series corresponds to one node. Contains 23 time serie
 | std_to_bandwidth_kbs         | Standard deviation of bandwidth (in kilobits per second) destined to the node over the aggregation interval. |
 | sum_to_bandwidth_kbs         | Sum of bandwidth (in kilobits per second) destined to the node over the aggregation interval. |
 
-More detailed description is available in the [paper](https://dl.acm.org/doi/10.1145/1111322.1111341).
+### Links
+
+More detailed description is available in the [paper](https://dl.acm.org/doi/10.1145/1111322.1111341). Original dataset can be downloaded at [https://totem.info.ucl.ac.be/dataset.html](https://totem.info.ucl.ac.be/dataset.html).

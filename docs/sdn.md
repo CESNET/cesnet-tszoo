@@ -61,4 +61,6 @@ In this subset, each time series corresponds to one node. Contains 14 time serie
 | std_to_traffic_volume        | Standard deviation of traffic volume destined to the node over the aggregation interval. |
 | sum_to_traffic_volume        | Sum of traffic volume destined to the node over the aggregation interval.          |
 
-More detailed description is available in the [paper](https://ieeexplore.ieee.org/document/9500331).
+### Links
+
+More detailed description is available in the [paper](https://doi.org/10.1109/ICC42927.2021.9500331). Original dataset can be downloaded at [https://github.com/duchuyle108/SDN-TMprediction](https://github.com/duchuyle108/SDN-TMprediction/blob/main/dataset/testbed_flat_tms.csv).

@@ -119,4 +119,6 @@ In this subset, each time series corresponds to one node. Contains 12 time serie
 | std_to_generalTomogravityOD     | Standard deviation of traffic volume estimated by the generalized tomogravity model destined to a node. |
 | sum_to_generalTomogravityOD     | Sum of traffic volume estimated by the generalized tomogravity model destined to a node.         |
 
-More detailed description is available in the [paper](https://arxiv.org/abs/0708.0945).
+### Links
+
+More detailed description is available in the [paper](https://arxiv.org/abs/0708.0945). Original dataset can be downloaded at [https://www.cs.utexas.edu/~yzhang/research/AbileneTM](https://www.cs.utexas.edu/~yzhang/research/AbileneTM).

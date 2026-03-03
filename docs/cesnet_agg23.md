@@ -62,4 +62,6 @@ The dataset consists of rules set used by the Scalar aggregator to aggregate inf
 | packets_tcp            |    The sum of packets of TCP flows.                                                                                                                |
 | packets_udp            |    The sum of packets of UDP flows.                                                                                                                |
 
-More detailed description is available in the [paper](https://doi.org/10.23919/CNSM59352.2023.10327823) or you can contact dataset author [Jaroslav Pesek](https://jaroslavpesek.github.io/).
+### Links
+
+More detailed description is available in the [paper](https://doi.org/10.23919/CNSM59352.2023.10327823) or you can contact dataset author [Jaroslav Pesek](https://jaroslavpesek.github.io/). Original dataset can be downloaded at [https://zenodo.org/records/8053021](https://zenodo.org/records/8053021).
