@@ -26,7 +26,7 @@ The goal of `cesnet-tszoo` project is to provide time series datasets with usefu
 | Name                      | CESNET-TimeSeries24 | CESNET-AGG23 | Abilene | GÉANT | SDN | Telecom Italia | Network Operator KPIs |
 |---------------------------|---------------------|--------------|---------|-------|-----|----------------|-----------------------|
 | _Published in_            | 2025 | 2023 | 2005 | 2005 | 2021 | 2015 | 2023 |
-| _Collection period_       | 2023–2024 | 2024 | 2004 | 2005 | — | 2013–2014 | — |
+| _Collection period_       | 9.10.2023 - 14.7.2024 | 25.2.2023 - 3.5.2023 | 2004 | 2005 | — | 2013–2014 | — |
 | _Collection duration_     | 40 weeks | 10 weeks | 6 months | 16 weeks | 4 days | 2 months | Multiple weeks |
 | _Aggregation window_      | 1 day, 1 hour, 10 min | 1 min | 5 min, 10 min, 1 hour, 1 day | 15 min, 1 hour, 1 day | 1 min, 10 min, 1 hour, 1 day | 10 min, 1 hour, 1 day | 5 min, 10 min, 1 hour, 1 day |
 | _Sources_                 | CESNET3: Institutions, Institution subnets, IP addresses | CESNET2 | Abilene network | GÉANT network | Simulated SDN environment | Milan city cells (SMS, call, internet) | Network operator |
