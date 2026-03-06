@@ -11,7 +11,7 @@
 
 The goal of `cesnet-tszoo` project is to provide time series datasets with useful tools for preprocessing and reproducibility. Such as:
 
-- API for downloading, configuring and loading CESNET-TimeSeries24, CESNET-AGG23 datasets. Each with various sources and aggregations.
+- API for downloading, configuring and loading various datasets (e.g. CESNET-TimeSeries24, CESNET-AGG23...), each with various sources and aggregations.
 - Example of configuration options:
   - Data can be split into train/val/test sets. Split can be done by time series or by time periods.
   - Transforming of data with built-in transformers or with custom transformers.
