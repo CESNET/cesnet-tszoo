@@ -36,7 +36,7 @@ For detailed information about the dataset, please refer to the linked paper and
     - Aggregation windows: 5 minutes, 10 minutes, 1 hour, 1 day
     - Subsets: Matrix, Node2Node, Node
 
-This dataset was published as part of *"An iterative tomogravity algorithm for the estimation of network traffic"* ([paper](https://arxiv.org/abs/0708.0945)). It contains trace data from the backbone network located in North America consisting of 12 nodes and 30 unidirectional links.
+The dataset originates from the Internet2 Abilene Network and was introduced in the work *"Fast Accurate Computation of Large-Scale IP Traffic Matrices from Link Loads"* ([paper](https://doi.org/10.1145/885651.781053)). It contains trace data from the backbone network located in North America consisting of 12 nodes and 30 unidirectional links.
 
 For detailed information about the dataset, please refer to the the linked paper and the [Abilene][abilene_page] page.
 

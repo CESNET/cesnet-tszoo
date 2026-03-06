@@ -121,4 +121,4 @@ In this subset, each time series corresponds to one node. Contains 12 time serie
 
 ### Links
 
-More detailed description is available in the [paper](https://arxiv.org/abs/0708.0945). Original dataset can be downloaded at [https://www.cs.utexas.edu/~yzhang/research/AbileneTM](https://www.cs.utexas.edu/~yzhang/research/AbileneTM).
+Cite [paper](https://doi.org/10.1145/885651.781053). Original dataset can be downloaded at [https://www.cs.utexas.edu/~yzhang/research/AbileneTM](https://www.cs.utexas.edu/~yzhang/research/AbileneTM).
