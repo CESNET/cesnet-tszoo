@@ -1,0 +1,17 @@
+.banner {
+    height: 30;
+    position: sticky;
+    top: 0;
+    left: 0;
+    padding: 10px 0;
+    width: 100%;
+    z-index: 1;
+    text-align: center;
+    background-color: rgb(240, 73, 83);
+}
+
+.banner-text {
+    color: white;
+    display: inline;
+    font-size: 24px;
+}

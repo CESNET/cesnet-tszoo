@@ -48,6 +48,8 @@
     
       <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -82,6 +84,14 @@
     </div>
     
     
+
+<!-- Custom Banner -->
+<div id="librouter-status" class="banner" style="display:none;">
+    <p id="librouter-status-text" class="banner-text"></p>
+</div>
+
+<!-- Original Header -->
+
       
 
   
@@ -176,6 +186,7 @@
   
 </header>
     
+
     <div class="md-container" data-md-component="container">
       
       
@@ -379,6 +390,69 @@
   
   
     <li class="md-nav__item">
+      <a href="../adding_datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adding dataset
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Supported datasets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Supported datasets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cesnet_timeseries24/" class="md-nav__link">
         
   
@@ -413,6 +487,129 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abilene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Abilene
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GÉANT
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sdn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SDN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../telecom-italia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Telecom Italia
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vigo-networkoperatorkpis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Vigo NetworkOperator KPIs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1767,6 +1964,28 @@
             </td>
           </tr>
           <tr class="doc-section-item">
+            <td><code><span title="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.subsets">subsets</span></code></td>
+            <td>
+                  <code><span title="list">list</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Available subsets for the database.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.matrix_feature_mappings">matrix_feature_mappings</span></code></td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which matrix ids maps to which matrices.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
             <td><code><span title="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.source_types">source_types</span></code></td>
             <td>
                   <code><span title="list">list</span>[<a class="autorefs autorefs-internal" title="SourceType (cesnet_tszoo.utils.enums.SourceType)" href="../reference_enums/#cesnet_tszoo.utils.enums.SourceType">SourceType</a>]</code>
@@ -1784,18 +2003,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Available aggregations for the database.   </p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><span title="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.additional_data">additional_data</span></code></td>
-            <td>
-                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="tuple">tuple</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Available small datasets for each dataset.</p>
+                <p>Available aggregations for the database.</p>
               </div>
             </td>
           </tr>
@@ -1977,7 +2185,24 @@
 <span class="normal">175</span>
 <span class="normal">176</span>
 <span class="normal">177</span>
-<span class="normal">178</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CesnetDatabase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CesnetDatabase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for cesnet databases. This class should **not** be used directly. Use it as base for adding new databases.</span>
 
@@ -2024,9 +2249,10 @@
 <span class="sd">        annotations_root: Path to the folder where annotations are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.</span>
 <span class="sd">        id_names: Names for time series IDs for each `source_type`.</span>
 <span class="sd">        default_values: Default values for each available feature.</span>
+<span class="sd">        subsets: Available subsets for the database.</span>
+<span class="sd">        matrix_feature_mappings: Which matrix ids maps to which matrices.</span>
 <span class="sd">        source_types: Available source types for the database.</span>
 <span class="sd">        aggregations: Available aggregations for the database.   </span>
-<span class="sd">        additional_data: Available small datasets for each dataset. </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -2040,20 +2266,22 @@
 
     <span class="n">id_names</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">default_values</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">subsets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">matrix_feature_mappings</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">source_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">SourceType</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">aggregations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">AgreggationType</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">additional_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;To create dataset instance use class method &#39;get_dataset&#39; instead.&quot;</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create new dataset instance.</span>
 
 <span class="sd">        Parameters:</span>
 <span class="sd">            data_root: Path to the folder where the dataset will be stored. Each database has its own subfolder `data_root/tszoo/databases/database_name/`.</span>
+<span class="sd">            subset: Specific subset of the dataset.</span>
 <span class="sd">            source_type: The source type of the desired dataset.</span>
 <span class="sd">            aggregation: The aggregation type for the selected source type.</span>
 <span class="sd">            dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).</span>
@@ -2066,15 +2294,19 @@
 
         <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;wrapper_dataset&quot;</span><span class="p">)</span>
 
+        <span class="n">subset</span> <span class="o">=</span> <span class="n">subset</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">subset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">subset</span>
         <span class="n">source_type</span> <span class="o">=</span> <span class="n">SourceType</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
         <span class="n">aggregation</span> <span class="o">=</span> <span class="n">AgreggationType</span><span class="p">(</span><span class="n">aggregation</span><span class="p">)</span>
         <span class="n">dataset_type</span> <span class="o">=</span> <span class="n">DatasetType</span><span class="p">(</span><span class="n">dataset_type</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">subset</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported subset: </span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">. Supported are: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">source_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">source_types</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported source type: </span><span class="si">{</span><span class="n">source_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported source type: </span><span class="si">{</span><span class="n">source_type</span><span class="si">}</span><span class="s2">. Supported are: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">source_types</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">aggregation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">aggregations</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported aggregation type: </span><span class="si">{</span><span class="n">aggregation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported aggregation type: </span><span class="si">{</span><span class="n">aggregation</span><span class="si">}</span><span class="s2">. Supported are: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">aggregations</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Dataset paths setup</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">tszoo_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_root</span><span class="p">,</span> <span class="s2">&quot;tszoo&quot;</span><span class="p">)))</span>
@@ -2082,7 +2314,17 @@
         <span class="bp">cls</span><span class="o">.</span><span class="n">configs_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">tszoo_root</span><span class="p">,</span> <span class="s2">&quot;configs&quot;</span><span class="p">)</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">benchmarks_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">tszoo_root</span><span class="p">,</span> <span class="s2">&quot;benchmarks&quot;</span><span class="p">)</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">annotations_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">tszoo_root</span><span class="p">,</span> <span class="s2">&quot;annotations&quot;</span><span class="p">)</span>
-        <span class="n">dataset_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">AgreggationType</span><span class="o">.</span><span class="n">_to_str_without_number</span><span class="p">(</span><span class="n">aggregation</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="n">backward_compatibility</span><span class="p">:</span>
+            <span class="n">name_aggregation</span> <span class="o">=</span> <span class="n">AgreggationType</span><span class="o">.</span><span class="n">_to_str_without_number</span><span class="p">(</span><span class="n">aggregation</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name_aggregation</span> <span class="o">=</span> <span class="n">aggregation</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="k">if</span> <span class="n">subset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dataset_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">name_aggregation</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dataset_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">name_aggregation</span><span class="si">}</span><span class="s2">&quot;</span>
+
         <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">database_root</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.h5&quot;</span><span class="p">)</span>
 
         <span class="c1"># Ensure necessary directories exist</span>
@@ -2094,7 +2336,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_is_downloaded</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">):</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">_download</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">)</span>
 
-        <span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">DatasetMetadata</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">configs_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">benchmarks_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">annotations_root</span><span class="p">,</span> <span class="n">source_type</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">id_names</span><span class="p">[</span><span class="n">source_type</span><span class="p">],</span> <span class="bp">cls</span><span class="o">.</span><span class="n">default_values</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">additional_data</span><span class="p">)</span>
+        <span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">DatasetMetadata</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">configs_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">benchmarks_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">annotations_root</span><span class="p">,</span> <span class="n">subset</span><span class="p">,</span> <span class="n">source_type</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">id_names</span><span class="p">[</span><span class="n">source_type</span><span class="p">],</span> <span class="bp">cls</span><span class="o">.</span><span class="n">default_values</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">matrix_feature_mappings</span><span class="p">)</span>
 
         <span class="n">dataset_factory</span> <span class="o">=</span> <span class="n">dataset_factories</span><span class="o">.</span><span class="n">get_dataset_factory</span><span class="p">(</span><span class="n">dataset_type</span><span class="p">)</span>
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset_factory</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="p">)</span>
@@ -2172,7 +2414,7 @@
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_dataset</span><span class="p">(</span><span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_dataset</span><span class="p">(</span><span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2201,6 +2443,22 @@
             <td>
               <div class="doc-md-description">
                 <p>Path to the folder where the dataset will be stored. Each database has its own subfolder <code>data_root/tszoo/databases/database_name/</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>subset</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Specific subset of the dataset.</p>
               </div>
             </td>
             <td>
@@ -2321,9 +2579,7 @@
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\datasets\databases\cesnet_database.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 84</span>
 <span class="normal"> 85</span>
 <span class="normal"> 86</span>
 <span class="normal"> 87</span>
@@ -2379,13 +2635,31 @@
 <span class="normal">137</span>
 <span class="normal">138</span>
 <span class="normal">139</span>
-<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span><span class="p">:</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create new dataset instance.</span>
 
 <span class="sd">    Parameters:</span>
 <span class="sd">        data_root: Path to the folder where the dataset will be stored. Each database has its own subfolder `data_root/tszoo/databases/database_name/`.</span>
+<span class="sd">        subset: Specific subset of the dataset.</span>
 <span class="sd">        source_type: The source type of the desired dataset.</span>
 <span class="sd">        aggregation: The aggregation type for the selected source type.</span>
 <span class="sd">        dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).</span>
@@ -2398,15 +2672,19 @@
 
     <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;wrapper_dataset&quot;</span><span class="p">)</span>
 
+    <span class="n">subset</span> <span class="o">=</span> <span class="n">subset</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">subset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">subset</span>
     <span class="n">source_type</span> <span class="o">=</span> <span class="n">SourceType</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
     <span class="n">aggregation</span> <span class="o">=</span> <span class="n">AgreggationType</span><span class="p">(</span><span class="n">aggregation</span><span class="p">)</span>
     <span class="n">dataset_type</span> <span class="o">=</span> <span class="n">DatasetType</span><span class="p">(</span><span class="n">dataset_type</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">subset</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported subset: </span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">. Supported are: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">source_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">source_types</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported source type: </span><span class="si">{</span><span class="n">source_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported source type: </span><span class="si">{</span><span class="n">source_type</span><span class="si">}</span><span class="s2">. Supported are: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">source_types</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">aggregation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">aggregations</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported aggregation type: </span><span class="si">{</span><span class="n">aggregation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported aggregation type: </span><span class="si">{</span><span class="n">aggregation</span><span class="si">}</span><span class="s2">. Supported are: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">aggregations</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Dataset paths setup</span>
     <span class="bp">cls</span><span class="o">.</span><span class="n">tszoo_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_root</span><span class="p">,</span> <span class="s2">&quot;tszoo&quot;</span><span class="p">)))</span>
@@ -2414,7 +2692,17 @@
     <span class="bp">cls</span><span class="o">.</span><span class="n">configs_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">tszoo_root</span><span class="p">,</span> <span class="s2">&quot;configs&quot;</span><span class="p">)</span>
     <span class="bp">cls</span><span class="o">.</span><span class="n">benchmarks_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">tszoo_root</span><span class="p">,</span> <span class="s2">&quot;benchmarks&quot;</span><span class="p">)</span>
     <span class="bp">cls</span><span class="o">.</span><span class="n">annotations_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">tszoo_root</span><span class="p">,</span> <span class="s2">&quot;annotations&quot;</span><span class="p">)</span>
-    <span class="n">dataset_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">AgreggationType</span><span class="o">.</span><span class="n">_to_str_without_number</span><span class="p">(</span><span class="n">aggregation</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">if</span> <span class="n">backward_compatibility</span><span class="p">:</span>
+        <span class="n">name_aggregation</span> <span class="o">=</span> <span class="n">AgreggationType</span><span class="o">.</span><span class="n">_to_str_without_number</span><span class="p">(</span><span class="n">aggregation</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name_aggregation</span> <span class="o">=</span> <span class="n">aggregation</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">if</span> <span class="n">subset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dataset_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">name_aggregation</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataset_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">name_aggregation</span><span class="si">}</span><span class="s2">&quot;</span>
+
     <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">database_root</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.h5&quot;</span><span class="p">)</span>
 
     <span class="c1"># Ensure necessary directories exist</span>
@@ -2426,7 +2714,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_is_downloaded</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">):</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">_download</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">)</span>
 
-    <span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">DatasetMetadata</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">configs_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">benchmarks_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">annotations_root</span><span class="p">,</span> <span class="n">source_type</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">id_names</span><span class="p">[</span><span class="n">source_type</span><span class="p">],</span> <span class="bp">cls</span><span class="o">.</span><span class="n">default_values</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">additional_data</span><span class="p">)</span>
+    <span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">DatasetMetadata</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">configs_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">benchmarks_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">annotations_root</span><span class="p">,</span> <span class="n">subset</span><span class="p">,</span> <span class="n">source_type</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">id_names</span><span class="p">[</span><span class="n">source_type</span><span class="p">],</span> <span class="bp">cls</span><span class="o">.</span><span class="n">default_values</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">matrix_feature_mappings</span><span class="p">)</span>
 
     <span class="n">dataset_factory</span> <span class="o">=</span> <span class="n">dataset_factories</span><span class="o">.</span><span class="n">get_dataset_factory</span><span class="p">(</span><span class="n">dataset_type</span><span class="p">)</span>
     <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset_factory</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="p">)</span>
@@ -2536,27 +2824,27 @@
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\datasets\databases\cesnet_database.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">159</span>
 <span class="normal">160</span>
 <span class="normal">161</span>
-<span class="normal">162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_expected_paths</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">database_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns expected path for the provided `data_root` and `database_name`</span>
 
@@ -2638,11 +2926,74 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "announce.autohide"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
+
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
+
+<script>
+    function isLocalStorageAvailable() {
+        try {
+            const testKey = "permTest";
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function checkRouterUptime() {
+        try {
+            const result = await fetch("https://api.uptimerobot.com/v2/getMonitors?api_key=m801936469-e8219ca3245b73b08cf33ef4&monitors=801936469", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(res => res.json())
+
+            const storageStatusCode = result.monitors?.[0].status;
+            localStorage.setItem("lastStorageStatusCode", storageStatusCode);
+
+        } catch (e) {
+            localStorage.setItem("lastStorageStatusCode", -1);
+            console.warn("Unexpected error happened: ${e}")
+        }
+    }
+
+    if (isLocalStorageAvailable()) {
+        const lastCheck = parseInt(localStorage.getItem("lastStorageStatusCheck") || "0", 10);
+        const now = Date.now();
+        const FIVE_MINUTES = 5 * 60 * 1000;
+
+        if (now - lastCheck > FIVE_MINUTES) {
+            checkRouterUptime();
+            localStorage.setItem("lastStorageStatusCheck", now);
+        }
+
+        const banner = document.getElementById("librouter-status");
+        const bannerText = document.getElementById("librouter-status-text");
+
+        const storageStatusCode = parseInt(localStorage.getItem("lastStorageStatusCode") || "-1", 10);
+
+        if (storageStatusCode == 2 || storageStatusCode == -1) {
+            bannerText.textContent = ""
+            banner.style.display = "none"
+        }
+        else {
+            bannerText.textContent = "Storage server is DOWN.";
+            banner.style.display = "block"
+        }
+    }
+    else {
+        console.warn("Local storage is not available. Up status check skipped.");
+    }
+
+</script>
+
   </body>
 </html>

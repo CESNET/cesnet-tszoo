@@ -48,6 +48,8 @@
     
       <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -82,6 +84,14 @@
     </div>
     
     
+
+<!-- Custom Banner -->
+<div id="librouter-status" class="banner" style="display:none;">
+    <p id="librouter-status-text" class="banner-text"></p>
+</div>
+
+<!-- Original Header -->
+
       
 
   
@@ -176,6 +186,7 @@
   
 </header>
     
+
     <div class="md-container" data-md-component="container">
       
       
@@ -379,6 +390,69 @@
   
   
     <li class="md-nav__item">
+      <a href="../adding_datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adding dataset
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Supported datasets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Supported datasets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cesnet_timeseries24/" class="md-nav__link">
         
   
@@ -413,6 +487,129 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abilene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Abilene
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GÉANT
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sdn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SDN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../telecom-italia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Telecom Italia
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vigo-networkoperatorkpis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Vigo NetworkOperator KPIs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1757,36 +1954,17 @@
 
         <p>Used as wrapper for imported <code>dataset</code>, <code>config</code>, <code>annotations</code> and <code>related_results</code>.</p>
 <p><strong>Intended usage:</strong></p>
-<p>For time-based:</p>
-<p>When using <a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset"><code>TimeBasedCesnetDataset</code></a> (<code>dataset_type</code> = <code>DatasetType.TIME_BASED</code>):</p>
 <ol>
-<li>Create an instance of the dataset with the desired data root by calling <a href="../reference_cesnet_database/#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset"><code>get_dataset</code></a>. This will download the dataset if it has not been previously downloaded and return instance of dataset.</li>
-<li>Create an instance of <a href="../reference_time_based_config/#references.TimeBasedConfig"><code>TimeBasedConfig</code></a> and set it using <a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize"><code>set_dataset_config_and_initialize</code></a>. 
-   This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.</li>
-<li>Use <a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset"><code>get_train_dataloader</code></a>/<a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df"><code>get_train_df</code></a>/<a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy"><code>get_train_numpy</code></a> to get training data for chosen model.</li>
-<li>Validate the model and perform the hyperparameter optimalization on <a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_dataloader"><code>get_val_dataloader</code></a>/<a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_df"><code>get_val_df</code></a>/<a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_numpy"><code>get_val_numpy</code></a>.</li>
-<li>Evaluate the model on <a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader"><code>get_test_dataloader</code></a>/<a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df"><code>get_test_df</code></a>/<a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy"><code>get_test_numpy</code></a>.     </li>
+<li>Call <a class="autorefs autorefs-internal" title="load_benchmark" href="#cesnet_tszoo.benchmarks.load_benchmark"><code>load_benchmark</code></a> with the desired benchmark. You can use your own saved benchmark or you can use already built-in one. This will download the dataset and annotations (if available) if they have not been previously downloaded.</li>
+<li>Retrieve the initialized dataset using <a href="./#cesnet_tszoo.benchmarks.Benchmark.get_initialized_dataset"><code>get_initialized_dataset</code></a>. This will provide a dataset that is ready to use. Check beforehand what type of dataset is returned.</li>
+<li>Use <a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_dataloader"><code>get_train_dataloader</code></a>/<a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_df"><code>get_train_df</code></a>/<a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_numpy"><code>get_train_numpy</code></a> to get training data for chosen model.</li>
+<li>[Optional] Modify used preprocessing steps with <a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.update_dataset_config_and_initialize"><code>update_dataset_config_and_initialize</code></a>.</li>
+<li>Validate the model and perform the hyperparameter optimalization on <a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_dataloader"><code>get_val_dataloader</code></a>/<a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_df"><code>get_val_df</code></a>/<a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_numpy"><code>get_val_numpy</code></a>.</li>
+<li>Evaluate the model on <a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_dataloader"><code>get_test_dataloader</code></a>/<a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_df"><code>get_test_df</code></a>/<a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_numpy"><code>get_test_numpy</code></a>.     </li>
 </ol>
-<p>When using <a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset"><code>SeriesBasedCesnetDataset</code></a> (<code>dataset_type</code> = <code>DatasetType.SERIES_BASED</code>):</p>
-<ol>
-<li>Create an instance of the dataset with the desired data root by calling <a href="../reference_cesnet_database/#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset"><code>get_dataset</code></a>. This will download the dataset if it has not been previously downloaded and return instance of dataset.</li>
-<li>Create an instance of <a href="../reference_series_based_config/#references.SeriesBasedConfig"><code>SeriesBasedConfig</code></a> and set it using <a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize"><code>set_dataset_config_and_initialize</code></a>. 
-   This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.</li>
-<li>Use <a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader"><code>get_train_dataloader</code></a>/<a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df"><code>get_train_df</code></a>/<a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy"><code>get_train_numpy</code></a> to get training data for chosen model.</li>
-<li>Validate the model and perform the hyperparameter optimalization on <a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader"><code>get_val_dataloader</code></a>/<a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df"><code>get_val_df</code></a>/<a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy"><code>get_val_numpy</code></a>.</li>
-<li>Evaluate the model on <a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader"><code>get_test_dataloader</code></a>/<a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df"><code>get_test_df</code></a>/<a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy"><code>get_test_numpy</code></a>.   </li>
-</ol>
-<p>When using <a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset"><code>DisjointTimeBasedCesnetDataset</code></a> (<code>dataset_type</code> = <code>DatasetType.DISJOINT_TIME_BASED</code>):</p>
-<ol>
-<li>Create an instance of the dataset with the desired data root by calling <a href="../reference_cesnet_database/#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset"><code>get_dataset</code></a>. This will download the dataset if it has not been previously downloaded and return instance of dataset.</li>
-<li>Create an instance of <a href="../reference_disjoint_time_based_config/#references.DisjointTimeBasedConfig"><code>DisjointTimeBasedConfig</code></a> and set it using <a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize"><code>set_dataset_config_and_initialize</code></a>. 
-   This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.</li>
-<li>Use <a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader"><code>get_train_dataloader</code></a>/<a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df"><code>get_train_df</code></a>/<a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy"><code>get_train_numpy</code></a> to get training data for chosen model.</li>
-<li>Validate the model and perform the hyperparameter optimalization on <a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_dataloader"><code>get_val_dataloader</code></a>/<a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_df"><code>get_val_df</code></a>/<a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_numpy"><code>get_val_numpy</code></a>.</li>
-<li>Evaluate the model on <a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader"><code>get_test_dataloader</code></a>/<a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_df"><code>get_test_df</code></a>/<a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_numpy"><code>get_test_numpy</code></a>.      </li>
-</ol>
-<p>You can create custom time-based benchmarks with <a href="../reference_time_based_cesnet_dataset/#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.save_benchmark"><code>save_benchmark</code></a>, series-based benchmarks with <a href="../reference_series_based_cesnet_dataset/#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.save_benchmark"><code>save_benchmark</code></a> or disjoint-time-based with <a href="../reference_disjoint_time_based_cesnet_dataset/#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.save_benchmark"><code>save_benchmark</code></a>.
-They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, where <code>data_root</code> was set when you created instance of dataset.</p>
+<p>You can create custom benchmarks with <a href="../reference_cesnet_dataset/#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.save_benchmark"><code>save_benchmark</code></a>.
+They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, where <code>data_root</code> was passed as parameter to <a class="autorefs autorefs-internal" title="load_benchmark" href="#cesnet_tszoo.benchmarks.load_benchmark"><code>load_benchmark</code></a>.</p>
+<p>Above steps are practically the same for all dataset types, but there can be small differences is method parameters. Check each of them for info about that.</p>
 
 
 
@@ -1895,63 +2073,23 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
 <span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Benchmark</span><span class="p">:</span>
+<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Benchmark</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Used as wrapper for imported `dataset`, `config`, `annotations` and `related_results`.</span>
 
 <span class="sd">    **Intended usage:**</span>
 
-<span class="sd">    For time-based:</span>
+<span class="sd">    1. Call [`load_benchmark`][cesnet_tszoo.benchmarks.load_benchmark] with the desired benchmark. You can use your own saved benchmark or you can use already built-in one. This will download the dataset and annotations (if available) if they have not been previously downloaded.</span>
+<span class="sd">    2. Retrieve the initialized dataset using [`get_initialized_dataset`](reference_benchmarks.md#cesnet_tszoo.benchmarks.Benchmark.get_initialized_dataset). This will provide a dataset that is ready to use. Check beforehand what type of dataset is returned.</span>
+<span class="sd">    3. Use [`get_train_dataloader`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_dataloader)/[`get_train_df`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_df)/[`get_train_numpy`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_train_numpy) to get training data for chosen model.</span>
+<span class="sd">    4. [Optional] Modify used preprocessing steps with [`update_dataset_config_and_initialize`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.update_dataset_config_and_initialize).</span>
+<span class="sd">    5. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_dataloader)/[`get_val_df`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_df)/[`get_val_numpy`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_val_numpy).</span>
+<span class="sd">    6. Evaluate the model on [`get_test_dataloader`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_dataloader)/[`get_test_df`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_df)/[`get_test_numpy`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.get_test_numpy).     </span>
 
-<span class="sd">    When using [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset) (`dataset_type` = `DatasetType.TIME_BASED`):</span>
+<span class="sd">    You can create custom benchmarks with [`save_benchmark`](reference_cesnet_dataset.md#cesnet_tszoo.datasets.cesnet_dataset.CesnetDataset.save_benchmark).</span>
+<span class="sd">    They will be saved to `&quot;data_root&quot;/tszoo/benchmarks/` directory, where `data_root` was passed as parameter to [`load_benchmark`][cesnet_tszoo.benchmarks.load_benchmark].</span>
 
-<span class="sd">    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset). This will download the dataset if it has not been previously downloaded and return instance of dataset.</span>
-<span class="sd">    2. Create an instance of [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig) and set it using [`set_dataset_config_and_initialize`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize). </span>
-<span class="sd">       This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.</span>
-<span class="sd">    3. Use [`get_train_dataloader`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset)/[`get_train_df`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_df)/[`get_train_numpy`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_train_numpy) to get training data for chosen model.</span>
-<span class="sd">    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_dataloader)/[`get_val_df`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_df)/[`get_val_numpy`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_val_numpy).</span>
-<span class="sd">    5. Evaluate the model on [`get_test_dataloader`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_dataloader)/[`get_test_df`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_df)/[`get_test_numpy`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.get_test_numpy).     </span>
-
-<span class="sd">    When using [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) (`dataset_type` = `DatasetType.SERIES_BASED`):</span>
-
-<span class="sd">    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset). This will download the dataset if it has not been previously downloaded and return instance of dataset.</span>
-<span class="sd">    2. Create an instance of [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig) and set it using [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize). </span>
-<span class="sd">       This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.</span>
-<span class="sd">    3. Use [`get_train_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_dataloader)/[`get_train_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_df)/[`get_train_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_train_numpy) to get training data for chosen model.</span>
-<span class="sd">    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_dataloader)/[`get_val_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_df)/[`get_val_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_val_numpy).</span>
-<span class="sd">    5. Evaluate the model on [`get_test_dataloader`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_dataloader)/[`get_test_df`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_df)/[`get_test_numpy`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.get_test_numpy).   </span>
-
-<span class="sd">    When using [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset) (`dataset_type` = `DatasetType.DISJOINT_TIME_BASED`):</span>
-
-<span class="sd">    1. Create an instance of the dataset with the desired data root by calling [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset). This will download the dataset if it has not been previously downloaded and return instance of dataset.</span>
-<span class="sd">    2. Create an instance of [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) and set it using [`set_dataset_config_and_initialize`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize). </span>
-<span class="sd">       This initializes the dataset, including data splitting (train/validation/test), fitting transformers (if needed), selecting features, and more. This is cached for later use.</span>
-<span class="sd">    3. Use [`get_train_dataloader`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_dataloader)/[`get_train_df`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_df)/[`get_train_numpy`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_train_numpy) to get training data for chosen model.</span>
-<span class="sd">    4. Validate the model and perform the hyperparameter optimalization on [`get_val_dataloader`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_dataloader)/[`get_val_df`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_df)/[`get_val_numpy`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_val_numpy).</span>
-<span class="sd">    5. Evaluate the model on [`get_test_dataloader`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_dataloader)/[`get_test_df`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_df)/[`get_test_numpy`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.get_test_numpy).      </span>
-
-<span class="sd">    You can create custom time-based benchmarks with [`save_benchmark`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.save_benchmark), series-based benchmarks with [`save_benchmark`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.save_benchmark) or disjoint-time-based with [`save_benchmark`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.save_benchmark).</span>
-<span class="sd">    They will be saved to `&quot;data_root&quot;/tszoo/benchmarks/` directory, where `data_root` was set when you created instance of dataset.</span>
+<span class="sd">    Above steps are practically the same for all dataset types, but there can be small differences is method parameters. Check each of them for info about that.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">CesnetDataset</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
@@ -2122,18 +2260,18 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\benchmarks.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">on</span><span class="p">:</span> <span class="n">AnnotationType</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;id_time&quot;</span><span class="p">,</span> <span class="s2">&quot;ts_id&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">on</span><span class="p">:</span> <span class="n">AnnotationType</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;id_time&quot;</span><span class="p">,</span> <span class="s2">&quot;ts_id&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">    Returns the annotations as a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html).</span>
 
@@ -2169,10 +2307,10 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\benchmarks.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SeriesBasedConfig</span> <span class="o">|</span> <span class="n">TimeBasedConfig</span> <span class="o">|</span> <span class="n">DisjointTimeBasedConfig</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SeriesBasedConfig</span> <span class="o">|</span> <span class="n">TimeBasedConfig</span> <span class="o">|</span> <span class="n">DisjointTimeBasedConfig</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns config made for this benchmark. &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
@@ -2269,20 +2407,20 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\benchmarks.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TimeBasedCesnetDataset</span> <span class="o">|</span> <span class="n">SeriesBasedCesnetDataset</span> <span class="o">|</span> <span class="n">DisjointTimeBasedCesnetDataset</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TimeBasedCesnetDataset</span> <span class="o">|</span> <span class="n">SeriesBasedCesnetDataset</span> <span class="o">|</span> <span class="n">DisjointTimeBasedCesnetDataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns dataset without initializing it.</span>
 
 <span class="sd">    Parameters:</span>
@@ -2444,36 +2582,36 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\benchmarks.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 76</span>
-<span class="normal"> 77</span>
-<span class="normal"> 78</span>
-<span class="normal"> 79</span>
-<span class="normal"> 80</span>
-<span class="normal"> 81</span>
-<span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
-<span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
-<span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_initialized_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">display_config_details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;diagram&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">workers</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">&quot;config&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TimeBasedCesnetDataset</span> <span class="o">|</span> <span class="n">SeriesBasedCesnetDataset</span> <span class="o">|</span> <span class="n">DisjointTimeBasedCesnetDataset</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_initialized_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">display_config_details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;diagram&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">workers</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">&quot;config&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TimeBasedCesnetDataset</span> <span class="o">|</span> <span class="n">SeriesBasedCesnetDataset</span> <span class="o">|</span> <span class="n">DisjointTimeBasedCesnetDataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns dataset with intialized sets, transformers, fillers etc..</span>
 
@@ -2550,15 +2688,15 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\benchmarks.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_related_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_related_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the related results as a Pandas [`DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html), if they exist. </span>
 
@@ -2671,7 +2809,27 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\benchmarks.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">146</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
 <span class="normal">147</span>
 <span class="normal">148</span>
 <span class="normal">149</span>
@@ -2682,27 +2840,7 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
 <span class="normal">154</span>
 <span class="normal">155</span>
 <span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_benchmark</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Benchmark</span><span class="p">:</span>
+<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_benchmark</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Benchmark</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Load a benchmark using the identifier.</span>
 
@@ -2795,11 +2933,74 @@ They will be saved to <code>"data_root"/tszoo/benchmarks/</code> directory, wher
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "announce.autohide"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
+
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
+
+<script>
+    function isLocalStorageAvailable() {
+        try {
+            const testKey = "permTest";
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function checkRouterUptime() {
+        try {
+            const result = await fetch("https://api.uptimerobot.com/v2/getMonitors?api_key=m801936469-e8219ca3245b73b08cf33ef4&monitors=801936469", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(res => res.json())
+
+            const storageStatusCode = result.monitors?.[0].status;
+            localStorage.setItem("lastStorageStatusCode", storageStatusCode);
+
+        } catch (e) {
+            localStorage.setItem("lastStorageStatusCode", -1);
+            console.warn("Unexpected error happened: ${e}")
+        }
+    }
+
+    if (isLocalStorageAvailable()) {
+        const lastCheck = parseInt(localStorage.getItem("lastStorageStatusCheck") || "0", 10);
+        const now = Date.now();
+        const FIVE_MINUTES = 5 * 60 * 1000;
+
+        if (now - lastCheck > FIVE_MINUTES) {
+            checkRouterUptime();
+            localStorage.setItem("lastStorageStatusCheck", now);
+        }
+
+        const banner = document.getElementById("librouter-status");
+        const bannerText = document.getElementById("librouter-status-text");
+
+        const storageStatusCode = parseInt(localStorage.getItem("lastStorageStatusCode") || "-1", 10);
+
+        if (storageStatusCode == 2 || storageStatusCode == -1) {
+            bannerText.textContent = ""
+            banner.style.display = "none"
+        }
+        else {
+            bannerText.textContent = "Storage server is DOWN.";
+            banner.style.display = "block"
+        }
+    }
+    else {
+        console.warn("Local storage is not available. Up status check skipped.");
+    }
+
+</script>
+
   </body>
 </html>

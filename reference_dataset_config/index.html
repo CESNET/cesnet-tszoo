@@ -48,6 +48,8 @@
     
       <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -82,6 +84,14 @@
     </div>
     
     
+
+<!-- Custom Banner -->
+<div id="librouter-status" class="banner" style="display:none;">
+    <p id="librouter-status-text" class="banner-text"></p>
+</div>
+
+<!-- Original Header -->
+
       
 
   
@@ -176,6 +186,7 @@
   
 </header>
     
+
     <div class="md-container" data-md-component="container">
       
       
@@ -379,6 +390,69 @@
   
   
     <li class="md-nav__item">
+      <a href="../adding_datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adding dataset
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Supported datasets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Supported datasets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cesnet_timeseries24/" class="md-nav__link">
         
   
@@ -413,6 +487,129 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abilene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Abilene
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GÉANT
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sdn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SDN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../telecom-italia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Telecom Italia
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vigo-networkoperatorkpis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Vigo NetworkOperator KPIs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -2301,7 +2498,64 @@
 <span class="normal">682</span>
 <span class="normal">683</span>
 <span class="normal">684</span>
-<span class="normal">685</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="normal">685</span>
+<span class="normal">686</span>
+<span class="normal">687</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
+<span class="normal">710</span>
+<span class="normal">711</span>
+<span class="normal">712</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span>
+<span class="normal">720</span>
+<span class="normal">721</span>
+<span class="normal">722</span>
+<span class="normal">723</span>
+<span class="normal">724</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for configuration management. This class should **not** be used directly. Instead, use one of its derived classes, such as [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig), [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) or [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig).</span>
 
@@ -2316,6 +2570,7 @@
 <span class="sd">        transformer_factory: Represents factory used to create passed Transformer type.</span>
 <span class="sd">        can_fit_fillers: Whether fillers in this config, can be fitted.</span>
 <span class="sd">        logger: Logger for displaying information. </span>
+<span class="sd">        subset: Subset of the used dataset.</span>
 <span class="sd">        aggregation: The aggregation period used for the data.</span>
 <span class="sd">        source_type: The source type of the data.</span>
 <span class="sd">        database_name: Specifies which database this config applies to.</span>
@@ -2423,6 +2678,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">can_fit_fillers</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">can_fit_fillers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logger</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">subset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aggregation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AgreggationType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SourceType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">database_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -2632,6 +2888,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_identifiers_from_dataset_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">DatasetMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates identifying attributes from dataset metadata. &quot;&quot;&quot;</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">subset</span> <span class="o">=</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">subset</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aggregation</span> <span class="o">=</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">aggregation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_type</span> <span class="o">=</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">source_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">database_name</span> <span class="o">=</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">database_name</span>
@@ -2643,7 +2900,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">ts_id_name</span> <span class="o">=</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">ts_id_name</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_features_to_take</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="o">.</span><span class="n">features</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_features_to_take</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="o">.</span><span class="n">features</span><span class="p">,</span> <span class="n">dataset_metadata</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Features to take have been successfully set.&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_ts</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="o">.</span><span class="n">ts_indices</span><span class="p">,</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">ts_row_ranges</span><span class="p">,</span> <span class="n">rd</span><span class="p">)</span>
@@ -2661,7 +2918,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_validate_finalization</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Finalization and validation completed successfully.&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_set_features_to_take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_dataset_features</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_features_to_take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_dataset_features</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">],</span> <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">DatasetMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates and filters the input `features_to_take` based on the `dataset`, `source_type`, and `aggregation`. &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
@@ -2689,7 +2946,11 @@
 
         <span class="c1"># Filtering features based on available dataset features</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">all_dataset_features</span> <span class="ow">or</span> <span class="n">feature</span> <span class="o">==</span> <span class="n">ID_TIME_COLUMN_NAME</span> <span class="ow">or</span> <span class="n">feature</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_id_name</span><span class="p">]</span>
+
+        <span class="c1"># to keep scalar features first and then matrix features</span>
+        <span class="n">scalar_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span> <span class="k">if</span> <span class="p">(</span><span class="n">feature</span> <span class="ow">in</span> <span class="n">all_dataset_features</span> <span class="ow">or</span> <span class="n">feature</span> <span class="o">==</span> <span class="n">ID_TIME_COLUMN_NAME</span> <span class="ow">or</span> <span class="n">feature</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_id_name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">matrix_features</span><span class="p">]</span>
+        <span class="n">matrix_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">matrix_features</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span> <span class="o">=</span> <span class="n">scalar_features</span> <span class="o">+</span> <span class="n">matrix_features</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Some features were removed as they are not available in the dataset.&quot;</span><span class="p">)</span>
@@ -2846,6 +3107,9 @@
                       <span class="n">css_utils</span><span class="o">.</span><span class="n">StepAttribute</span><span class="p">(</span><span class="s2">&quot;Aggregation&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation</span><span class="p">),</span>
                       <span class="n">css_utils</span><span class="o">.</span><span class="n">StepAttribute</span><span class="p">(</span><span class="s2">&quot;Source&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_type</span><span class="p">)]</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attributes</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">css_utils</span><span class="o">.</span><span class="n">StepAttribute</span><span class="p">(</span><span class="s2">&quot;Subset&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subset</span><span class="p">))</span>
+
         <span class="k">return</span> <span class="n">css_utils</span><span class="o">.</span><span class="n">SummaryDiagramStep</span><span class="p">(</span><span class="s2">&quot;Load from dataset&quot;</span><span class="p">,</span> <span class="n">attributes</span><span class="p">)</span>
 
     <span class="nd">@abstractmethod</span>
@@ -2923,6 +3187,53 @@
             <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">steps</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_dataloader_return_dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">DatasetMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+        <span class="n">dtype_body</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_time</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_format</span> <span class="o">==</span> <span class="n">TimeFormat</span><span class="o">.</span><span class="n">DATETIME</span><span class="p">:</span>
+            <span class="n">dtype_body</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">TIME_DTYPE_PART</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">object_</span><span class="p">))</span>
+
+        <span class="n">base_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">scalar_features</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_features</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">dtype_body</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">BASE_DATA_DTYPE_PART</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_features</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take_without_ids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">matrix_features</span><span class="p">:</span>
+                <span class="n">dtype_body</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">feature</span><span class="p">,</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">matrix_features</span><span class="p">[</span><span class="n">feature</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype_body</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_dataloader_preprocess_dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">DatasetMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+        <span class="n">dtype_body</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">base_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">scalar_features</span> <span class="ow">and</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take_without_ids</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_features</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">dtype_body</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">BASE_DATA_DTYPE_PART</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">base_features</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_to_take_without_ids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">matrix_features</span><span class="p">:</span>
+                <span class="n">dtype_body</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">feature</span><span class="p">,</span> <span class="n">dataset_metadata</span><span class="o">.</span><span class="n">matrix_features</span><span class="p">[</span><span class="n">feature</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype_body</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_dataloader_return_dtype_fill_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">DatasetMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+        <span class="n">return_dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataloader_return_dtype</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="p">)</span>
+        <span class="n">fill_values</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">return_dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">return_dtype</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span><span class="o">.</span><span class="n">subdtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">field_type</span> <span class="o">=</span> <span class="n">return_dtype</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">field_type</span> <span class="o">=</span> <span class="n">return_dtype</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span><span class="o">.</span><span class="n">subdtype</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">field_type</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">field_type</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">complexfloating</span><span class="p">):</span>
+                <span class="n">fill_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fill_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">field_type</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">fill_values</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">return_dtype</span><span class="p">)</span>
 
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_summary_loader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">css_utils</span><span class="o">.</span><span class="n">SummaryDiagramStep</span><span class="p">]:</span>
@@ -3523,6 +3834,17 @@
             </td>
           </tr>
           <tr class="doc-section-item">
+            <td><code><span title="cesnet_tszoo.configs.base_config.DatasetConfig.subset">subset</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Subset of the used dataset.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
             <td><code><span title="cesnet_tszoo.configs.base_config.DatasetConfig.aggregation">aggregation</span></code></td>
             <td>
                   <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="AgreggationType (cesnet_tszoo.utils.enums.AgreggationType)" href="../reference_enums/#cesnet_tszoo.utils.enums.AgreggationType">AgreggationType</a>]</code>
@@ -4012,11 +4334,74 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "announce.autohide"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
+
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
+
+<script>
+    function isLocalStorageAvailable() {
+        try {
+            const testKey = "permTest";
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function checkRouterUptime() {
+        try {
+            const result = await fetch("https://api.uptimerobot.com/v2/getMonitors?api_key=m801936469-e8219ca3245b73b08cf33ef4&monitors=801936469", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(res => res.json())
+
+            const storageStatusCode = result.monitors?.[0].status;
+            localStorage.setItem("lastStorageStatusCode", storageStatusCode);
+
+        } catch (e) {
+            localStorage.setItem("lastStorageStatusCode", -1);
+            console.warn("Unexpected error happened: ${e}")
+        }
+    }
+
+    if (isLocalStorageAvailable()) {
+        const lastCheck = parseInt(localStorage.getItem("lastStorageStatusCheck") || "0", 10);
+        const now = Date.now();
+        const FIVE_MINUTES = 5 * 60 * 1000;
+
+        if (now - lastCheck > FIVE_MINUTES) {
+            checkRouterUptime();
+            localStorage.setItem("lastStorageStatusCheck", now);
+        }
+
+        const banner = document.getElementById("librouter-status");
+        const bannerText = document.getElementById("librouter-status-text");
+
+        const storageStatusCode = parseInt(localStorage.getItem("lastStorageStatusCode") || "-1", 10);
+
+        if (storageStatusCode == 2 || storageStatusCode == -1) {
+            bannerText.textContent = ""
+            banner.style.display = "none"
+        }
+        else {
+            bannerText.textContent = "Storage server is DOWN.";
+            banner.style.display = "block"
+        }
+    }
+    else {
+        console.warn("Local storage is not available. Up status check skipped.");
+    }
+
+</script>
+
   </body>
 </html>

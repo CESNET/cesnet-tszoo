@@ -48,6 +48,8 @@
     
       <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -82,6 +84,14 @@
     </div>
     
     
+
+<!-- Custom Banner -->
+<div id="librouter-status" class="banner" style="display:none;">
+    <p id="librouter-status-text" class="banner-text"></p>
+</div>
+
+<!-- Original Header -->
+
       
 
   
@@ -176,6 +186,7 @@
   
 </header>
     
+
     <div class="md-container" data-md-component="container">
       
       
@@ -379,6 +390,69 @@
   
   
     <li class="md-nav__item">
+      <a href="../adding_datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adding dataset
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Supported datasets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Supported datasets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cesnet_timeseries24/" class="md-nav__link">
         
   
@@ -413,6 +487,129 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abilene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Abilene
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GÉANT
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sdn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SDN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../telecom-italia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Telecom Italia
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vigo-networkoperatorkpis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Vigo NetworkOperator KPIs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -2059,7 +2256,17 @@
 <span class="normal">409</span>
 <span class="normal">410</span>
 <span class="normal">411</span>
-<span class="normal">412</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SeriesBasedConfig</span><span class="p">(</span><span class="n">SeriesBasedHandler</span><span class="p">,</span> <span class="n">DatasetConfig</span><span class="p">):</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SeriesBasedConfig</span><span class="p">(</span><span class="n">SeriesBasedHandler</span><span class="p">,</span> <span class="n">DatasetConfig</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class is used for configuring the [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset).</span>
 
@@ -2105,6 +2312,7 @@
 <span class="sd">        test_ts_row_ranges: Initialized when `test_ts` is set. Contains time series IDs in test set with their respective time ID ranges.</span>
 <span class="sd">        all_ts_row_ranges: Initialized when `all_ts` is set. Contains time series IDs in all set with their respective time ID ranges.</span>
 <span class="sd">        display_time_period: Used to display the configured value of `time_period`.</span>
+<span class="sd">        subset: Subset of the used dataset.</span>
 <span class="sd">        aggregation: The aggregation period used for the data.</span>
 <span class="sd">        source_type: The source type of the data.</span>
 <span class="sd">        database_name: Specifies which database this config applies to.</span>
@@ -2320,25 +2528,25 @@
         <span class="n">train_fillers</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># Set the fillers for the training set</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_train</span><span class="p">():</span>
-            <span class="n">train_fillers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">create_filler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_to_take_without_ids</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_ts</span><span class="p">])</span>
+            <span class="n">train_fillers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">create_filler</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_ts</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fillers for training set are set.&quot;</span><span class="p">)</span>
 
         <span class="n">val_fillers</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># Set the fillers for the validation set</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_val</span><span class="p">():</span>
-            <span class="n">val_fillers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">create_filler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_to_take_without_ids</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_ts</span><span class="p">])</span>
+            <span class="n">val_fillers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">create_filler</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_ts</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fillers for validation set are set.&quot;</span><span class="p">)</span>
 
         <span class="n">test_fillers</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># Set the fillers for the test set</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_test</span><span class="p">():</span>
-            <span class="n">test_fillers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">create_filler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_to_take_without_ids</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_ts</span><span class="p">])</span>
+            <span class="n">test_fillers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">create_filler</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_ts</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fillers for test set are set.&quot;</span><span class="p">)</span>
 
         <span class="n">all_fillers</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># Set the fillers for the all set</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_all</span><span class="p">():</span>
-            <span class="n">all_fillers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">create_filler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_to_take_without_ids</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_ts</span><span class="p">])</span>
+            <span class="n">all_fillers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">create_filler</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_ts</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fillers for all set are set.&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using filler </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filler_factory</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -2407,12 +2615,21 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">time_part</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Time included: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">include_time</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
 
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
-<span class="s1">Config Details:</span>
-<span class="s1">    Used for database: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">database_name</span><span class="si">}</span>
-<span class="s1">    Aggregation: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation</span><span class="p">)</span><span class="si">}</span>
-<span class="s1">    Source: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_type</span><span class="p">)</span><span class="si">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dataset_part</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;Used for database: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">database_name</span><span class="si">}</span>
+<span class="s1">        Aggregation: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation</span><span class="p">)</span><span class="si">}</span>
+<span class="s1">        Source: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_type</span><span class="p">)</span><span class="si">}</span>
+<span class="s1">            &#39;&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dataset_part</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;Used for database: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">database_name</span><span class="si">}</span>
+<span class="s1">        Subset: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">subset</span><span class="si">}</span>
+<span class="s1">        Aggregation: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation</span><span class="p">)</span><span class="si">}</span>
+<span class="s1">        Source: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_type</span><span class="p">)</span><span class="si">}</span>
+<span class="s1">            &#39;&#39;&#39;</span>
 
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">Config Details</span>
+<span class="s1">    </span><span class="si">{</span><span class="n">dataset_part</span><span class="si">}</span>
 <span class="s1">    Time series</span>
 <span class="s1">        Train time series IDS: </span><span class="si">{</span><span class="n">get_abbreviated_list_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_ts</span><span class="p">)</span><span class="si">}</span>
 <span class="s1">        Val time series IDS: </span><span class="si">{</span><span class="n">get_abbreviated_list_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val_ts</span><span class="p">)</span><span class="si">}</span>
@@ -3132,6 +3349,17 @@
             </td>
           </tr>
           <tr class="doc-section-item">
+            <td><code><span title="cesnet_tszoo.configs.series_based_config.SeriesBasedConfig.subset">subset</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Subset of the used dataset.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
             <td><code><span title="cesnet_tszoo.configs.series_based_config.SeriesBasedConfig.aggregation">aggregation</span></code></td>
             <td>
                   <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="AgreggationType (cesnet_tszoo.utils.enums.AgreggationType)" href="../reference_enums/#cesnet_tszoo.utils.enums.AgreggationType">AgreggationType</a>]</code>
@@ -3644,11 +3872,74 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "announce.autohide"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
+
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
+
+<script>
+    function isLocalStorageAvailable() {
+        try {
+            const testKey = "permTest";
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function checkRouterUptime() {
+        try {
+            const result = await fetch("https://api.uptimerobot.com/v2/getMonitors?api_key=m801936469-e8219ca3245b73b08cf33ef4&monitors=801936469", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(res => res.json())
+
+            const storageStatusCode = result.monitors?.[0].status;
+            localStorage.setItem("lastStorageStatusCode", storageStatusCode);
+
+        } catch (e) {
+            localStorage.setItem("lastStorageStatusCode", -1);
+            console.warn("Unexpected error happened: ${e}")
+        }
+    }
+
+    if (isLocalStorageAvailable()) {
+        const lastCheck = parseInt(localStorage.getItem("lastStorageStatusCheck") || "0", 10);
+        const now = Date.now();
+        const FIVE_MINUTES = 5 * 60 * 1000;
+
+        if (now - lastCheck > FIVE_MINUTES) {
+            checkRouterUptime();
+            localStorage.setItem("lastStorageStatusCheck", now);
+        }
+
+        const banner = document.getElementById("librouter-status");
+        const bannerText = document.getElementById("librouter-status-text");
+
+        const storageStatusCode = parseInt(localStorage.getItem("lastStorageStatusCode") || "-1", 10);
+
+        if (storageStatusCode == 2 || storageStatusCode == -1) {
+            bannerText.textContent = ""
+            banner.style.display = "none"
+        }
+        else {
+            bannerText.textContent = "Storage server is DOWN.";
+            banner.style.display = "block"
+        }
+    }
+    else {
+        console.warn("Local storage is not available. Up status check skipped.");
+    }
+
+</script>
+
   </body>
 </html>

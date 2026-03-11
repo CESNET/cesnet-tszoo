@@ -48,6 +48,8 @@
     
       <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -82,6 +84,14 @@
     </div>
     
     
+
+<!-- Custom Banner -->
+<div id="librouter-status" class="banner" style="display:none;">
+    <p id="librouter-status-text" class="banner-text"></p>
+</div>
+
+<!-- Original Header -->
+
       
 
   
@@ -176,6 +186,7 @@
   
 </header>
     
+
     <div class="md-container" data-md-component="container">
       
       
@@ -379,6 +390,69 @@
   
   
     <li class="md-nav__item">
+      <a href="../adding_datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adding dataset
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Supported datasets
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Supported datasets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cesnet_timeseries24/" class="md-nav__link">
         
   
@@ -413,6 +487,129 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abilene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Abilene
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GÉANT
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sdn/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SDN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../telecom-italia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Telecom Italia
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vigo-networkoperatorkpis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Vigo NetworkOperator KPIs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1673,28 +1870,46 @@
 <p>You can create your own custom anomaly handler. It is recommended to derive from 'AnomalyHandler' base class. </p>
 <p>To check AnomalyHandler base class refer to <a href="../reference_anomaly_handlers/#cesnet_tszoo.utils.anomaly_handler.anomaly_handler.AnomalyHandler"><code>AnomalyHandler</code></a></p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.utils.anomaly_handler</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnomalyHandler</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeBasedConfig</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">CustomAnomalyHandler</span><span class="p">(</span><span class="n">AnomalyHandler</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">iqr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">q25</span><span class="p">,</span> <span class="n">q75</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span> <span class="mi">75</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">iqr</span> <span class="o">=</span> <span class="n">q75</span> <span class="o">-</span> <span class="n">q25</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="n">q25</span> <span class="o">-</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">iqr</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="n">q75</span> <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">iqr</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">transform_anomalies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="n">mask_lower_outliers</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span>
-        <span class="n">mask_upper_outliers</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 
-        <span class="n">data</span><span class="p">[</span><span class="n">mask_lower_outliers</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask_lower_outliers</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">data</span><span class="p">[</span><span class="n">mask_upper_outliers</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask_upper_outliers</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>              
+            <span class="n">q25</span><span class="p">,</span> <span class="n">q75</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">current_data</span><span class="p">,</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span> <span class="mi">75</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">iqr</span> <span class="o">=</span> <span class="n">q75</span> <span class="o">-</span> <span class="n">q25</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">q25</span> <span class="o">-</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">iqr</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">q75</span> <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">iqr</span>
+
+        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;always&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform_anomalies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">lower_bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">upper_bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">current_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+            <span class="n">lb_broadcast</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">current_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">ub_broadcast</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">upper_bound</span><span class="p">,</span> <span class="n">current_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+            <span class="n">mask_lower</span> <span class="o">=</span> <span class="n">current_data</span> <span class="o">&lt;</span> <span class="n">lb_broadcast</span>
+            <span class="n">mask_upper</span> <span class="o">=</span> <span class="n">current_data</span> <span class="o">&gt;</span> <span class="n">ub_broadcast</span>
+
+            <span class="n">current_data</span><span class="p">[</span><span class="n">mask_lower</span><span class="p">]</span> <span class="o">=</span> <span class="n">lb_broadcast</span><span class="p">[</span><span class="n">mask_lower</span><span class="p">]</span>
+            <span class="n">current_data</span><span class="p">[</span><span class="n">mask_upper</span><span class="p">]</span> <span class="o">=</span> <span class="n">ub_broadcast</span><span class="p">[</span><span class="n">mask_upper</span><span class="p">]</span>           
 
 <span class="n">config</span> <span class="o">=</span> <span class="n">TimeBasedConfig</span><span class="p">(</span><span class="n">ts_ids</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">train_time_period</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">val_time_period</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">test_time_period</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">features_to_take</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;n_flows&#39;</span><span class="p">,</span> <span class="s1">&#39;n_packets&#39;</span><span class="p">],</span>
                            <span class="n">handle_anomalies_with</span><span class="o">=</span><span class="n">CustomAnomalyHandler</span><span class="p">,</span> <span class="n">nan_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1500</span><span class="p">)</span>                                                                    
@@ -1772,11 +1987,74 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "announce.autohide"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
+
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
+
+<script>
+    function isLocalStorageAvailable() {
+        try {
+            const testKey = "permTest";
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function checkRouterUptime() {
+        try {
+            const result = await fetch("https://api.uptimerobot.com/v2/getMonitors?api_key=m801936469-e8219ca3245b73b08cf33ef4&monitors=801936469", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(res => res.json())
+
+            const storageStatusCode = result.monitors?.[0].status;
+            localStorage.setItem("lastStorageStatusCode", storageStatusCode);
+
+        } catch (e) {
+            localStorage.setItem("lastStorageStatusCode", -1);
+            console.warn("Unexpected error happened: ${e}")
+        }
+    }
+
+    if (isLocalStorageAvailable()) {
+        const lastCheck = parseInt(localStorage.getItem("lastStorageStatusCheck") || "0", 10);
+        const now = Date.now();
+        const FIVE_MINUTES = 5 * 60 * 1000;
+
+        if (now - lastCheck > FIVE_MINUTES) {
+            checkRouterUptime();
+            localStorage.setItem("lastStorageStatusCheck", now);
+        }
+
+        const banner = document.getElementById("librouter-status");
+        const bannerText = document.getElementById("librouter-status-text");
+
+        const storageStatusCode = parseInt(localStorage.getItem("lastStorageStatusCode") || "-1", 10);
+
+        if (storageStatusCode == 2 || storageStatusCode == -1) {
+            bannerText.textContent = ""
+            banner.style.display = "none"
+        }
+        else {
+            bannerText.textContent = "Storage server is DOWN.";
+            banner.style.display = "block"
+        }
+    }
+    else {
+        console.warn("Local storage is not available. Up status check skipped.");
+    }
+
+</script>
+
   </body>
 </html>
