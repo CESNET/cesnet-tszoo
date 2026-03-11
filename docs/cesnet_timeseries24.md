@@ -68,4 +68,7 @@ Moreover, the time series created by re-aggregation contains following time seri
 | avg_n_dest_ports        |  The average number of unique destination transport layer ports.             |
 | std_n_dest_ports        | Standard deviation of numbers of unique destination transport layer ports.   |
 
-More detailed description is available in the dataset [paper](https://doi.org/10.1038/s41597-025-04603-x) or you can contact dataset author [Josef Koumar](https://koumajos.github.io/).
+
+### Links
+
+More detailed description is available in the dataset [paper](https://doi.org/10.1038/s41597-025-04603-x) or you can contact dataset author [Josef Koumar](https://koumajos.github.io/). Original dataset can be downloaded at [https://zenodo.org/records/13382427](https://zenodo.org/records/13382427).

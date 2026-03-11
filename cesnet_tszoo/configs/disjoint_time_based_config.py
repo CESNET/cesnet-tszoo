@@ -69,6 +69,7 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         all_time_period: Contains total used time period.
         all_ts: Contains all used time series.
         all_ts_row_ranges: Contains time series IDs in all set with their respective time ID ranges.
+        subset: Subset of the used dataset.
         aggregation: The aggregation period used for the data.
         source_type: The source type of the data.
         database_name: Specifies which database this config applies to.
@@ -320,19 +321,19 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         train_fillers = None
         # Set the fillers for the training set
         if self.has_train():
-            train_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.train_ts])
+            train_fillers = np.array([self.filler_factory.create_filler() for _ in self.train_ts])
             self.logger.debug("Fillers for training set are set.")
 
         val_fillers = None
         # Set the fillers for the validation set
         if self.has_val():
-            val_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.val_ts])
+            val_fillers = np.array([self.filler_factory.create_filler() for _ in self.val_ts])
             self.logger.debug("Fillers for validation set are set.")
 
         test_fillers = None
         # Set the fillers for the test set
         if self.has_test():
-            test_fillers = np.array([self.filler_factory.create_filler(self.features_to_take_without_ids) for _ in self.test_ts])
+            test_fillers = np.array([self.filler_factory.create_filler() for _ in self.test_ts])
             self.logger.debug("Fillers for test set are set.")
 
         self.logger.debug("Using filler %s", self.filler_factory.name)
@@ -424,12 +425,21 @@ class DisjointTimeBasedConfig(SeriesBasedHandler, TimeBasedHandler, DatasetConfi
         else:
             time_part = f"Time included: {str(self.include_time)}"
 
+        if self.subset is None:
+            dataset_part = f'''Used for database: {self.database_name}
+        Aggregation: {str(self.aggregation)}
+        Source: {str(self.source_type)}
+            '''
+        else:
+            dataset_part = f'''Used for database: {self.database_name}
+        Subset: {self.subset}
+        Aggregation: {str(self.aggregation)}
+        Source: {str(self.source_type)}
+            '''
+
         return f'''
 Config Details
-    Used for database: {self.database_name}
-    Aggregation: {str(self.aggregation)}
-    Source: {str(self.source_type)}
-
+    {dataset_part}
     Time series
         Train time series IDs: {get_abbreviated_list_string(self.train_ts)}
         Val time series IDs: {get_abbreviated_list_string(self.val_ts)}

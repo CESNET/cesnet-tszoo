@@ -39,7 +39,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     - **Numpy array**: For loading the entire training, validation, test or all set at once.      
     - See [loading data][loading-data] for more details.
 
-    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `SeriesBasedDataset` and `SeriesBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize)) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
+    The dataset is stored in a [PyTables](https://www.pytables.org/) dataset. The internal `SeriesBasedDataset` and `SeriesBasedInitializerDataset` classes act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
     interface. These wrappers are compatible with PyTorch’s [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader), providing efficient parallel data loading. 
 
     The dataset configuration is done through the [`SeriesBasedConfig`](reference_series_based_config.md#references.SeriesBasedConfig) class.     
@@ -66,13 +66,13 @@ class SeriesBasedCesnetDataset(CesnetDataset):
     """Configuration of the dataset."""
 
     train_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
-    """Training set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
+    """Training set as a `SeriesBasedDataset` instance wrapping the PyTables dataset."""
     val_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
-    """Validation set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
+    """Validation set as a `SeriesBasedDataset` instance wrapping the PyTables dataset."""
     test_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
-    """Test set as a `SeriesBasedDataset` instance wrapping the PyTables database."""
+    """Test set as a `SeriesBasedDataset` instance wrapping the PyTables dataset."""
     all_dataset: Optional[SeriesBasedDataset] = field(default=None, init=False)
-    """All set as a `SeriesBasedDataset` instance wrapping the PyTables database.  """
+    """All set as a `SeriesBasedDataset` instance wrapping the PyTables dataset.  """
 
     train_dataloader: Optional[SeriesBasedDataloader] = field(default=None, init=False)
     """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set."""
@@ -262,25 +262,25 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         """Called in [`set_dataset_config_and_initialize`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset.set_dataset_config_and_initialize), this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
-            load_config = SeriesLoadConfig(self.dataset_config, SplitType.TRAIN)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.TRAIN, self.metadata)
             self.train_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
 
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
-            load_config = SeriesLoadConfig(self.dataset_config, SplitType.VAL)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.VAL, self.metadata)
             self.val_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
 
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
-            load_config = SeriesLoadConfig(self.dataset_config, SplitType.TEST)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.TEST, self.metadata)
             self.test_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
 
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all():
-            load_config = SeriesLoadConfig(self.dataset_config, SplitType.ALL)
+            load_config = SeriesLoadConfig(self.dataset_config, SplitType.ALL, self.metadata)
             self.all_dataset = SeriesBasedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config)
 
             self.logger.debug("all_dataset initiliazed.")
@@ -302,7 +302,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             self.logger.debug("Train set updated: %s time series left.", len(self.dataset_config.train_ts))
 
         if self.dataset_config.has_val():
-            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]))
+            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]), self.metadata)
 
             ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "val")
             self.dataset_config.val_ts = self.dataset_config.val_ts[ts_ids_to_take]
@@ -313,7 +313,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             self.logger.debug("Val set updated: %s time series left.", len(self.dataset_config.val_ts))
 
         if self.dataset_config.has_test():
-            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.TEST, PreprocessOrderGroup([]))
+            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.TEST, PreprocessOrderGroup([]), self.metadata)
 
             ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "test")
             self.dataset_config.test_ts = self.dataset_config.test_ts[ts_ids_to_take]
@@ -326,7 +326,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         if self.dataset_config.has_all():
 
             if not self.dataset_config.has_train() and not self.dataset_config.has_val() and not self.dataset_config.has_test():
-                init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.ALL, PreprocessOrderGroup([]))
+                init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.ALL, PreprocessOrderGroup([]), self.metadata)
 
                 ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "all")
                 self.dataset_config.all_ts = self.dataset_config.all_ts[ts_ids_to_take]
@@ -355,7 +355,7 @@ class SeriesBasedCesnetDataset(CesnetDataset):
             ts_ids_to_take = []
             self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(groups))
 
-            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group)
+            init_config = SeriesDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group, self.metadata)
             init_dataset = SeriesBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
             sampler = SequentialSampler(init_dataset)
@@ -533,10 +533,12 @@ class SeriesBasedCesnetDataset(CesnetDataset):
         dataset = self._get_singular_time_series_dataset(dataset, ts_id)
         dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
-        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.load_config.time_format, dataset.load_config.include_time, DatasetType.SERIES_BASED, True)
+        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), DatasetType.SERIES_BASED, True)
 
-        if (dataset.load_config.time_format == TimeFormat.DATETIME and dataset.load_config.include_time):
-            temp_data = temp_data[0]
+        if (temp_data.dtype.names is not None):
+            if "base_data" not in temp_data.dtype.names:
+                raise NotImplementedError("Plotting support only non matrix features.")
+            temp_data = temp_data["base_data"]
 
         temp_data = temp_data[0][:, feature_indices]
 

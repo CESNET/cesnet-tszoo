@@ -47,8 +47,3 @@ AGGREGATIONS = {
     AgreggationType.AGG_1_HOUR,
     AgreggationType.AGG_1_DAY
 }
-
-ADDITIONAL_DATA = {
-    "ids_relationship": (("id_ip", np.int64), ("id_institution", np.int64), ("id_institution_subnet", np.int64)),
-    "weekends_and_holidays": (("Date", datetime), ("Type", str))
-}

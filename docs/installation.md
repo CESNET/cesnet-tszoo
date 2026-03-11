@@ -7,7 +7,7 @@ pip install cesnet-tszoo
 or for editable install with:
 
 ```bash
-pip install -e git+https://github.com/CESNET/cesnet-tszoo
+pip install -e git+https://github.com/CESNET/cesnet-tszoo#egg=cesnet-tszoo
 ```
 
 ## Requirements

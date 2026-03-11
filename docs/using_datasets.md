@@ -3,10 +3,16 @@
 This tutorial will look at what you need to use dataset. <br/>
 Trying to use dataset you do not have downloaded, will automatically download it.
 
-There currently two supported datasets:
+There currently seven supported datasets:
 
-- [CESNET-TimeSeries24][cesnet_timeseries24_page] - supports all approaches
-- [CESNET-AGG23][cesnet_agg23_page] - supports only time-based
+- [CESNET_TimeSeries24][cesnet_timeseries24_page] - supports all approaches
+- [CESNET_AGG23][cesnet_agg23_page] - supports only time-based
+- [Abilene][abilene_page] - supports all approaches
+- [GÉANT][geant_page] - supports all approaches
+- [SDN][sdn_page] - supports all approaches
+- [TelecomItalia][telecom_italia_page] - supports all approaches
+- [Vigo_NetworkOperatorKPIs][vigo_networkoperatorkpis_page] - supports all approaches
+
 
 ## Using dataset from benchmark
 You can refer to [benchmarks][benchmarks] for more detailed usage.
@@ -28,7 +34,7 @@ dataset = benchmark.get_initialized_dataset(display_config_details="text", check
 ## Creating dataset
 You can refer to [choosing_data][choosing-data] for more detailed data selection via config.
 
-### Using dataset from CESNET_TimeSeries24
+### Example of using dataset from CESNET_TimeSeries24
 
 ```python
 
@@ -56,18 +62,4 @@ series_based_dataset.set_dataset_config_and_initialize(config)
 
 ```
 
-### Using dataset from CESNET_AGG23
-
-```python
-
-from cesnet_tszoo.configs import TimeBasedConfig # For time-based dataset 
-
-from cesnet_tszoo.datasets import CESNET_AGG23
-
-# Using dataset from CESNET_AGG23
-# Only time-based
-time_based_dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/")
-config = TimeBasedConfig(ts_ids=1)
-time_based_dataset.set_dataset_config_and_initialize(config)
-
-```
+Similarly you can use other datasets from the *Datasets* section.

@@ -38,7 +38,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
     - **Numpy array**: For loading the entire training, validation, test or all set at once. 
     - See [loading data][loading-data] for more details.
 
-    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `TimeBasedDataset`, `SplittedDataset`, `TimeBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize)) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
+    The dataset is stored in a [PyTables](https://www.pytables.org/) dataset. The internal `TimeBasedSplittedDataset`, `TimeSplitBasedDataset` and `TimeBasedInitializerDataset` classes act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
     interface. These wrappers are compatible with PyTorch’s [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader), providing efficient parallel data loading. 
 
     The dataset configuration is done through the [`TimeBasedConfig`](reference_time_based_config.md#references.TimeBasedConfig) class.       
@@ -65,16 +65,16 @@ class TimeBasedCesnetDataset(CesnetDataset):
     """Configuration of the dataset."""
 
     train_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
-    """Training set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database."""
+    """Training set as a `TimeBasedSplittedDataset` instance wrapping multiple `TimeSplitBasedDataset` that wrap the PyTables dataset."""
 
     val_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
-    """Validation set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database."""
+    """Validation set as a `TimeBasedSplittedDataset` instance wrapping multiple `TimeSplitBasedDataset` that wrap the PyTables dataset."""
 
     test_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
-    """Test set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.  """
+    """Test set as a `TimeBasedSplittedDataset` instance wrapping multiple `TimeSplitBasedDataset` that wrap the PyTables dataset.  """
 
     all_dataset: Optional[TimeBasedSplittedDataset] = field(default=None, init=False)
-    """All set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database.   """
+    """All set as a `TimeBasedSplittedDataset` instance wrapping multiple `TimeSplitBasedDataset` that wrap the PyTables dataset.   """
 
     train_dataloader: Optional[TimeBasedDataloader] = field(default=None, init=False)
     """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set."""
@@ -313,25 +313,25 @@ class TimeBasedCesnetDataset(CesnetDataset):
         """Called in [`set_dataset_config_and_initialize`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset.set_dataset_config_and_initialize), this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
-            load_config = TimeLoadConfig(self.dataset_config, SplitType.TRAIN)
+            load_config = TimeLoadConfig(self.dataset_config, SplitType.TRAIN, self.metadata)
             self.train_dataset = TimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.train_workers)
 
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
-            load_config = TimeLoadConfig(self.dataset_config, SplitType.VAL)
+            load_config = TimeLoadConfig(self.dataset_config, SplitType.VAL, self.metadata)
             self.val_dataset = TimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.val_workers)
 
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
-            load_config = TimeLoadConfig(self.dataset_config, SplitType.TEST)
+            load_config = TimeLoadConfig(self.dataset_config, SplitType.TEST, self.metadata)
             self.test_dataset = TimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.test_workers)
 
             self.logger.debug("test_dataset initiliazed.")
 
         if self.dataset_config.has_all():
-            load_config = TimeLoadConfig(self.dataset_config, SplitType.ALL)
+            load_config = TimeLoadConfig(self.dataset_config, SplitType.ALL, self.metadata)
             self.all_dataset = TimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.all_workers)
 
             self.logger.debug("all_dataset initiliazed.")
@@ -361,7 +361,7 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
             self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(grouped))
 
-            init_config = TimeDatasetInitConfig(self.dataset_config, ts_ids_ignore, train_group, val_group, test_group)
+            init_config = TimeDatasetInitConfig(self.dataset_config, ts_ids_ignore, train_group, val_group, test_group, self.metadata)
             init_dataset = TimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
             sampler = SequentialSampler(init_dataset)
@@ -517,10 +517,12 @@ class TimeBasedCesnetDataset(CesnetDataset):
 
         dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
-        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.load_config.time_format, dataset.load_config.include_time, DatasetType.TIME_BASED, True)
+        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), DatasetType.TIME_BASED, True)
 
-        if (dataset.load_config.time_format == TimeFormat.DATETIME and dataset.load_config.include_time):
-            temp_data = temp_data[0]
+        if (temp_data.dtype.names is not None):
+            if "base_data" not in temp_data.dtype.names:
+                raise NotImplementedError("Plotting support only non matrix features.")
+            temp_data = temp_data["base_data"]
 
         temp_data = temp_data[0][:, feature_indices]
 

@@ -19,8 +19,16 @@ def load_database(dataset_path: str, table_data_path: str = None, mode: str = "r
     return dataset, table_data
 
 
-def get_additional_data(dataset_path: str, data_name: str) -> np.ndarray:
+def load_arrays(dataset: tb.File, group: tb.Group, names: list[str]) -> list[tb.Array]:
+    arrays = []
+    for name in names:
+        arrays.append(dataset.get_node(group, name))
+
+    return arrays
+
+
+def get_additional_data(dataset_path: str, data_name: str) -> tuple[np.ndarray, dict[str, tb.Cols]]:
     """Return additional data dataset. """
     with tb.open_file(dataset_path, mode="r") as dataset:
         additional_data = dataset.get_node(f"/{data_name}")[:]
-        return additional_data
+        return additional_data, dict(dataset.get_node(f"/{data_name}").description._v_colobjects.items())

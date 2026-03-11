@@ -8,4 +8,5 @@ dataset_type: time_based
 description: null
 related_results_identifier: null
 source_type: ip_addresses_full
-version: 2.1.0
+subset: null
+version: 2.2.0

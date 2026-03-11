@@ -9,6 +9,7 @@ from cesnet_tszoo.data_models.fitted_preprocess_instance import FittedPreprocess
 from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
 from cesnet_tszoo.data_models.init_dataset_return import InitDatasetReturn
 from cesnet_tszoo.utils.enums import PreprocessType
+from cesnet_tszoo.utils.constants import BASE_DATA_DTYPE_PART
 
 
 class TimeBasedInitializerDataset(InitializerDataset):
@@ -78,15 +79,23 @@ class TimeBasedInitializerDataset(InitializerDataset):
         train_data = np.array([])
         if can_preprocess:
 
-            # Prepare data from current time series for training
-            if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
-                train_data = data[:, self.offset_exclude_feature_ids:].reshape(-1, 1)
-            elif len(self.init_config.time_period) == 1:
-                train_data = data[:, self.offset_exclude_feature_ids:].reshape(1, -1)
-            else:
-                train_data = data[:, self.offset_exclude_feature_ids:]
+            # if BASE_DATA_DTYPE_PART in self.init_config.return_dtype.names:  # TO-DO
+            #    train_data = data[BASE_DATA_DTYPE_PART][:, self.offset_exclude_feature_ids:].view()
 
-            train_data = self._handle_data_preprocess(train_data, idx)
+            # Prepare data from current time series for training
+            #    if self.init_config.non_id_scalar_features_count == 1:
+            #        train_data = train_data.reshape(-1, 1)
+            #    elif len(self.init_config.time_period) == 1:
+            #        train_data = train_data.reshape(1, -1)
+
+            #    train_data = self._handle_data_preprocess(train_data, idx)
+
+            #    if self.init_config.train_time_period is not None:
+            #        train_data = train_data[: len(self.init_config.train_time_period)]
+            #    else:
+            #        train_data = np.array([])
+
+            train_data = self._handle_data_preprocess(data, idx)
 
             if self.init_config.train_time_period is not None:
                 train_data = train_data[: len(self.init_config.train_time_period)]
@@ -111,6 +120,7 @@ class TimeBasedInitializerDataset(InitializerDataset):
         return len(self.init_config.ts_row_ranges)
 
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> tuple[np.ndarray, np.ndarray]:
+        data = self._data_to_train_shape(data, idx)
 
         train_preprocess_inner_orders = self.init_config.train_preprocess_order_group.preprocess_inner_orders
         val_preprocess_inner_orders = self.init_config.val_preprocess_order_group.preprocess_inner_orders
@@ -196,16 +206,9 @@ class TimeBasedInitializerDataset(InitializerDataset):
     def _handle_transforming(self, transfomer_holder: TransformerHolder, should_fit: bool, data: np.ndarray, idx: int) -> np.ndarray:
         """Fits and uses transformers. """
 
-        if self.init_config.train_time_period is not None:
-            if len(self.init_config.indices_of_features_to_take_no_ids) == 1:
-                train_data = data[: len(self.init_config.train_time_period), :].reshape(-1, 1)
-            elif len(self.init_config.train_time_period) == 1:
-                train_data = data[: len(self.init_config.train_time_period), :].reshape(1, -1)
-            else:
-                train_data = data[: len(self.init_config.train_time_period), :]
-
-            if should_fit:
-                transfomer_holder.fit(train_data, idx)
+        if self.init_config.train_time_period is not None and should_fit:
+            train_data = data[: len(self.init_config.train_time_period)]
+            transfomer_holder.fit(train_data, idx)
 
         return transfomer_holder.apply(data, idx)
 

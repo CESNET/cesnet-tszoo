@@ -7,10 +7,11 @@
 [![](https://img.shields.io/badge/tutorials-cesnet--tszoo-blue.svg)](https://github.com/CESNET/cesnet-ts-zoo-tutorials)
 [![](https://img.shields.io/badge/python->=3.10-blue.svg)](https://pypi.org/project/cesnet-tszoo/)
 [![](https://img.shields.io/pypi/v/cesnet-tszoo)](https://pypi.org/project/cesnet-tszoo/)
+[![Storage Status](https://img.shields.io/uptimerobot/status/m801936469-e8219ca3245b73b08cf33ef4?label=storage%20status)](https://stats.uptimerobot.com/6a75HRSoRU)
 
 The goal of `cesnet-tszoo` project is to provide time series datasets with useful tools for preprocessing and reproducibility. Such as:
 
-- API for downloading, configuring and loading CESNET-TimeSeries24, CESNET-AGG23 datasets. Each with various sources and aggregations.
+- API for downloading, configuring and loading various datasets (e.g. CESNET-TimeSeries24, CESNET-AGG23...), each with various sources and aggregations.
 - Example of configuration options:
   - Data can be split into train/val/test sets. Split can be done by time series or by time periods.
   - Transforming of data with built-in transformers or with custom transformers.
@@ -22,17 +23,17 @@ The goal of `cesnet-tszoo` project is to provide time series datasets with usefu
 
 ## Datasets
 
-| Name                      | CESNET-TimeSeries24                                                                       | CESNET-AGG23                                                                                          |
-|---------------------------|-------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| _Published in_            | 2025                                                                                      | 2023                                                                                                  |
-| _Collection duration_     | 40 weeks                                                                                  | 10 weeks                                                                                              |
-| _Collection period_       | 9.10.2023 - 14.7.2024                                                                     | 25.2.2023 - 3.5.2023                                                                                  |
-| _Aggregation window_      | 1 day, 1 hour, 10 min                                                                     | 1 min                                                                                                 |
-| _Sources_                 | CESNET3: Institutions, Institution subnets, IP addresses                                  | CESNET2                                                                                               |
-| _Number of time series_   | Institutions: 849, Institution subnets: 1644, IP addresses: 825372                        | 1                                                                                                     |
-| _Cite_                    | [https://doi.org/10.1038/s41597-025-04603-x](https://doi.org/10.1038/s41597-025-04603-x)  | [https://doi.org/10.23919/CNSM59352.2023.10327823](https://doi.org/10.23919/CNSM59352.2023.10327823)  |
-| _Zenodo URL_              | [https://zenodo.org/records/13382427](https://zenodo.org/records/13382427)                | [https://zenodo.org/records/8053021](https://zenodo.org/records/8053021)                              |
-| _Related papers_          |                                                                                           |                                                                                                       |
+| Name                      | CESNET-TimeSeries24 | CESNET-AGG23 | Abilene | GÉANT | SDN | Telecom Italia | Network Operator KPIs |
+|---------------------------|---------------------|--------------|---------|-------|-----|----------------|-----------------------|
+| _Published in_            | 2025 | 2023 | 2005 | 2005 | 2021 | 2015 | 2023 |
+| _Collection period_       | 9.10.2023 - 14.7.2024 | 25.2.2023 - 3.5.2023 | 2004 | 2005 | — | 2013–2014 | — |
+| _Collection duration_     | 40 weeks | 10 weeks | 6 months | 16 weeks | 4 days | 2 months | Multiple weeks |
+| _Aggregation window_      | 1 day, 1 hour, 10 min | 1 min | 5 min, 10 min, 1 hour, 1 day | 15 min, 1 hour, 1 day | 1 min, 10 min, 1 hour, 1 day | 10 min, 1 hour, 1 day | 5 min, 10 min, 1 hour, 1 day |
+| _Sources_                 | CESNET3: Institutions, Institution subnets, IP addresses | CESNET2 | Abilene network | GÉANT network | Simulated SDN environment | Milan city cells (SMS, call, internet) | Network operator |
+| _Subsets_                 | — | — | Matrix, Node2Node, Node | Matrix, Node2Node, Node | Matrix, Node2Node, Node | — | Downstream, Internet, Sessions, VPN |
+| _Cite_                    | [https://doi.org/10.1038/s41597-025-04603-x](https://doi.org/10.1038/s41597-025-04603-x) | [https://doi.org/10.23919/CNSM59352.2023.10327823](https://doi.org/10.23919/CNSM59352.2023.10327823) | [https://doi.org/10.1145/885651.781053](https://doi.org/10.1145/885651.781053) | [https://dl.acm.org/doi/10.1145/1111322.1111341](https://dl.acm.org/doi/10.1145/1111322.1111341) | [https://doi.org/10.1109/ICC42927.2021.9500331](https://doi.org/10.1109/ICC42927.2021.9500331) | [https://doi.org/10.1038/sdata.2015.55](https://doi.org/10.1038/sdata.2015.55) | [https://doi.org/10.5281/zenodo.8147768](https://doi.org/10.5281/zenodo.8147768) |
+| _Source URL_                    | [https://zenodo.org/records/13382427](https://zenodo.org/records/13382427) | [https://zenodo.org/records/8053021](https://zenodo.org/records/8053021) | [https://www.cs.utexas.edu/~yzhang/research/AbileneTM](https://www.cs.utexas.edu/~yzhang/research/AbileneTM) | [https://totem.info.ucl.ac.be/dataset.html](https://totem.info.ucl.ac.be/dataset.html) | [https://github.com/duchuyle108/SDN-TMprediction](https://github.com/duchuyle108/SDN-TMprediction/blob/main/dataset/testbed_flat_tms.csv) | [https://dataverse.harvard.edu](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/EGZHFV) | [https://doi.org/10.5281/zenodo.8147768](https://doi.org/10.5281/zenodo.8147768) |
+
 
 ## Installation
 

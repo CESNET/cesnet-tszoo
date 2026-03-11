@@ -12,6 +12,10 @@ ID_TIME_FORMAT = "id_time"
 ID_TIME_COLUMN_NAME = "id_time"
 TIME_COLUMN_NAME = "time"
 
+# dtype names
+BASE_DATA_DTYPE_PART = "base_data"
+TIME_DTYPE_PART = "time"
+
 # Other
 
 ROW_START = "start"

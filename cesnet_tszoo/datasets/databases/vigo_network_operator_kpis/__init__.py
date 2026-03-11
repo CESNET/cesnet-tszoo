@@ -1,0 +1,2 @@
+from cesnet_tszoo.datasets.databases.vigo_network_operator_kpis.vigo_network_operator_kpis import Vigo_NetworkOperatorKPIs
+from cesnet_tszoo.datasets.databases.vigo_network_operator_kpis.factory import Vigo_NetworkOperatorKPIsFactory

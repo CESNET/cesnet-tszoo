@@ -8,6 +8,7 @@ import numpy as np
 from cesnet_tszoo.pytables_data.base_datasets.split_dataset import SplitDataset
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
 from cesnet_tszoo.utils.enums import TimeFormat
+import cesnet_tszoo.datasets.utils.loaders as dataset_loaders
 
 
 class SplittedDataset(Dataset):
@@ -78,6 +79,7 @@ class SplittedDataset(Dataset):
                 dataset,
                 num_workers=dataloader_workers,
                 worker_init_fn=SplitDataset.worker_init_fn,
+                collate_fn=dataset_loaders.collate_fn_simple,
                 persistent_workers=False,
                 batch_size=None,
                 prefetch_factor=dataloader_prefetch_factor,
@@ -140,10 +142,7 @@ class SplittedDataset(Dataset):
 
         # First window to return
         if self.data_for_window is None:
-            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-                self.data_for_window, self.times_for_window = self._get_data(batch_idx)
-            else:
-                self.data_for_window = self._get_data(batch_idx)
+            self.data_for_window = self._get_data(batch_idx)
 
             self.offset = 0
             self.until_next_batch_for_window = self.data_for_window.shape[1] - self.sliding_window_size
@@ -151,41 +150,22 @@ class SplittedDataset(Dataset):
         # Need more data for creating window
         elif self.until_next_batch_for_window < self.sliding_window_prediction_size:
 
-            new_data_batch = None
-            new_time_batch = None
-
-            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-                new_data_batch, new_time_batch = self._get_data(batch_idx)
-            else:
-                new_data_batch = self._get_data(batch_idx)
-
-            self.data_for_window = np.concatenate([self.data_for_window[:, self.offset:, :], new_data_batch], axis=1)
-            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-                self.times_for_window = np.concatenate([self.times_for_window[self.offset:], new_time_batch], axis=0)
+            new_data_batch = self._get_data(batch_idx)
+            self.data_for_window = np.concatenate([self.data_for_window[:, self.offset:], new_data_batch], axis=1)
 
             self.offset = 0
             self.until_next_batch_for_window = self.data_for_window.shape[1] - self.sliding_window_size
 
         # Prepare data in window form
-        if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-            result_data = (self.data_for_window[:, self.offset:self.offset + self.sliding_window_size, :], self.data_for_window[:, self.offset + self.sliding_window_size:self.offset + self.sliding_window_size + self.sliding_window_prediction_size, :].reshape((self.data_for_window.shape[0], self.sliding_window_prediction_size, self.data_for_window.shape[2])))
-            result_time = (self.times_for_window[self.offset:self.offset + self.sliding_window_size], self.times_for_window[self.offset + self.sliding_window_size:self.offset + self.sliding_window_size + self.sliding_window_prediction_size])
-        else:
-            result_data = (self.data_for_window[:, self.offset:self.offset + self.sliding_window_size, :], self.data_for_window[:, self.offset + self.sliding_window_size:self.offset + self.sliding_window_size + self.sliding_window_prediction_size, :].reshape((self.data_for_window.shape[0], self.sliding_window_prediction_size, self.data_for_window.shape[2])))
+        result_data = (self.data_for_window[:, self.offset:self.offset + self.sliding_window_size], self.data_for_window[:, self.offset + self.sliding_window_size:self.offset + self.sliding_window_size + self.sliding_window_prediction_size])
 
         self.offset += self.sliding_window_step
         self.until_next_batch_for_window -= self.sliding_window_step
 
-        if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-            return *result_data, *result_time
-        else:
-            return result_data
+        return result_data
 
     def _get_data(self, batch_idx):
         """Returns concantated data from each dataset/worker."""
-
-        batch_parts = []
-        times = None
 
         if batch_idx[0] == 0:
             self.dataloaders_iters = []
@@ -207,14 +187,4 @@ class SplittedDataset(Dataset):
         for worker in workers:
             worker.join()
 
-        for batch_part in results:
-            if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-                batch_parts.append(batch_part[0])
-                times = batch_part[1]
-            else:
-                batch_parts.append(batch_part)
-
-        if self.load_config.time_format == TimeFormat.DATETIME and self.load_config.include_time:
-            return np.concatenate(batch_parts, axis=0), times
-        else:
-            return np.concatenate(batch_parts, axis=0)
+        return np.concatenate(results, axis=0)

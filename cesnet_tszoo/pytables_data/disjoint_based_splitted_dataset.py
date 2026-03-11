@@ -2,7 +2,7 @@ import logging
 
 from cesnet_tszoo.pytables_data.disjoint_based_split_dataset import DisjointTimeBasedSplitDataset
 from cesnet_tszoo.pytables_data.base_datasets.splitted_dataset import SplittedDataset
-from cesnet_tszoo.data_models.load_dataset_configs.time_load_config import TimeLoadConfig
+from cesnet_tszoo.data_models.load_dataset_configs.disjoint_time_load_config import DisjointTimeLoadConfig
 
 
 class DisjointTimeBasedSplittedDataset(SplittedDataset):
@@ -12,7 +12,7 @@ class DisjointTimeBasedSplittedDataset(SplittedDataset):
     Splits ts_row_ranges based on workers and for each worker creates a DisjointTimeBasedSplitDataset with subset of values from ts_row_ranges. Then each worker gets a dataloader.
     """
 
-    def __init__(self, database_path: str, table_data_path: str, load_config: TimeLoadConfig, workers: int):
+    def __init__(self, database_path: str, table_data_path: str, load_config: DisjointTimeLoadConfig, workers: int):
         self.load_config = load_config
 
         super().__init__(database_path, table_data_path, load_config, workers)

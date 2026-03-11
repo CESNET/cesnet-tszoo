@@ -4,13 +4,14 @@ from copy import copy, deepcopy
 from cesnet_tszoo.configs import TimeBasedConfig
 from cesnet_tszoo.data_models.load_dataset_configs.load_config import LoadConfig
 from cesnet_tszoo.utils.enums import SplitType
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 class TimeLoadConfig(LoadConfig):
     """Base class for dataset configs that are used to pass values to load datasets. """
 
-    def __init__(self, config: TimeBasedConfig, limit_init_to_set: Optional[SplitType]):
-        super().__init__(config, limit_init_to_set)
+    def __init__(self, config: TimeBasedConfig, limit_init_to_set: Optional[SplitType], dataset_metadata: DatasetMetadata):
+        super().__init__(config, limit_init_to_set, dataset_metadata)
 
         self.ts_row_ranges = config.ts_row_ranges
 

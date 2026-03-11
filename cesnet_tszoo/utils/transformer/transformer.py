@@ -18,19 +18,35 @@ class Transformer(ABC):
 
         class LogTransformer(Transformer):
 
-            def fit(self, data: np.ndarray):
-                ...
+            def __init__(self):
+                self.names = None
+
+            def fit(self, data: np.ndarray) -> None:
+                self.partial_fit(data)
 
             def partial_fit(self, data: np.ndarray) -> None:
-                ...
+                self.names = data.dtype.names
 
-            def transform(self, data: np.ndarray):
-                log_data = np.ma.log(data)
+            def transform(self, data: np.ndarray) -> np.ndarray:
 
-                return log_data.filled(np.nan)
+                for name in data.dtype.names:
 
-            def inverse_transform(self, transformed_data):
-                return np.exp(transformed_data)                
+                    current_data = data[name]
+                    log_data = np.ma.log(current_data)
+                    current_data[:] = log_data.filled(np.nan)
+
+                return data
+
+            def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+                names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.names
+
+                for name in names:
+
+                    current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+                    current_data[:] = np.exp(current_data)
+
+                return transformed_data               
     """
 
     @abstractmethod
@@ -41,7 +57,8 @@ class Transformer(ABC):
         This method must be implemented if using multiple transformers that have not been pre-fitted.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.
         """
         ...
 
@@ -53,7 +70,8 @@ class Transformer(ABC):
         This method must be implemented if using a single transformer that is not pre-fitted for all time series, or when using pre-fitted transformer(s) with `partial_fit_initialized_transformers` set to `True`.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.        
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.   
         """
         ...
 
@@ -65,10 +83,11 @@ class Transformer(ABC):
         This method must always be implemented.
 
         Parameters:
-            data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                  For matrix features use their name instead of base_data.
 
         Returns:
-            The transformed data, with the same shape as the input `(times, features)`.            
+            The transformed data, with the same shape and dtype as the input `(times)`.            
         """
         ...
 
@@ -77,10 +96,11 @@ class Transformer(ABC):
         Transforms the input transformed data to their original representation for a given time series part.
 
         Parameters:
-            transformed_data: A numpy array representing data for a single time series with shape `(times, features)` excluding any identifiers.  
+            transformed_data: A structured numpy array representing data for a single time series with shape `(times)`. Use data["base_data"] to get non matrix features excluding any identifiers. 
+                              For matrix features use their name instead of base_data. 
 
         Returns:
-            The original representation of transformed data, with the same shape as the input `(times, features)`.            
+            The original representation of transformed data, with the same shape and dtype as the input `(times)`.            
         """
         return transformed_data
 
@@ -93,19 +113,60 @@ class MinMaxScaler(Transformer):
     """
 
     def __init__(self):
-        self.transformer = sk.MinMaxScaler()
+        self.transformers: dict[str, sk.MinMaxScaler] = {}
 
     def fit(self, data: np.ndarray) -> None:
-        self.transformer.fit(data)
+        self.partial_fit(data)
 
     def partial_fit(self, data: np.ndarray) -> None:
-        self.transformer.partial_fit(data)
+
+        is_init = len(self.transformers) == 0
+
+        for name in data.dtype.names:
+
+            if is_init:
+                transformer = self.transformers[name] = sk.MinMaxScaler()
+            else:
+                transformer = self.transformers[name]
+
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            transformer.partial_fit(current_data)
 
     def transform(self, data: np.ndarray) -> np.ndarray:
-        return self.transformer.transform(data)
+
+        for name in data.dtype.names:
+
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.transform(current_data)
+
+        return data
 
     def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
-        return self.transformer.inverse_transform(transformed_data)
+
+        names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.transformers.keys()
+
+        for name in names:
+
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data
 
 
 class StandardScaler(Transformer):
@@ -116,19 +177,60 @@ class StandardScaler(Transformer):
     """
 
     def __init__(self):
-        self.transformer = sk.StandardScaler()
+        self.transformers: dict[str, sk.StandardScaler] = {}
 
     def fit(self, data: np.ndarray) -> None:
-        self.transformer.fit(data)
+        self.partial_fit(data)
 
     def partial_fit(self, data: np.ndarray) -> None:
-        self.transformer.partial_fit(data)
+
+        is_init = len(self.transformers) == 0
+
+        for name in data.dtype.names:
+
+            if is_init:
+                transformer = self.transformers[name] = sk.StandardScaler()
+            else:
+                transformer = self.transformers[name]
+
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            transformer.partial_fit(current_data)
 
     def transform(self, data: np.ndarray) -> np.ndarray:
-        return self.transformer.transform(data)
 
-    def inverse_transform(self, transformed_data: np.ndarray):
-        return self.transformer.inverse_transform(transformed_data)
+        for name in data.dtype.names:
+
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.transformers.keys()
+
+        for name in names:
+
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data
 
 
 class MaxAbsScaler(Transformer):
@@ -139,19 +241,60 @@ class MaxAbsScaler(Transformer):
     """
 
     def __init__(self):
-        self.transformer = sk.MaxAbsScaler()
+        self.transformers: dict[str, sk.MaxAbsScaler] = {}
 
-    def fit(self, data: np.ndarray):
-        self.transformer.fit(data)
+    def fit(self, data: np.ndarray) -> None:
+        self.partial_fit(data)
 
     def partial_fit(self, data: np.ndarray) -> None:
-        self.transformer.partial_fit(data)
 
-    def transform(self, data: np.ndarray):
-        return self.transformer.transform(data)
+        is_init = len(self.transformers) == 0
 
-    def inverse_transform(self, transformed_data: np.ndarray):
-        return self.transformer.inverse_transform(transformed_data)
+        for name in data.dtype.names:
+
+            if is_init:
+                transformer = self.transformers[name] = sk.MaxAbsScaler()
+            else:
+                transformer = self.transformers[name]
+
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            transformer.partial_fit(current_data)
+
+    def transform(self, data: np.ndarray) -> np.ndarray:
+
+        for name in data.dtype.names:
+
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.transformers.keys()
+
+        for name in names:
+
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data
 
 
 class LogTransformer(Transformer):
@@ -161,19 +304,35 @@ class LogTransformer(Transformer):
     Corresponds to enum [`TransformerType.LOG_TRANSFORMER`][cesnet_tszoo.utils.enums.TransformerType] or literal `log_transformer`.
     """
 
-    def fit(self, data: np.ndarray):
-        ...
+    def __init__(self):
+        self.names = None
+
+    def fit(self, data: np.ndarray) -> None:
+        self.partial_fit(data)
 
     def partial_fit(self, data: np.ndarray) -> None:
-        ...
+        self.names = data.dtype.names
 
-    def transform(self, data: np.ndarray):
-        log_data = np.ma.log(data)
+    def transform(self, data: np.ndarray) -> np.ndarray:
 
-        return log_data.filled(np.nan)
+        for name in data.dtype.names:
 
-    def inverse_transform(self, transformed_data: np.ndarray):
-        return np.exp(transformed_data)
+            current_data = data[name]
+            log_data = np.ma.log(current_data)
+            current_data[:] = log_data.filled(np.nan)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.names
+
+        for name in names:
+
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            current_data[:] = np.exp(current_data)
+
+        return transformed_data
 
 
 class L2Normalizer(Transformer):
@@ -186,16 +345,24 @@ class L2Normalizer(Transformer):
     def __init__(self):
         self.transformer = sk.Normalizer(norm="l2")
 
-    def fit(self, data: np.ndarray):
+    def fit(self, data: np.ndarray) -> None:
         ...
 
     def partial_fit(self, data: np.ndarray) -> None:
         ...
 
-    def transform(self, data: np.ndarray):
-        return self.transformer.fit_transform(data)
+    def transform(self, data: np.ndarray) -> np.ndarray:
+        for name in data.dtype.names:
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
 
-    def inverse_transform(self, transformed_data: np.ndarray):
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            current_data[:] = self.transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Normalizer does not support inverse_transform.")
 
 
@@ -210,19 +377,48 @@ class RobustScaler(Transformer):
     """
 
     def __init__(self):
-        self.transformer = sk.RobustScaler()
+        self.transformers: dict[str, sk.RobustScaler] = {}
 
-    def fit(self, data: np.ndarray):
-        self.transformer.fit(data)
+    def fit(self, data: np.ndarray) -> None:
+
+        for name in data.dtype.names:
+            transformer = self.transformers[name] = sk.RobustScaler()
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            transformer.fit(current_data)
 
     def partial_fit(self, data: np.ndarray) -> None:
         raise NotImplementedError("RobustScaler does not support partial_fit.")
 
-    def transform(self, data: np.ndarray):
-        return self.transformer.transform(data)
+    def transform(self, data: np.ndarray) -> np.ndarray:
 
-    def inverse_transform(self, transformed_data: np.ndarray):
-        return self.transformer.inverse_transform(transformed_data)
+        for name in data.dtype.names:
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            current_data[:] = transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.transformers.keys()
+
+        for name in names:
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data
 
 
 class PowerTransformer(Transformer):
@@ -236,19 +432,48 @@ class PowerTransformer(Transformer):
     """
 
     def __init__(self):
-        self.transformer = sk.PowerTransformer()
+        self.transformers: dict[str, sk.PowerTransformer] = {}
 
-    def fit(self, data: np.ndarray):
-        self.transformer.fit(data)
+    def fit(self, data: np.ndarray) -> None:
+
+        for name in data.dtype.names:
+            transformer = self.transformers[name] = sk.PowerTransformer()
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            transformer.fit(current_data)
 
     def partial_fit(self, data: np.ndarray) -> None:
         raise NotImplementedError("PowerTransformer does not support partial_fit.")
 
-    def transform(self, data: np.ndarray):
-        return self.transformer.transform(data)
+    def transform(self, data: np.ndarray) -> np.ndarray:
 
-    def inverse_transform(self, transformed_data: np.ndarray):
-        return self.transformer.inverse_transform(transformed_data)
+        for name in data.dtype.names:
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            current_data[:] = transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.transformers.keys()
+
+        for name in names:
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data
 
 
 class QuantileTransformer(Transformer):
@@ -262,19 +487,48 @@ class QuantileTransformer(Transformer):
     """
 
     def __init__(self):
-        self.transformer = sk.QuantileTransformer()
+        self.transformers: dict[str, sk.QuantileTransformer] = {}
 
-    def fit(self, data: np.ndarray):
-        self.transformer.fit(data)
+    def fit(self, data: np.ndarray) -> None:
+
+        for name in data.dtype.names:
+            transformer = self.transformers[name] = sk.QuantileTransformer()
+            current_data = data[name]
+            flat_size = int(np.prod(current_data.shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            transformer.fit(current_data)
 
     def partial_fit(self, data: np.ndarray) -> None:
         raise NotImplementedError("QuantileTransformer does not support partial_fit.")
 
-    def transform(self, data: np.ndarray):
-        return self.transformer.transform(data)
+    def transform(self, data: np.ndarray) -> np.ndarray:
 
-    def inverse_transform(self, transformed_data: np.ndarray):
-        return self.transformer.inverse_transform(transformed_data)
+        for name in data.dtype.names:
+            transformer = self.transformers[name]
+            current_data = data[name]
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            current_data[:] = transformer.transform(current_data)
+
+        return data
+
+    def inverse_transform(self, transformed_data: np.ndarray) -> np.ndarray:
+
+        names = transformed_data.dtype.names if transformed_data.dtype.names is not None else self.transformers.keys()
+
+        for name in names:
+            transformer = self.transformers[name]
+            current_data = transformed_data[name] if transformed_data.dtype.names is not None else transformed_data
+            original_shape = current_data.shape
+            flat_size = int(np.prod(original_shape[1:]))
+
+            current_data = current_data.reshape(current_data.shape[0], flat_size)
+            current_data[:] = transformer.inverse_transform(current_data)
+
+        return transformed_data
 
 
 class NoTransformer(Transformer):

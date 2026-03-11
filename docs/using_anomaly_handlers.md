@@ -54,28 +54,46 @@ To check AnomalyHandler base class refer to [`AnomalyHandler`](reference_anomaly
 ```python
 
 import numpy as np
+import warnings
+
 from cesnet_tszoo.utils.anomaly_handler import AnomalyHandler
 from cesnet_tszoo.configs import TimeBasedConfig
 
 class CustomAnomalyHandler(AnomalyHandler):
     def __init__(self):
-        self.lower_bound = None
-        self.upper_bound = None
-        self.iqr = None
+        self.lower_bound = {}
+        self.upper_bound = {}
 
     def fit(self, data: np.ndarray) -> None:
-        q25, q75 = np.percentile(data, [25, 75], axis=0)
-        self.iqr = q75 - q25
 
-        self.lower_bound = q25 - 1.5 * self.iqr
-        self.upper_bound = q75 + 1.5 * self.iqr
+        warnings.filterwarnings("ignore")
 
-    def transform_anomalies(self, data: np.ndarray) -> np.ndarray:
-        mask_lower_outliers = data < self.lower_bound
-        mask_upper_outliers = data > self.upper_bound
+        for name in data.dtype.names:
+            current_data = data[name]
 
-        data[mask_lower_outliers] = np.take(self.lower_bound, np.where(mask_lower_outliers)[1])
-        data[mask_upper_outliers] = np.take(self.upper_bound, np.where(mask_upper_outliers)[1])              
+            q25, q75 = np.nanpercentile(current_data, [25, 75], axis=0)
+            iqr = q75 - q25
+
+            self.lower_bound[name] = q25 - 1.5 * iqr
+            self.upper_bound[name] = q75 + 1.5 * iqr
+
+        warnings.filterwarnings("always")
+
+    def transform_anomalies(self, data: np.ndarray):
+
+        for name in data.dtype.names:
+            lower_bound = self.lower_bound[name]
+            upper_bound = self.upper_bound[name]
+            current_data = data[name]
+
+            lb_broadcast = np.broadcast_to(lower_bound, current_data.shape)
+            ub_broadcast = np.broadcast_to(upper_bound, current_data.shape)
+
+            mask_lower = current_data < lb_broadcast
+            mask_upper = current_data > ub_broadcast
+
+            current_data[mask_lower] = lb_broadcast[mask_lower]
+            current_data[mask_upper] = ub_broadcast[mask_upper]           
 
 config = TimeBasedConfig(ts_ids=500, train_time_period=0.5, val_time_period=0.2, test_time_period=0.1, features_to_take=['n_flows', 'n_packets'],
                            handle_anomalies_with=CustomAnomalyHandler, nan_threshold=0.5, random_state=1500)                                                                    

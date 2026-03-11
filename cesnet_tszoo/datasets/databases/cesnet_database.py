@@ -56,9 +56,10 @@ class CesnetDatabase(ABC):
         annotations_root: Path to the folder where annotations are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.
         id_names: Names for time series IDs for each `source_type`.
         default_values: Default values for each available feature.
+        subsets: Available subsets for the database.
+        matrix_feature_mappings: Which matrix ids maps to which matrices.
         source_types: Available source types for the database.
         aggregations: Available aggregations for the database.   
-        additional_data: Available small datasets for each dataset. 
     """
 
     name: str
@@ -72,20 +73,22 @@ class CesnetDatabase(ABC):
 
     id_names: dict = None
     default_values: dict = None
+    subsets: list[str] = None
+    matrix_feature_mappings: dict[str, str] = {}
     source_types: list[SourceType] = []
     aggregations: list[AgreggationType] = []
-    additional_data: dict[str, tuple] = {}
 
     def __init__(self):
         raise ValueError("To create dataset instance use class method 'get_dataset' instead.")
 
     @classmethod
-    def get_dataset(cls, data_root: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False) -> CesnetDataset:
+    def get_dataset(cls, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False, backward_compatibility: bool = False) -> CesnetDataset:
         """
         Create new dataset instance.
 
         Parameters:
             data_root: Path to the folder where the dataset will be stored. Each database has its own subfolder `data_root/tszoo/databases/database_name/`.
+            subset: Specific subset of the dataset.
             source_type: The source type of the desired dataset.
             aggregation: The aggregation type for the selected source type.
             dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
@@ -98,15 +101,19 @@ class CesnetDatabase(ABC):
 
         logger = logging.getLogger("wrapper_dataset")
 
+        subset = subset.lower().strip() if subset is not None else subset
         source_type = SourceType(source_type)
         aggregation = AgreggationType(aggregation)
         dataset_type = DatasetType(dataset_type)
 
+        if cls.subsets is not None and subset not in cls.subsets:
+            raise ValueError(f"Unsupported subset: {subset}. Supported are: {cls.subsets}")
+
         if source_type not in cls.source_types:
-            raise ValueError(f"Unsupported source type: {source_type}")
+            raise ValueError(f"Unsupported source type: {source_type}. Supported are: {cls.source_types}")
 
         if aggregation not in cls.aggregations:
-            raise ValueError(f"Unsupported aggregation type: {aggregation}")
+            raise ValueError(f"Unsupported aggregation type: {aggregation}. Supported are: {cls.aggregations}")
 
         # Dataset paths setup
         cls.tszoo_root = os.path.normpath(os.path.expanduser(os.path.join(data_root, "tszoo")))
@@ -114,7 +121,17 @@ class CesnetDatabase(ABC):
         cls.configs_root = os.path.join(cls.tszoo_root, "configs")
         cls.benchmarks_root = os.path.join(cls.tszoo_root, "benchmarks")
         cls.annotations_root = os.path.join(cls.tszoo_root, "annotations")
-        dataset_name = f"{cls.name}-{source_type.value}-{AgreggationType._to_str_without_number(aggregation)}"
+
+        if backward_compatibility:
+            name_aggregation = AgreggationType._to_str_without_number(aggregation)
+        else:
+            name_aggregation = aggregation.value
+
+        if subset is None:
+            dataset_name = f"{cls.name}-{source_type.value}-{name_aggregation}"
+        else:
+            dataset_name = f"{cls.name}-{subset}-{source_type.value}-{name_aggregation}"
+
         dataset_path = os.path.join(cls.database_root, f"{dataset_name}.h5")
 
         # Ensure necessary directories exist
@@ -126,7 +143,7 @@ class CesnetDatabase(ABC):
         if not cls._is_downloaded(dataset_path):
             cls._download(dataset_name, dataset_path)
 
-        dataset_metadata = DatasetMetadata(cls.name, dataset_type, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.additional_data)
+        dataset_metadata = DatasetMetadata(cls.name, dataset_type, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, subset, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.matrix_feature_mappings)
 
         dataset_factory = dataset_factories.get_dataset_factory(dataset_type)
         dataset = dataset_factory.create_dataset(dataset_metadata)

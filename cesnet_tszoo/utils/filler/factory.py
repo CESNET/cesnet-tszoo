@@ -22,7 +22,7 @@ class FillerFactory(ABC):
         ...
 
     @abstractmethod
-    def create_filler(self, features) -> Filler:
+    def create_filler(self) -> Filler:
         """Creates filler instance. """
         ...
 
@@ -43,8 +43,8 @@ class MeanFillerFactory(FillerFactory):
     def __init__(self):
         super().__init__(MeanFiller, FillerType.MEAN_FILLER)
 
-    def create_filler(self, features) -> MeanFiller:
-        return MeanFiller(features)
+    def create_filler(self) -> MeanFiller:
+        return MeanFiller()
 
 
 class ForwardFillerFactory(FillerFactory):
@@ -53,8 +53,8 @@ class ForwardFillerFactory(FillerFactory):
     def __init__(self):
         super().__init__(ForwardFiller, FillerType.FORWARD_FILLER)
 
-    def create_filler(self, features) -> ForwardFiller:
-        return ForwardFiller(features)
+    def create_filler(self) -> ForwardFiller:
+        return ForwardFiller()
 
 
 class LinearInterpolationFillerFactory(FillerFactory):
@@ -63,8 +63,8 @@ class LinearInterpolationFillerFactory(FillerFactory):
     def __init__(self):
         super().__init__(LinearInterpolationFiller, FillerType.LINEAR_INTERPOLATION_FILLER)
 
-    def create_filler(self, features) -> LinearInterpolationFiller:
-        return LinearInterpolationFiller(features)
+    def create_filler(self) -> LinearInterpolationFiller:
+        return LinearInterpolationFiller()
 
 
 class NoFillerFactory(FillerFactory):
@@ -73,8 +73,8 @@ class NoFillerFactory(FillerFactory):
     def __init__(self):
         super().__init__(NoFiller, FillerType.NO_FILLER, is_empty_factory=True)
 
-    def create_filler(self, features) -> NoFiller:
-        return NoFiller(features)
+    def create_filler(self) -> NoFiller:
+        return NoFiller()
 
 
 class CustomFillerFactory(FillerFactory):
@@ -83,8 +83,8 @@ class CustomFillerFactory(FillerFactory):
     def __init__(self):
         super().__init__(None, None, creates_built_in=False)
 
-    def create_filler(self, features) -> Filler:
-        return self.filler_type(features)
+    def create_filler(self) -> Filler:
+        return self.filler_type()
 
     def can_be_used(self, fill_missing_with: type):
         return isinstance(fill_missing_with, type) and inspect.isclass(fill_missing_with) and issubclass(fill_missing_with, Filler)

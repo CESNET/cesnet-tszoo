@@ -37,7 +37,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     - **Numpy array**: For loading the entire training, validation or test set at once. 
     - See [loading data][loading-data] for more details.
 
-    The dataset is stored in a [PyTables](https://www.pytables.org/) database. The internal `TimeBasedDataset`, `SplittedDataset`, `TimeBasedInitializerDataset` classes (used only when calling [`set_dataset_config_and_initialize`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize)) act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
+    The dataset is stored in a [PyTables](https://www.pytables.org/) dataset. The internal `DisjointTimeBasedSplittedDataset`, `DisjointTimeBasedSplitDataset` and `DisjointTimeBasedInitializerDataset` classes act as wrappers that implement the PyTorch [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) 
     interface. These wrappers are compatible with PyTorch’s [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader), providing efficient parallel data loading. 
 
     The dataset configuration is done through the [`DisjointTimeBasedConfig`](reference_disjoint_time_based_config.md#references.DisjointTimeBasedConfig) class.       
@@ -64,11 +64,11 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
     """Configuration of the dataset."""
 
     train_dataset: Optional[DisjointTimeBasedSplittedDataset] = field(default=None, init=False)
-    """Training set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database."""
+    """Training set as a `DisjointTimeBasedSplittedDataset` instance wrapping multiple `DisjointTimeBasedSplitDataset` that wrap the PyTables dataset."""
     val_dataset: Optional[DisjointTimeBasedSplittedDataset] = field(default=None, init=False)
-    """Validation set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database."""
+    """Validation set as a `DisjointTimeBasedSplittedDataset` instance wrapping multiple `DisjointTimeBasedSplitDataset` that wrap the PyTables dataset."""
     test_dataset: Optional[DisjointTimeBasedSplittedDataset] = field(default=None, init=False)
-    """Test set as a `SplittedDataset` instance wrapping multiple `TimeBasedDataset` that wrap the PyTables database. """
+    """Test set as a `DisjointTimeBasedSplittedDataset` instance wrapping multiple `DisjointTimeBasedSplitDataset` that wrap the PyTables dataset. """
 
     train_dataloader: Optional[DisjointTimeBasedDataloader] = field(default=None, init=False)
     """Iterable PyTorch [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) for training set."""
@@ -370,19 +370,19 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
         """Called in [`set_dataset_config_and_initialize`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset.set_dataset_config_and_initialize), this method initializes the set datasets (train, validation, test and all). """
 
         if self.dataset_config.has_train():
-            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.TRAIN)
+            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.TRAIN, self.metadata)
             self.train_dataset = DisjointTimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.train_workers)
 
             self.logger.debug("train_dataset initiliazed.")
 
         if self.dataset_config.has_val():
-            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.VAL)
+            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.VAL, self.metadata)
             self.val_dataset = DisjointTimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.val_workers)
 
             self.logger.debug("val_dataset initiliazed.")
 
         if self.dataset_config.has_test():
-            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.TEST)
+            load_config = DisjointTimeLoadConfig(self.dataset_config, SplitType.TEST, self.metadata)
             self.test_dataset = DisjointTimeBasedSplittedDataset(self.metadata.dataset_path, self.metadata.data_table_path, load_config, self.dataset_config.test_workers)
             self.logger.debug("test_dataset initiliazed.")
 
@@ -400,7 +400,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.logger.debug("Train set updated: %s time series left.", len(self.dataset_config.train_ts))
 
         if self.dataset_config.has_val():
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]))
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.VAL, PreprocessOrderGroup([]), self.metadata)
 
             ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "val")
             self.dataset_config.val_ts = self.dataset_config.val_ts[ts_ids_to_take]
@@ -410,7 +410,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             self.logger.debug("Val set updated: %s time series left.", len(self.dataset_config.val_ts))
 
         if self.dataset_config.has_test():
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TEST, PreprocessOrderGroup([]))
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TEST, PreprocessOrderGroup([]), self.metadata)
 
             ts_ids_to_take = self.__initialize_config_for_non_fit_sets(init_config, workers, "test")
             self.dataset_config.test_ts = self.dataset_config.test_ts[ts_ids_to_take]
@@ -435,7 +435,7 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
             ts_ids_to_take = []
             self.logger.info("Starting fitting cycle %s/%s.", i + 1, len(groups))
 
-            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group)
+            init_config = DisjointTimeDatasetInitConfig(self.dataset_config, SplitType.TRAIN, group, self.metadata)
             init_dataset = DisjointTimeBasedInitializerDataset(self.metadata.dataset_path, self.metadata.data_table_path, init_config)
 
             sampler = SequentialSampler(init_dataset)
@@ -584,10 +584,12 @@ class DisjointTimeBasedCesnetDataset(CesnetDataset):
 
         dataloader = self.dataloader_factory.create_dataloader(dataset, self.dataset_config, 0, True, None)
 
-        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), dataset.load_config.time_format, dataset.load_config.include_time, DatasetType.TIME_BASED, True)
+        temp_data = dataset_loaders.create_numpy_from_dataloader(dataloader, np.array([ts_id]), DatasetType.TIME_BASED, True)
 
-        if (dataset.load_config.time_format == TimeFormat.DATETIME and dataset.load_config.include_time):
-            temp_data = temp_data[0]
+        if (temp_data.dtype.names is not None):
+            if "base_data" not in temp_data.dtype.names:
+                raise NotImplementedError("Plotting support only non matrix features.")
+            temp_data = temp_data["base_data"]
 
         temp_data = temp_data[0][:, feature_indices]
 

@@ -22,7 +22,7 @@ Relevant configuration values:
 - Load data using Pytorch Dataloader.
 - Affected by workers and batch sizes.
 - Last batch is never dropped (unless sliding window is used)
-- Returned batch shape changes when used `time_format` is TimeFormat.DATETIME compare to other time formats. Check Jupyter notebook for details.
+- Returned numpy array is structured when `time_format` is TimeFormat.DATETIME or matrix feature is used alongside with non matrix feature. Check Jupyter notebook for details.
 
 ```python
 
@@ -52,7 +52,7 @@ dataloader = time_based_dataset.get_all_dataloader(workers="config")
 batches = []
 
 for batch in tqdm(dataloader):
-    # batch is a Numpy array of shape (ts_ids, batch_size, features_to_take + used ids)
+    # batch is a Numpy array of shape (ts_ids, batch_size, features_to_take + used ids) or structured array of shape (ts_ids, batch_size)
     batches.append(batch)
 
 ```
@@ -96,7 +96,7 @@ dataloader = time_based_dataset.get_train_dataloader(ts_id=1, workers="config")
 batches = []
 
 for batch in tqdm(dataloader):
-    # batch is a Numpy array of shape (1, batch_size, features_to_take + used ids)
+    # batch is a Numpy array of shape (1, batch_size, features_to_take + used ids) or structured array of shape (1, batch_size)
     batches.append(batch)
 
 ```
@@ -127,8 +127,8 @@ dataloader = time_based_dataset.get_train_dataloader(workers="config")
 batches = []
 
 for sliding_window, sliding_window_prediction in tqdm(dataloader):
-    # sliding_window is a Numpy array of shape (ts_ids, sliding_window_size, features_to_take + used ids)
-    # sliding_window_prediction is a Numpy array of shape (ts_ids, sliding_window_prediction_size, features_to_take + used ids)
+    # sliding_window is a Numpy array of shape (ts_ids, sliding_window_size, features_to_take + used ids) or structured array of shape (ts_ids, sliding_window_size)
+    # sliding_window_prediction is a Numpy array of shape (ts_ids, sliding_window_prediction_size, features_to_take + used ids) or structured array of shape (ts_ids, sliding_window_prediction_size)
     batches.append((sliding_window, sliding_window_prediction))    
 
 ```
@@ -226,7 +226,7 @@ Relevant configuration values:
 - Load data using Pytorch Dataloader.
 - Affected by workers and batch sizes.
 - Last batch is never dropped (unless sliding window is used)
-- Returned batch shape changes when used `time_format` is TimeFormat.DATETIME compare to other time formats. Check Jupyter notebook for details.
+- Returned numpy array is structured when `time_format` is TimeFormat.DATETIME or matrix feature is used alongside with non matrix feature. Check Jupyter notebook for details.
 
 ```python
 
@@ -253,7 +253,7 @@ dataloader = disjoint_dataset.get_test_dataloader(workers="config")
 batches = []
 
 for batch in tqdm(dataloader):
-    # batch is a Numpy array of shape (train_ts/val_ts/test_ts, batch_size, features_to_take + used ids)
+    # batch is a Numpy array of shape (train_ts/val_ts/test_ts, batch_size, features_to_take + used ids) or structured array of shape (train_ts/val_ts/test_ts, batch_size)
     batches.append(batch)
 
 ```
@@ -298,7 +298,7 @@ dataloader = disjoint_dataset.get_train_dataloader(ts_id=177, workers="config")
 batches = []
 
 for batch in tqdm(dataloader):
-    # batch is a Numpy array of shape (1, batch_size, features_to_take + used ids)
+    # batch is a Numpy array of shape (1, batch_size, features_to_take + used ids) or structured array of shape (1, batch_size)
     batches.append(batch)
 
 ```
@@ -330,8 +330,8 @@ dataloader = disjoint_dataset.get_train_dataloader(workers="config")
 batches = []
 
 for sliding_window, sliding_window_prediction in tqdm(dataloader):
-    # sliding_window is a Numpy array of shape (train_ts/val_ts/test_ts, sliding_window_size, features_to_take + used ids)
-    # sliding_window_prediction is a Numpy array of shape (train_ts/val_ts/test_ts, sliding_window_prediction_size, features_to_take + used ids)
+    # sliding_window is a Numpy array of shape (train_ts/val_ts/test_ts, sliding_window_size, features_to_take + used ids) or structured array of shape (train_ts/val_ts/test_ts, sliding_window_size)
+    # sliding_window_prediction is a Numpy array of shape (train_ts/val_ts/test_ts, sliding_window_prediction_size, features_to_take + used ids) or structured array of shape (train_ts/val_ts/test_ts, sliding_window_prediction_size)
     batches.append((sliding_window, sliding_window_prediction))    
 
 ```
@@ -421,7 +421,7 @@ Relevant configuration values:
 - Load data using Pytorch Dataloader.
 - Affected by workers and batch sizes.
 - Last batch is never dropped.
-- Returned batch shape changes when used `time_format` is TimeFormat.DATETIME compare to other time formats. Check Jupyter notebook for details.
+- Returned numpy array is structured when `time_format` is TimeFormat.DATETIME or matrix feature is used alongside with non matrix feature. Check Jupyter notebook for details.
 
 ```python
 
@@ -451,7 +451,7 @@ dataloader = series_based_dataset.get_all_dataloader(workers="config")
 batches = []
 
 for batch in tqdm(dataloader):
-    # batch is a Numpy array of shape (batch_size, time_period, features_to_take + used ids)
+    # batch is a Numpy array of shape (batch_size, time_period, features_to_take + used ids) or structured array of shape (batch_size, time_period)
     batches.append(batch)
 
 ```
@@ -495,7 +495,7 @@ dataloader = series_based_dataset.get_train_dataloader(ts_id=176, workers="confi
 batches = []
 
 for batch in tqdm(dataloader):
-    # batch is a Numpy array of shape (1, time_period, features_to_take + used ids)
+    # batch is a Numpy array of shape (1, time_period, features_to_take + used ids) or structured array of shape (1, time_period)
     batches.append(batch)
 
 ```

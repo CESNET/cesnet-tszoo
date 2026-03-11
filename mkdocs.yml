@@ -4,12 +4,17 @@ repo_url: https://github.com/CESNET/cesnet-tszoo
 
 theme:
   name: "material"
+  custom_dir: docs/overrides
   palette:
-    primary: white
+    primary: white   
   features:
     - navigation.sections
+    - announce.autohide  
   logo: images/tszoo_logo.svg
   favicon: images/tszoo_logo.svg
+  
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - search
@@ -29,8 +34,15 @@ nav:
   - Approaches to datasets: dataset_approaches.md
   - Benchmarks: benchmarks.md
   - Datasets:
-    - CESNET-TimeSeries24: cesnet_timeseries24.md
-    - CESNET-AGG23: cesnet_agg23.md
+      - Adding dataset: adding_datasets.md
+      - Supported datasets:
+        - CESNET-TimeSeries24: cesnet_timeseries24.md
+        - CESNET-AGG23: cesnet_agg23.md
+        - Abilene: abilene.md
+        - GÉANT: geant.md
+        - SDN: sdn.md
+        - Telecom Italia: telecom-italia.md
+        - Vigo NetworkOperator KPIs: vigo-networkoperatorkpis.md
   - Preprocesses:
     - Transformers: transformers.md
     - Fillers: fillers.md

@@ -41,7 +41,9 @@ class AllFitTest(AllSeriesCustomHandler):
         self.count += 1
 
     def apply(self, data: np.ndarray) -> np.ndarray:
-        data[:, :] = self.count
+        for name in data.dtype.names:
+            data[name][:, :] = self.count
+
         return data
 
     @staticmethod
@@ -88,7 +90,9 @@ class PerFitTest(PerSeriesCustomHandler):
         self.count += 1
 
     def apply(self, data: np.ndarray) -> np.ndarray:
-        data[:, :] = self.count
+        for name in data.dtype.names:
+            data[name][:, :] = self.count       
+
         return data
 
     @staticmethod
@@ -127,7 +131,8 @@ from cesnet_tszoo.configs import TimeBasedConfig
 
 class NoFitTest(NoFitCustomHandler):
     def apply(self, data: np.ndarray) -> np.ndarray:
-        data[:, :] = -1
+        for name in data.dtype.names:
+            data[name][:, :] = -1
         return data
 
     @staticmethod

@@ -5,12 +5,13 @@ import numpy as np
 from cesnet_tszoo.configs import TimeBasedConfig
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
+from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
 class TimeDatasetInitConfig(DatasetInitConfig):
     """For time based init datasets. """
 
-    def __init__(self, config: TimeBasedConfig, ts_ids_ignore: np.ndarray, train_group: PreprocessOrderGroup, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup):
+    def __init__(self, config: TimeBasedConfig, ts_ids_ignore: np.ndarray, train_group: PreprocessOrderGroup, val_group: PreprocessOrderGroup, test_group: PreprocessOrderGroup, dataset_metadata: DatasetMetadata):
         self.ts_row_ranges = config.ts_row_ranges
         self.ts_ids = config.ts_ids
 
@@ -24,7 +25,7 @@ class TimeDatasetInitConfig(DatasetInitConfig):
         self.val_preprocess_order_group = deepcopy(val_group)
         self.test_preprocess_order_group = deepcopy(test_group)
 
-        super().__init__(config, None)
+        super().__init__(config, None, dataset_metadata)
 
         if self.all_time_period is None:
             for temp_time_period in [self.train_time_period, self.val_time_period, self.test_time_period]:

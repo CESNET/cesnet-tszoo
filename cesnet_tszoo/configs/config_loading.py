@@ -7,8 +7,8 @@ from cesnet_tszoo.utils.enums import SourceType, AgreggationType
 from cesnet_tszoo.configs.config_updater import ConfigUpdater
 
 
-def load_config(identifier: str, config_root: str, database_name: str, source_type: str, aggregation: str, logger: Logger) -> DatasetConfig:
-    config_file_path, is_built_in = get_config_path_and_whether_it_is_built_in(identifier, config_root, database_name, SourceType(source_type), AgreggationType(aggregation), logger)
+def load_config(identifier: str, config_root: str, database_name: str, subset: str, source_type: str, aggregation: str, logger: Logger) -> DatasetConfig:
+    config_file_path, is_built_in = get_config_path_and_whether_it_is_built_in(identifier, config_root, database_name, subset, SourceType(source_type), AgreggationType(aggregation), logger)
 
     if is_built_in:
         logger.info("Built-in config found: %s. Loading it.", identifier)

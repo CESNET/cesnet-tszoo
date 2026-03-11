@@ -11,8 +11,8 @@ from cesnet_tszoo.utils.enums import PreprocessType
 from cesnet_tszoo.data_models.init_dataset_configs.init_config import DatasetInitConfig
 from cesnet_tszoo.data_models.preprocess_order_group import PreprocessOrderGroup
 from cesnet_tszoo.data_models.holders import FillingHolder, TransformerHolder, AnomalyHandlerHolder, PerSeriesCustomHandlerHolder, AllSeriesCustomHandlerHolder, NoFitCustomHandlerHolder
-from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME
-from cesnet_tszoo.pytables_data.utils.utils import load_database
+from cesnet_tszoo.utils.constants import ROW_START, ROW_END, ID_TIME_COLUMN_NAME, BASE_DATA_DTYPE_PART, TIME_DTYPE_PART
+from cesnet_tszoo.pytables_data.utils.utils import load_database, load_arrays
 
 
 class InitializerDataset(Dataset, ABC):
@@ -25,8 +25,10 @@ class InitializerDataset(Dataset, ABC):
         self.table = None
         self.worker_id = None
         self.database = None
+        self.matrix_nodes = None
+        self.preprocess_template_array = np.zeros(len(self.init_config.time_period), dtype=self.init_config.preprocess_dtype)
 
-        self.offset_exclude_feature_ids = len(self.init_config.features_to_take) - len(self.init_config.indices_of_features_to_take_no_ids)
+        self.offset_exclude_feature_ids = len(self.init_config.all_features_to_take_table) - self.init_config.non_id_scalar_features_count
 
     def pytables_worker_init(self, worker_id=0) -> None:
         """Prepares this dataset for loading data. """
@@ -34,6 +36,8 @@ class InitializerDataset(Dataset, ABC):
         self.worker_id = worker_id
 
         self.database, self.table = load_database(dataset_path=self.database_path, table_data_path=self.table_data_path)
+        self.matrix_nodes = load_arrays(self.database, self.table._v_parent, self.init_config.matrix_features_to_take)
+
         atexit.register(self.cleanup)
 
     @abstractmethod
@@ -52,8 +56,7 @@ class InitializerDataset(Dataset, ABC):
     def load_data_from_table(self, identifier_row_range_to_take: np.ndarray) -> np.ndarray:
         """Returns data from the table and indices of rows where values exists."""
 
-        result = np.full((len(self.init_config.time_period), len(self.init_config.features_to_take)), fill_value=np.nan, dtype=np.float64)
-        result[:, self.offset_exclude_feature_ids:] = np.nan
+        result = np.full(len(self.init_config.time_period), fill_value=self.init_config.return_dtype_fill_values, dtype=self.init_config.return_dtype)
 
         expected_offset = np.uint32(len(self.init_config.time_period))
         start = int(identifier_row_range_to_take[ROW_START])
@@ -93,9 +96,34 @@ class InitializerDataset(Dataset, ABC):
         existing_indices = filtered_rows[ID_TIME_COLUMN_NAME].view()
 
         if len(filtered_rows) > 0:
-            result[existing_indices, :] = rf.structured_to_unstructured(filtered_rows[:][self.init_config.features_to_take], dtype=np.float64, copy=False)
+            all_features_rows = rf.structured_to_unstructured(filtered_rows[:][self.init_config.all_features_to_take_table], dtype=np.float64, copy=False)
+            self.__try_add_base_data(all_features_rows, result, existing_indices)
+            self.__try_add_matrices(all_features_rows, result, existing_indices)
 
         return result, existing_indices
+
+    def __try_add_base_data(self, to_take_from: np.ndarray, to_add_to: np.ndarray, existing_indices: np.ndarray):
+        if BASE_DATA_DTYPE_PART in self.init_config.return_dtype.names:
+            to_add_to[BASE_DATA_DTYPE_PART][existing_indices] = to_take_from[:, self.init_config.non_matrix_feature_indices]
+
+    def __try_add_matrices(self, to_take_from: np.ndarray, to_add_to: np.ndarray, existing_indices: np.ndarray):
+        if len(self.matrix_nodes) == 0:
+            return
+
+        matrix_indices = to_take_from[:, self.init_config.matrix_feature_indices].astype(np.uint32)
+
+        for i, matrix_node in enumerate(self.matrix_nodes):
+            feature_name = self.init_config.matrix_features_to_take[i]
+            to_add_to[feature_name][existing_indices] = matrix_node[matrix_indices[:, i], :, :]
+
+    def _data_to_train_shape(self, data: np.ndarray, idx: int) -> np.ndarray:
+        for name in self.init_config.preprocess_dtype.names:
+            if name == BASE_DATA_DTYPE_PART:
+                self.preprocess_template_array[BASE_DATA_DTYPE_PART] = data[BASE_DATA_DTYPE_PART][:, self.offset_exclude_feature_ids:]
+            elif name != TIME_DTYPE_PART:
+                self.preprocess_template_array[name] = data[name]
+
+        return self.preprocess_template_array
 
     @abstractmethod
     def _handle_data_preprocess(self, data: np.ndarray, idx: int) -> np.ndarray:
