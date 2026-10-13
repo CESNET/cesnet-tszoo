@@ -37,6 +37,7 @@ nav:
       - Adding dataset: adding_datasets.md
       - Supported datasets:
         - CESNET-TimeSeries24: cesnet_timeseries24.md
+        - CESNET-TimeSeries26: cesnet_timeseries26.md
         - CESNET-AGG23: cesnet_agg23.md
         - Abilene: abilene.md
         - GÉANT: geant.md
