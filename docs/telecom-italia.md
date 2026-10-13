@@ -45,6 +45,25 @@ Additionaly to prevent lot of empty time series, every pair of (square, country 
 | std_internet_traffic          | Standard deviation of Internet traffic volume of specific country code within the cell over the aggregation interval.                 |
 | sum_internet_traffic          | Sum of Internet traffic volume of specific country code within the cell over the aggregation interval.                                 |
 
+<!-- terms:start -->
+### Source, citation and terms of use
+
+- **Original data:** Telecommunications - SMS, Call, Internet - MI (Telecom Italia Big Data Challenge, Milan grid), Harvard Dataverse — <https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/EGZHFV>
+- **Reference:** Telecom Italia, "Telecommunications - SMS, Call, Internet - MI", Harvard Dataverse, V1, 2015, https://doi.org/10.7910/DVN/EGZHFV. Descriptor paper: G. Barlacchi, M. De Nadai, R. Larcher, A. Casella, C. Chitic, G. Torrisi, F. Antonelli, A. Vespignani, A. Pentland, B. Lepri, "A multi-source dataset of urban life in the city of Milan and the Province of Trentino", Scientific Data 2:150055, 2015.
+- **Licence of the original data:** ODbL 1.0 (Open Database License)
+
+If you use this dataset, cite the original work:
+
+```bibtex
+@article{Barlacchi2015Milan, author={Gianni Barlacchi and Marco De Nadai and Roberto Larcher and Antonio Casella and Cristiana Chitic and Giovanni Torrisi and Fabrizio Antonelli and Alessandro Vespignani and Alex Pentland and Bruno Lepri}, title={A multi-source dataset of urban life in the city of {M}ilan and the {P}rovince of {T}rentino}, journal={Scientific Data}, volume={2}, pages={150055}, year={2015}, doi={10.1038/sdata.2015.55}}
+@misc{TelecomItaliaMI2015, author={{Telecom Italia}}, title={Telecommunications - {SMS}, {C}all, {I}nternet - {MI}}, publisher={Harvard Dataverse}, version={V1}, year={2015}, doi={10.7910/DVN/EGZHFV}}
+```
+
+!!! warning "Terms of use"
+    The files are a converted copy of the original data, distributed under the licence of the original data (ODbL 1.0 (Open Database License)) and intended for research and education. The terms of the original source apply; check them before any commercial use. Every use must carry the attribution "from BigDataChallenge contest" with a link to http://www.telecomitalia.com/tit/en/bigdatachallenge.html. Databases derived from these files must be offered under ODbL 1.0. The conversion to HDF5 does not alter the measured values and is provided as is, without warranty. Rights holders who object to the redistribution can contact the maintainers and the files will be removed.
+
+<!-- terms:end -->
+
 ### Links
 
 More detailed description is available in the [paper](https://doi.org/10.1038/sdata.2015.55). Original dataset can be downloaded at [https://dataverse.harvard.edu](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/EGZHFV).

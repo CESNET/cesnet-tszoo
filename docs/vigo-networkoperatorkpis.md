@@ -84,6 +84,24 @@ In this subset, time series are of VPN traffic. Contains 11 time series.
 | std_scaled_bts               | Standard deviation of VPN traffic over the aggregation interval.                                 |
 | sum_scaled_bts               | Sum of VPN traffic over the aggregation interval.                                              |
 
+<!-- terms:start -->
+### Source, citation and terms of use
+
+- **Original data:** Network operator KPIs time series dataset (Zenodo record 8147768) — <https://zenodo.org/records/8147768>
+- **Reference:** P. Fondo-Ferreiro, M. Rodelgo-Lacruz, F. J. Gonzalez-Castano, F. Gil-Castineira, D. Candal-Ventureira, "Network operator KPIs time series dataset", Version 1.0, Zenodo, 14 July 2023, https://doi.org/10.5281/zenodo.8147768.
+- **Licence of the original data:** CC BY 4.0
+
+If you use this dataset, cite the original work:
+
+```bibtex
+@dataset{FondoFerreiro2023KPIs, author={Fondo-Ferreiro, Pablo and Rodelgo-Lacruz, Miguel and Gonz{\'a}lez-Casta{\~n}o, Francisco Javier and Gil-Casti{\~n}eira, Felipe and Candal-Ventureira, David}, title={Network operator {KPI}s time series dataset}, publisher={Zenodo}, version={1.0}, year={2023}, month={jul}, doi={10.5281/zenodo.8147768}, url={https://doi.org/10.5281/zenodo.8147768}}
+```
+
+!!! warning "Terms of use"
+    The files are a converted copy of the original data, distributed under the licence of the original data (CC BY 4.0) and intended for research and education. The terms of the original source apply; check them before any commercial use. The conversion to HDF5 does not alter the measured values and is provided as is, without warranty. Rights holders who object to the redistribution can contact the maintainers and the files will be removed.
+
+<!-- terms:end -->
+
 ### Links
 
 More detailed description is available on the [Zenodo](https://doi.org/10.5281/zenodo.8147768). Original dataset can be downloaded at [https://doi.org/10.5281/zenodo.8147768](https://doi.org/10.5281/zenodo.8147768).

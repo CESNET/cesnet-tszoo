@@ -119,6 +119,33 @@ In this subset, each time series corresponds to one node. Contains 12 time serie
 | std_to_generalTomogravityOD     | Standard deviation of traffic volume estimated by the generalized tomogravity model destined to a node. |
 | sum_to_generalTomogravityOD     | Sum of traffic volume estimated by the generalized tomogravity model destined to a node.         |
 
+<!-- terms:start -->
+### Source, citation and terms of use
+
+- **Original data:** Abilene/Internet2 traffic matrices collected by Yin Zhang (AbileneTM, 6 months, 2004) — <https://www.cs.utexas.edu/~yzhang/research/AbileneTM/>
+- **Reference:** Y. Zhang, M. Roughan, N. Duffield and A. Greenberg, "Fast accurate computation of large-scale IP traffic matrices from link loads," ACM SIGMETRICS Performance Evaluation Review, vol. 31, no. 1, pp. 206-217, June 2003.
+- **Licence of the original data:** No licence stated by the source
+
+If you use this dataset, cite the original work:
+
+```bibtex
+@article{zhang2003fast,
+  author = {Zhang, Yin and Roughan, Matthew and Duffield, Nick and Greenberg, Albert},
+  title = {Fast accurate computation of large-scale {IP} traffic matrices from link loads},
+  journal = {ACM SIGMETRICS Performance Evaluation Review},
+  volume = {31},
+  number = {1},
+  pages = {206--217},
+  year = {2003},
+  doi = {10.1145/885651.781053}
+}
+```
+
+!!! warning "Terms of use"
+    The files are a converted copy of the original data, redistributed **only for non-commercial research and education**. **Do not use them for commercial purposes.** All rights to the data remain with the original authors and the terms of the original source apply. For any other use, obtain the data and the permission from the original source. The conversion to HDF5 does not alter the measured values and is provided as is, without warranty. Rights holders who object to the redistribution can contact the maintainers and the files will be removed.
+
+<!-- terms:end -->
+
 ### Links
 
 Cite [paper](https://doi.org/10.1145/885651.781053). Original dataset can be downloaded at [https://www.cs.utexas.edu/~yzhang/research/AbileneTM](https://www.cs.utexas.edu/~yzhang/research/AbileneTM).
