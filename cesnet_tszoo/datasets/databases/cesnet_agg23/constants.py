@@ -1,3 +1,4 @@
+from cesnet_tszoo.utils.download import google_drive_url, zenodo_file_url
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType
 
 ID_NAMES = {
@@ -57,3 +58,19 @@ SOURCE_TYPES = {
 AGGREGATIONS = {
     AgreggationType.AGG_1_MINUTE
 }
+
+# Secondary sources tried when the DataZoo bucket is unreachable; the files are copies of the bucket content.
+FALLBACK_DOWNLOAD_URLS = {
+    "CESNET-AGG23-CESNET2-minute": [google_drive_url("1we-tL84fHavzwx0uWSvdeERr6lqh9LH7")],
+}
+
+# SHA-256 digests of the dataset files (verified after download).
+CHECKSUMS = {
+    "CESNET-AGG23-CESNET2-minute": "23c6f9720f3cba4ec84f18054822e4eb21e43346037a0b5a13e0f8625805611b",
+}
+
+# Zenodo record https://zenodo.org/records/22721975 (DOI 10.5281/zenodo.22721975, published 2026-10-13) holds the same
+# files (byte-identical to the DataZoo bucket, see CHECKSUMS); tried after the Google Drive mirror.
+ZENODO_RECORD = 22721975
+ZENODO_SOURCES = {name: [zenodo_file_url(ZENODO_RECORD, f"{name}.h5")] for name in CHECKSUMS}
+FALLBACK_DOWNLOAD_URLS = {name: list(FALLBACK_DOWNLOAD_URLS.get(name, [])) + ZENODO_SOURCES[name] for name in CHECKSUMS}

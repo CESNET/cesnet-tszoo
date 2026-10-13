@@ -6,16 +6,21 @@ from cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset import DisjointTim
 from cesnet_tszoo.datasets.databases.cesnet_database import CesnetDatabase
 import cesnet_tszoo.datasets.databases.SDN.constants as sdn_constants
 from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
+from cesnet_tszoo.utils.enums import DownloadSource
 
 
 class SDN(CesnetDatabase):
     """
     Dataset class for [SDN][sdn]. 
 
+    Files are downloaded from CESNET DataZoo, with the Google Drive copies in `fallback_download_urls` as a secondary source, and verified against `checksums`.
+
     Use class method [`get_dataset`][cesnet_tszoo.datasets.SDN.get_dataset] to create a dataset instance.
     """
     name = "SDN"
     bucket_url = "https://liberouter.org/datazoo/download?bucket=sdn"
+    fallback_download_urls = sdn_constants.FALLBACK_DOWNLOAD_URLS
+    checksums = sdn_constants.CHECKSUMS
     id_names = sdn_constants.ID_NAMES
     default_values = sdn_constants.DEFAULT_VALUES
     matrix_feature_mappings = sdn_constants.MATRIX_FEATURE_MAPPINGS
@@ -26,21 +31,21 @@ class SDN(CesnetDatabase):
     @overload
     @classmethod
     def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], aggregation: AgreggationType | Literal["1_minute", "10_minutes", "1_hour", "1_day"],
-                    dataset_type: Literal[DatasetType.TIME_BASED, "time_based"], check_errors: bool = False, display_details: bool = False) -> TimeBasedCesnetDataset: ...
+                    dataset_type: Literal[DatasetType.TIME_BASED, "time_based"], check_errors: bool = False, display_details: bool = False, download_source: DownloadSource | str = "auto") -> TimeBasedCesnetDataset: ...
 
     @overload
     @classmethod
     def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], aggregation: AgreggationType | Literal["1_minute", "10_minutes", "1_hour", "1_day"],
-                    dataset_type: Literal[DatasetType.SERIES_BASED, "series_based"], check_errors: bool = False, display_details: bool = False) -> SeriesBasedCesnetDataset: ...
+                    dataset_type: Literal[DatasetType.SERIES_BASED, "series_based"], check_errors: bool = False, display_details: bool = False, download_source: DownloadSource | str = "auto") -> SeriesBasedCesnetDataset: ...
 
     @overload
     @classmethod
     def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], aggregation: AgreggationType | Literal["1_minute", "10_minutes", "1_hour", "1_day"],
-                    dataset_type: Literal[DatasetType.DISJOINT_TIME_BASED, "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> DisjointTimeBasedCesnetDataset: ...
+                    dataset_type: Literal[DatasetType.DISJOINT_TIME_BASED, "disjoint_time_based"], check_errors: bool = False, display_details: bool = False, download_source: DownloadSource | str = "auto") -> DisjointTimeBasedCesnetDataset: ...
 
     @classmethod
     def get_dataset(cls, data_root: str, subset: Literal["matrix", "node", "node2node"], aggregation: AgreggationType | Literal["1_minute", "10_minutes", "1_hour", "1_day"],
-                    dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"], check_errors: bool = False, display_details: bool = False) -> Union[TimeBasedCesnetDataset, SeriesBasedCesnetDataset, DisjointTimeBasedCesnetDataset]:
+                    dataset_type: DatasetType | Literal["time_based", "series_based", "disjoint_time_based"], check_errors: bool = False, display_details: bool = False, download_source: DownloadSource | str = "auto") -> Union[TimeBasedCesnetDataset, SeriesBasedCesnetDataset, DisjointTimeBasedCesnetDataset]:
         """
         Create new dataset instance.
 
@@ -51,9 +56,10 @@ class SDN(CesnetDatabase):
             dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
             check_errors: Whether to validate if the dataset is corrupted. `Default: False`
             display_details: Whether to display details about the available data in chosen dataset. `Default: False`
+            download_source: Where to download the dataset from when it is not in `data_root` yet: `"auto"` (every configured source in order), `"datazoo"`, `"google_drive"` or `"zenodo"`. See [`DownloadSource`][cesnet_tszoo.utils.enums.DownloadSource]. `Default: "auto"`
 
         Returns:
             [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
         """
 
-        return super(SDN, cls).get_dataset(data_root, subset, SourceType.MININET_SIMULATOR, aggregation, dataset_type, check_errors, display_details)
+        return super(SDN, cls).get_dataset(data_root, subset, SourceType.MININET_SIMULATOR, aggregation, dataset_type, check_errors, display_details, download_source=download_source)
