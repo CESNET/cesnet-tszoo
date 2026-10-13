@@ -11,9 +11,9 @@ The token is read from ~/.zenodo_token (scopes deposit:write, deposit:actions) o
 Symbolic links in the record directory are followed (the target file is uploaded).
 
 Example:
-  python scripts/zenodo_upload.py --manifest /Volumes/NewDisk/tszoo-mirror/zenodo/CESNET-TimeSeries26/pack/manifest.json \\
+  python scripts/zenodo_upload.py --manifest <out>/manifest.json \\
       --record 1 --metadata zenodo_ts26_record1.json \\
-      --extra /Volumes/NewDisk/tszoo-mirror/zenodo/CESNET-TimeSeries26/README.md
+      --extra <out>/README.md
   # add --sandbox to try it on https://sandbox.zenodo.org first (needs a sandbox token)
 """
 

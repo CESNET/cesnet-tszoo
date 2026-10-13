@@ -21,8 +21,8 @@ Two modes:
 
 Example:
   python scripts/zenodo_pack.py pack --database CESNET-TimeSeries26 \\
-      --files /Volumes/NewDisk/CESNET-TimeSeries-datasets/tszoo_h5/*.h5 --out /Volumes/NewDisk/zenodo/CESNET-TimeSeries26
-  python scripts/zenodo_pack.py urls --manifest /Volumes/NewDisk/zenodo/CESNET-TimeSeries26/manifest.json --record-ids 1:1234567,2:1234568
+      --files <h5_dir>/*.h5 --out <out>
+  python scripts/zenodo_pack.py urls --manifest <out>/manifest.json --record-ids 1:1234567,2:1234568
 """
 
 import argparse
