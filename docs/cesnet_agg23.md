@@ -62,6 +62,25 @@ The dataset consists of rules set used by the Scalar aggregator to aggregate inf
 | packets_tcp            |    The sum of packets of TCP flows.                                                                                                                |
 | packets_udp            |    The sum of packets of UDP flows.                                                                                                                |
 
+<!-- terms:start -->
+### Source, citation and terms of use
+
+- **Original data:** CESNET-AGG23 (Zenodo record 8053021) — <https://zenodo.org/records/8053021>
+- **Reference:** T. Benes, J. Pesek, T. Cejka, "Look at my Network: An Insight into the ISP Backbone Traffic", in Proc. 2023 19th International Conference on Network and Service Management (CNSM), IEEE, 2023, pp. 1-7, https://doi.org/10.23919/CNSM59352.2023.10327823. Dataset: T. Benes, J. Pesek, T. Cejka, "CESNET-AGG23", Zenodo, 18 Jun 2023, https://doi.org/10.5281/zenodo.8053021.
+- **Licence of the original data:** CC BY 4.0
+
+If you use this dataset, cite the original work:
+
+```bibtex
+@inproceedings{Benes2023LookAtMyNetwork, author={Tomas Benes and Jaroslav Pesek and Tomas Cejka}, title={Look at my Network: An Insight into the {ISP} Backbone Traffic}, booktitle={2023 19th International Conference on Network and Service Management (CNSM)}, pages={1--7}, year={2023}, publisher={IEEE}, doi={10.23919/CNSM59352.2023.10327823}}
+@dataset{Benes2023AGG23, author={Benes, Tomas and Pesek, Jaroslav and Cejka, Tomas}, title={{CESNET-AGG23}}, publisher={Zenodo}, year={2023}, month={jun}, doi={10.5281/zenodo.8053021}}
+```
+
+!!! warning "Terms of use"
+    The files are a converted copy of the original data, distributed under the licence of the original data (CC BY 4.0) and intended for research and education. The terms of the original source apply; check them before any commercial use. The conversion to HDF5 does not alter the measured values and is provided as is, without warranty. Rights holders who object to the redistribution can contact the maintainers and the files will be removed.
+
+<!-- terms:end -->
+
 ### Links
 
 More detailed description is available in the [paper](https://doi.org/10.23919/CNSM59352.2023.10327823) or you can contact dataset author [Jaroslav Pesek](https://jaroslavpesek.github.io/). Original dataset can be downloaded at [https://zenodo.org/records/8053021](https://zenodo.org/records/8053021).

@@ -53,6 +53,24 @@ class SourceType(Enum):
     IP_ADDRESSES_SAMPLE = "ip_addresses_sample"
     """Traffic of subset from `ip_addresses_full`. """
 
+    IP_ADDRESSES_SAMPLE_GAPS_20_00 = "ip_addresses_sample_gaps_20_00"
+    """CESNET-TimeSeries26: sample of `ip_addresses_full` stratified by the gap ratio of the 10-minute windows (band [0.00, 0.20]). """
+
+    IP_ADDRESSES_SAMPLE_GAPS_40_20 = "ip_addresses_sample_gaps_40_20"
+    """CESNET-TimeSeries26: sample of `ip_addresses_full` stratified by the gap ratio of the 10-minute windows (band (0.20, 0.40]). """
+
+    IP_ADDRESSES_SAMPLE_GAPS_60_40 = "ip_addresses_sample_gaps_60_40"
+    """CESNET-TimeSeries26: sample of `ip_addresses_full` stratified by the gap ratio of the 10-minute windows (band (0.40, 0.60]). """
+
+    IP_ADDRESSES_SAMPLE_GAPS_80_60 = "ip_addresses_sample_gaps_80_60"
+    """CESNET-TimeSeries26: sample of `ip_addresses_full` stratified by the gap ratio of the 10-minute windows (band (0.60, 0.80]). """
+
+    IP_ADDRESSES_SAMPLE_GAPS_100_80 = "ip_addresses_sample_gaps_100_80"
+    """CESNET-TimeSeries26: sample of `ip_addresses_full` stratified by the gap ratio of the 10-minute windows (band (0.80, 1.00]). """
+
+    SUBNET_LONGITUDINAL = "subnet_longitudinal"
+    """CESNET-TimeSeries26: IP addresses of one institution subnet monitored 2021-12-31 - 2026-07-09 (own time grid, TCP-only volumetrics, reduced metric set). """
+
     INSTITUTION_SUBNETS = "institution_subnets"
     """Traffic of subnets in institutions`. """
 
@@ -256,3 +274,19 @@ class ScalerType(Enum):
 
     QUANTILE_TRANSFORMER = "quantile_transformer"
     """Represents transformer [`QuantileTransformer`](reference_transformers.md#cesnet_tszoo.utils.transformer.transformer.QuantileTransformer). Equivalent to literal `quantile_transformer`. """
+
+
+class DownloadSource(Enum):
+    """Where the dataset files are downloaded from (`download_source` of `get_dataset`)."""
+
+    AUTO = "auto"
+    """Try every configured source in the default order (DataZoo bucket and mirrors), moving on when one fails."""
+
+    DATAZOO = "datazoo"
+    """CESNET DataZoo bucket only."""
+
+    GOOGLE_DRIVE = "google_drive"
+    """Google Drive mirrors only (primary and backup folder)."""
+
+    ZENODO = "zenodo"
+    """Zenodo records only."""

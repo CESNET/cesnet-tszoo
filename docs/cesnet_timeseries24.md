@@ -69,6 +69,15 @@ Moreover, the time series created by re-aggregation contains following time seri
 | std_n_dest_ports        | Standard deviation of numbers of unique destination transport layer ports.   |
 
 
+#### Download sources
+
+The library downloads the HDF5 files from the CESNET DataZoo bucket. When the bucket is unavailable or returns a
+corrupted file, it falls back to the Zenodo mirror of the HDF5 files, records
+[23296228](https://zenodo.org/records/23296228), [23296251](https://zenodo.org/records/23296251) and
+[23296272](https://zenodo.org/records/23296272). Files larger than 500 MB are stored there as 500 MB parts
+(`<file>.h5.001`, `.002`, …), which the library downloads in parallel and re-assembles. Every downloaded file is
+verified against its SHA-256 (`CHECKSUMS`).
+
 ### Links
 
 More detailed description is available in the dataset [paper](https://doi.org/10.1038/s41597-025-04603-x) or you can contact dataset author [Josef Koumar](https://koumajos.github.io/). Original dataset can be downloaded at [https://zenodo.org/records/13382427](https://zenodo.org/records/13382427).

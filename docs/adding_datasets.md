@@ -195,5 +195,12 @@ Create two Markdown files describing your dataset:
 Create a GitHub issue that includes:
 
 - Any other relevant information about the dataset.
-- A download link for the dataset files.
+- A download link for the dataset files. Besides the CESNET DataZoo `bucket_url`, a database can list backup mirrors
+  in `fallback_download_urls` (`dataset file name -> [source, ...]`, tried in order after the bucket) and the SHA-256
+  of every file in `checksums`; a source that fails or returns a file with another digest is skipped. Build the URLs
+  with `cesnet_tszoo.utils.download.google_drive_url(file_id)` and `zenodo_file_url(record_id, file_name)`. A file too
+  large for one Zenodo record (50 GB) can be published as consecutive parts (`scripts/zenodo_pack.py` splits the
+  files, computes the checksums and plans the records); the source is then `parts_source([url_of_part_1, ...])` and
+  the library downloads the parts in parallel, re-assembles the file and verifies it. See
+  `datasets/databases/cesnet_agg23/constants.py` and `datasets/databases/cesnet_timeseries26/constants.py`.
 - Links to both Markdown documentation files created in Step 2.

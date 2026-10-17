@@ -3,9 +3,10 @@
 This tutorial will look at what you need to use dataset. <br/>
 Trying to use dataset you do not have downloaded, will automatically download it.
 
-There currently seven supported datasets:
+There currently eight supported datasets:
 
 - [CESNET_TimeSeries24][cesnet_timeseries24_page] - supports all approaches
+- [CESNET_TimeSeries26][cesnet_timeseries26_page] - supports all approaches
 - [CESNET_AGG23][cesnet_agg23_page] - supports only time-based
 - [Abilene][abilene_page] - supports all approaches
 - [GÉANT][geant_page] - supports all approaches
@@ -63,3 +64,29 @@ series_based_dataset.set_dataset_config_and_initialize(config)
 ```
 
 Similarly you can use other datasets from the *Datasets* section.
+
+## Choosing the download source
+
+A dataset file is downloaded the first time it is requested. By default (`download_source="auto"`) the library tries
+every configured source in order - the CESNET DataZoo bucket first, then the mirrors (Google Drive, Zenodo) - and moves
+on when a source is unavailable or returns a file whose SHA-256 does not match. To use one source only, pass
+`download_source`:
+
+```python
+from cesnet_tszoo.datasets import CESNET_TimeSeries24
+
+# Only Zenodo (large files are stored there as 500 MB parts, downloaded in parallel and re-assembled)
+dataset = CESNET_TimeSeries24.get_dataset(data_root="/some_directory/", source_type="institutions",
+                                          aggregation="1_hour", dataset_type="time_based", download_source="zenodo")
+```
+
+| `download_source` | Sources used |
+|---|---|
+| `"auto"` (default) | All configured sources, in order |
+| `"datazoo"` | CESNET DataZoo bucket |
+| `"google_drive"` | Google Drive mirrors (primary and backup folder) |
+| `"zenodo"` | Zenodo records |
+
+When the chosen source is not available for the dataset, `get_dataset` raises a `ValueError` listing the sources that
+are. The number of parts of a split file downloaded at the same time is 4; set the environment variable
+`CESNET_TSZOO_PARALLEL_DOWNLOADS` to change it (`1` downloads the parts one by one).

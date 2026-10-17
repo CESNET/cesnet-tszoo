@@ -14,6 +14,18 @@ For detailed information about the dataset, please refer to the linked paper and
 
 ---
 
+## CESNET-TimeSeries26
+
+!!! info inline end "CESNET-TimeSeries26"
+    - Collected in 2023-2026 (one subnet since 2021)
+    - Spans 996 days (~142 weeks); `subnet_longitudinal` 1 652 days
+    - Multivariate time series for 285 institutions, 566 institution subnets, all IP addresses, a 1 000-address random sample, five 1 000-address samples stratified by share of missing values, and 135 addresses of one subnet monitored for 4.5 years
+    - Aggregation windows: 1 day, 1 hour, 10 minutes
+
+Successor of CESNET-TimeSeries24 built from live traffic of the CESNET3 network. Files are downloaded from CESNET DataZoo with Google Drive and Zenodo as backup sources; see the [CESNET-TimeSeries26][cesnet_timeseries26_page] page.
+
+---
+
 ## CESNET-AGG23
 
 !!! info inline end "CESNET-AGG23"

@@ -4,8 +4,8 @@ from abc import ABC
 
 import cesnet_tszoo.datasets.dataset_factory as dataset_factories
 from cesnet_tszoo.datasets.cesnet_dataset import CesnetDataset
-from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType
-from cesnet_tszoo.utils.download import resumable_download
+from cesnet_tszoo.utils.enums import SourceType, AgreggationType, DatasetType, DownloadSource
+from cesnet_tszoo.utils.download import download_from_sources, source_kind
 from cesnet_tszoo.data_models.dataset_metadata import DatasetMetadata
 
 
@@ -48,7 +48,10 @@ class CesnetDatabase(ABC):
 
     Attributes:
         name: Name of the database.
-        bucket_url: URL of the bucket where the dataset is stored.
+        bucket_url: URL of the CESNET DataZoo bucket where the dataset is stored (`None` when the database is not in DataZoo). Used as the last download source.
+        download_urls: Additional download sources per dataset file name (`dataset_name` -> list of sources). A source is a plain URL or a multi-part description from [`parts_source`][cesnet_tszoo.utils.download.parts_source] (file split into consecutive parts, optionally gzipped, e.g. on Zenodo). Mirrors are tried in order, before `bucket_url`. Use [`google_drive_url`][cesnet_tszoo.utils.download.google_drive_url] / [`zenodo_file_url`][cesnet_tszoo.utils.download.zenodo_file_url] to build the URLs.
+        fallback_download_urls: Secondary download sources per dataset file name, in the same format as `download_urls` but tried *after* `bucket_url`. Use these for a database published in DataZoo that only needs a backup mirror; the primary source stays DataZoo.
+        checksums: Optional SHA-256 hex digests per dataset file name (`dataset_name` -> digest). When set, the downloaded file is verified and a corrupted download is retried from the next source.
         tszoo_root: Path to folder where all databases are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.
         database_root: Path to the folder where datasets belonging to the database are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.
         configs_root: Path to the folder where configurations are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.
@@ -63,7 +66,10 @@ class CesnetDatabase(ABC):
     """
 
     name: str
-    bucket_url: str
+    bucket_url: str | None = None
+    download_urls: dict[str, list[str | dict]] = {}
+    fallback_download_urls: dict[str, list[str | dict]] = {}
+    checksums: dict[str, str] = {}
 
     tszoo_root: str
     database_root: str
@@ -82,7 +88,7 @@ class CesnetDatabase(ABC):
         raise ValueError("To create dataset instance use class method 'get_dataset' instead.")
 
     @classmethod
-    def get_dataset(cls, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False, backward_compatibility: bool = False) -> CesnetDataset:
+    def get_dataset(cls, data_root: str, subset: str, source_type: SourceType | str, aggregation: AgreggationType | str, dataset_type: DatasetType | str, check_errors: bool = False, display_details: bool = False, backward_compatibility: bool = False, download_source: DownloadSource | str = "auto") -> CesnetDataset:
         """
         Create new dataset instance.
 
@@ -94,6 +100,7 @@ class CesnetDatabase(ABC):
             dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
             check_errors: Whether to validate if the dataset is corrupted. `Default: False`
             display_details: Whether to display details about the available data in chosen dataset. `Default: False`
+            download_source: Where to download the dataset from when it is not present in `data_root` yet: `"auto"` tries every configured source in order (DataZoo bucket, then the mirrors) and moves on when one fails; `"datazoo"`, `"google_drive"` or `"zenodo"` uses only that source. See [`DownloadSource`][cesnet_tszoo.utils.enums.DownloadSource]. `Default: "auto"`
 
         Returns:
             [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).
@@ -105,6 +112,7 @@ class CesnetDatabase(ABC):
         source_type = SourceType(source_type)
         aggregation = AgreggationType(aggregation)
         dataset_type = DatasetType(dataset_type)
+        download_source = DownloadSource(download_source)
 
         if cls.subsets is not None and subset not in cls.subsets:
             raise ValueError(f"Unsupported subset: {subset}. Supported are: {cls.subsets}")
@@ -141,7 +149,7 @@ class CesnetDatabase(ABC):
                 os.makedirs(directory)
 
         if not cls._is_downloaded(dataset_path):
-            cls._download(dataset_name, dataset_path)
+            cls._download(dataset_name, dataset_path, download_source)
 
         dataset_metadata = DatasetMetadata(cls.name, dataset_type, dataset_path, cls.configs_root, cls.benchmarks_root, cls.annotations_root, subset, source_type, aggregation, cls.id_names[source_type], cls.default_values, cls.matrix_feature_mappings)
 
@@ -185,11 +193,29 @@ class CesnetDatabase(ABC):
         return os.path.exists(dataset_path)
 
     @classmethod
-    def _download(cls, dataset_name: str, dataset_path: str) -> None:
-        """Download the dataset file. """
+    def get_download_urls(cls, dataset_name: str, download_source: DownloadSource | str = DownloadSource.AUTO) -> list[str | dict]:
+        """Returns all download sources for `dataset_name` in the order they are tried: `download_urls` mirrors first (plain URLs or multi-part sources, see `cesnet_tszoo.utils.download.parts_source`), then DataZoo `bucket_url`, then the `fallback_download_urls` mirrors. """
+
+        urls = list(cls.download_urls.get(dataset_name, []))
+        if cls.bucket_url is not None:
+            urls.append(f"{cls.bucket_url}&file={dataset_name}.h5")
+        urls.extend(cls.fallback_download_urls.get(dataset_name, []))
+
+        download_source = DownloadSource(download_source)
+        if download_source is not DownloadSource.AUTO:
+            available = sorted({kind.value for kind in map(source_kind, urls) if kind is not None})
+            urls = [url for url in urls if source_kind(url) is download_source]
+            if len(urls) == 0:
+                raise ValueError(f"{cls.name} has no '{download_source.value}' download source for {dataset_name}. "
+                                 f"Available sources: {available} (or 'auto').")
+        return urls
+
+    @classmethod
+    def _download(cls, dataset_name: str, dataset_path: str, download_source: DownloadSource | str = DownloadSource.AUTO) -> None:
+        """Download the dataset file from the first working source. """
 
         logger = logging.getLogger("wrapper_dataset")
 
         logger.info("Downloading %s dataset.", dataset_name)
-        database_url = f"{cls.bucket_url}&file={dataset_name}.h5"
-        resumable_download(url=database_url, file_path=dataset_path, silent=False)
+        used_url = download_from_sources(urls=cls.get_download_urls(dataset_name, download_source), file_path=dataset_path, expected_sha256=cls.checksums.get(dataset_name), silent=False)
+        logger.info("Downloaded %s dataset from %s.", dataset_name, used_url)
