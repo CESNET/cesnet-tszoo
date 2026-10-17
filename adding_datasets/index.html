@@ -649,6 +649,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../cesnet_timeseries26/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CESNET-TimeSeries26
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cesnet_agg23/" class="md-nav__link">
         
   
@@ -2219,7 +2242,14 @@
 <p>Create a GitHub issue that includes:</p>
 <ul>
 <li>Any other relevant information about the dataset.</li>
-<li>A download link for the dataset files.</li>
+<li>A download link for the dataset files. Besides the CESNET DataZoo <code>bucket_url</code>, a database can list backup mirrors
+  in <code>fallback_download_urls</code> (<code>dataset file name -&gt; [source, ...]</code>, tried in order after the bucket) and the SHA-256
+  of every file in <code>checksums</code>; a source that fails or returns a file with another digest is skipped. Build the URLs
+  with <code>cesnet_tszoo.utils.download.google_drive_url(file_id)</code> and <code>zenodo_file_url(record_id, file_name)</code>. A file too
+  large for one Zenodo record (50 GB) can be published as consecutive parts (<code>scripts/zenodo_pack.py</code> splits the
+  files, computes the checksums and plans the records); the source is then <code>parts_source([url_of_part_1, ...])</code> and
+  the library downloads the parts in parallel, re-assembles the file and verifies it. See
+  <code>datasets/databases/cesnet_agg23/constants.py</code> and <code>datasets/databases/cesnet_timeseries26/constants.py</code>.</li>
 <li>Links to both Markdown documentation files created in Step 2.</li>
 </ul>
 

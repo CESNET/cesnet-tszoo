@@ -476,6 +476,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../cesnet_timeseries26/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CESNET-TimeSeries26
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cesnet_agg23/" class="md-nav__link">
         
   
@@ -1184,6 +1207,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_download_urls" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_download_urls
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_expected_paths" class="md-nav__link">
     <span class="md-ellipsis">
       get_expected_paths
@@ -1771,6 +1803,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_download_urls" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_download_urls
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_expected_paths" class="md-nav__link">
     <span class="md-ellipsis">
       get_expected_paths
@@ -1878,11 +1919,44 @@
           <tr class="doc-section-item">
             <td><code><span title="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.bucket_url">bucket_url</span></code></td>
             <td>
-                  <code><span title="str">str</span></code>
+                  <code><span title="str">str</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>URL of the bucket where the dataset is stored.</p>
+                <p>URL of the CESNET DataZoo bucket where the dataset is stored (<code>None</code> when the database is not in DataZoo). Used as the last download source.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.download_urls">download_urls</span></code></td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="list">list</span>[<span title="str">str</span> | <span title="dict">dict</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Additional download sources per dataset file name (<code>dataset_name</code> -&gt; list of sources). A source is a plain URL or a multi-part description from [<code>parts_source</code>][cesnet_tszoo.utils.download.parts_source] (file split into consecutive parts, optionally gzipped, e.g. on Zenodo). Mirrors are tried in order, before <code>bucket_url</code>. Use [<code>google_drive_url</code>][cesnet_tszoo.utils.download.google_drive_url] / [<code>zenodo_file_url</code>][cesnet_tszoo.utils.download.zenodo_file_url] to build the URLs.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.fallback_download_urls">fallback_download_urls</span></code></td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="list">list</span>[<span title="str">str</span> | <span title="dict">dict</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Secondary download sources per dataset file name, in the same format as <code>download_urls</code> but tried <em>after</em> <code>bucket_url</code>. Use these for a database published in DataZoo that only needs a backup mirror; the primary source stays DataZoo.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.checksums">checksums</span></code></td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional SHA-256 hex digests per dataset file name (<code>dataset_name</code> -&gt; digest). When set, the downloaded file is verified and a corrupted download is retried from the next source.</p>
               </div>
             </td>
           </tr>
@@ -2202,7 +2276,33 @@
 <span class="normal">192</span>
 <span class="normal">193</span>
 <span class="normal">194</span>
-<span class="normal">195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CesnetDatabase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CesnetDatabase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for cesnet databases. This class should **not** be used directly. Use it as base for adding new databases.</span>
 
@@ -2241,7 +2341,10 @@
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        name: Name of the database.</span>
-<span class="sd">        bucket_url: URL of the bucket where the dataset is stored.</span>
+<span class="sd">        bucket_url: URL of the CESNET DataZoo bucket where the dataset is stored (`None` when the database is not in DataZoo). Used as the last download source.</span>
+<span class="sd">        download_urls: Additional download sources per dataset file name (`dataset_name` -&gt; list of sources). A source is a plain URL or a multi-part description from [`parts_source`][cesnet_tszoo.utils.download.parts_source] (file split into consecutive parts, optionally gzipped, e.g. on Zenodo). Mirrors are tried in order, before `bucket_url`. Use [`google_drive_url`][cesnet_tszoo.utils.download.google_drive_url] / [`zenodo_file_url`][cesnet_tszoo.utils.download.zenodo_file_url] to build the URLs.</span>
+<span class="sd">        fallback_download_urls: Secondary download sources per dataset file name, in the same format as `download_urls` but tried *after* `bucket_url`. Use these for a database published in DataZoo that only needs a backup mirror; the primary source stays DataZoo.</span>
+<span class="sd">        checksums: Optional SHA-256 hex digests per dataset file name (`dataset_name` -&gt; digest). When set, the downloaded file is verified and a corrupted download is retried from the next source.</span>
 <span class="sd">        tszoo_root: Path to folder where all databases are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.</span>
 <span class="sd">        database_root: Path to the folder where datasets belonging to the database are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.</span>
 <span class="sd">        configs_root: Path to the folder where configurations are saved. Set after [`get_dataset`](reference_cesnet_database.md#cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_dataset) was called at least once.</span>
@@ -2256,7 +2359,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">bucket_url</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">bucket_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">download_urls</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">fallback_download_urls</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">checksums</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="n">tszoo_root</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">database_root</span><span class="p">:</span> <span class="nb">str</span>
@@ -2275,7 +2381,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;To create dataset instance use class method &#39;get_dataset&#39; instead.&quot;</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">download_source</span><span class="p">:</span> <span class="n">DownloadSource</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create new dataset instance.</span>
 
@@ -2287,6 +2393,7 @@
 <span class="sd">            dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).</span>
 <span class="sd">            check_errors: Whether to validate if the dataset is corrupted. `Default: False`</span>
 <span class="sd">            display_details: Whether to display details about the available data in chosen dataset. `Default: False`</span>
+<span class="sd">            download_source: Where to download the dataset from when it is not present in `data_root` yet: `&quot;auto&quot;` tries every configured source in order (DataZoo bucket, then the mirrors) and moves on when one fails; `&quot;datazoo&quot;`, `&quot;google_drive&quot;` or `&quot;zenodo&quot;` uses only that source. See [`DownloadSource`][cesnet_tszoo.utils.enums.DownloadSource]. `Default: &quot;auto&quot;`</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).</span>
@@ -2298,6 +2405,7 @@
         <span class="n">source_type</span> <span class="o">=</span> <span class="n">SourceType</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
         <span class="n">aggregation</span> <span class="o">=</span> <span class="n">AgreggationType</span><span class="p">(</span><span class="n">aggregation</span><span class="p">)</span>
         <span class="n">dataset_type</span> <span class="o">=</span> <span class="n">DatasetType</span><span class="p">(</span><span class="n">dataset_type</span><span class="p">)</span>
+        <span class="n">download_source</span> <span class="o">=</span> <span class="n">DownloadSource</span><span class="p">(</span><span class="n">download_source</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">subset</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported subset: </span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">. Supported are: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -2334,7 +2442,7 @@
                 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_is_downloaded</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">):</span>
-            <span class="bp">cls</span><span class="o">.</span><span class="n">_download</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">)</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_download</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="n">download_source</span><span class="p">)</span>
 
         <span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">DatasetMetadata</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">configs_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">benchmarks_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">annotations_root</span><span class="p">,</span> <span class="n">subset</span><span class="p">,</span> <span class="n">source_type</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">id_names</span><span class="p">[</span><span class="n">source_type</span><span class="p">],</span> <span class="bp">cls</span><span class="o">.</span><span class="n">default_values</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">matrix_feature_mappings</span><span class="p">)</span>
 
@@ -2378,14 +2486,32 @@
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_download</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Download the dataset file. &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_download_urls</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">download_source</span><span class="p">:</span> <span class="n">DownloadSource</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DownloadSource</span><span class="o">.</span><span class="n">AUTO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all download sources for `dataset_name` in the order they are tried: `download_urls` mirrors first (plain URLs or multi-part sources, see `cesnet_tszoo.utils.download.parts_source`), then DataZoo `bucket_url`, then the `fallback_download_urls` mirrors. &quot;&quot;&quot;</span>
+
+        <span class="n">urls</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">download_urls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">bucket_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">bucket_url</span><span class="si">}</span><span class="s2">&amp;file=</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.h5&quot;</span><span class="p">)</span>
+        <span class="n">urls</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">fallback_download_urls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="p">[]))</span>
+
+        <span class="n">download_source</span> <span class="o">=</span> <span class="n">DownloadSource</span><span class="p">(</span><span class="n">download_source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">download_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">DownloadSource</span><span class="o">.</span><span class="n">AUTO</span><span class="p">:</span>
+            <span class="n">available</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">kind</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">source_kind</span><span class="p">,</span> <span class="n">urls</span><span class="p">)</span> <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span>
+            <span class="n">urls</span> <span class="o">=</span> <span class="p">[</span><span class="n">url</span> <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span> <span class="k">if</span> <span class="n">source_kind</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="ow">is</span> <span class="n">download_source</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">urls</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> has no &#39;</span><span class="si">{</span><span class="n">download_source</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39; download source for </span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">. &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;Available sources: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2"> (or &#39;auto&#39;).&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">urls</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_download</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">download_source</span><span class="p">:</span> <span class="n">DownloadSource</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DownloadSource</span><span class="o">.</span><span class="n">AUTO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Download the dataset file from the first working source. &quot;&quot;&quot;</span>
 
         <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;wrapper_dataset&quot;</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Downloading </span><span class="si">%s</span><span class="s2"> dataset.&quot;</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">)</span>
-        <span class="n">database_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">bucket_url</span><span class="si">}</span><span class="s2">&amp;file=</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.h5&quot;</span>
-        <span class="n">resumable_download</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">database_url</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">used_url</span> <span class="o">=</span> <span class="n">download_from_sources</span><span class="p">(</span><span class="n">urls</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">get_download_urls</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">download_source</span><span class="p">),</span> <span class="n">file_path</span><span class="o">=</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">expected_sha256</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">checksums</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">),</span> <span class="n">silent</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Downloaded </span><span class="si">%s</span><span class="s2"> dataset from </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">,</span> <span class="n">used_url</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -2414,7 +2540,7 @@
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_dataset</span><span class="p">(</span><span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_dataset</span><span class="p">(</span><span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">download_source</span><span class="p">:</span> <span class="n">DownloadSource</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2545,6 +2671,22 @@
                   <code>False</code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>download_source</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="DownloadSource (cesnet_tszoo.utils.enums.DownloadSource)" href="../reference_enums/#cesnet_tszoo.utils.enums.DownloadSource">DownloadSource</a> | <span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Where to download the dataset from when it is not present in <code>data_root</code> yet: <code>"auto"</code> tries every configured source in order (DataZoo bucket, then the mirrors) and moves on when one fails; <code>"datazoo"</code>, <code>"google_drive"</code> or <code>"zenodo"</code> uses only that source. See <a class="autorefs autorefs-internal" title="DownloadSource" href="../reference_enums/#cesnet_tszoo.utils.enums.DownloadSource"><code>DownloadSource</code></a>. <code>Default: "auto"</code></p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;auto&#39;</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -2579,13 +2721,7 @@
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\datasets\databases\cesnet_database.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 84</span>
-<span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
-<span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 90</span>
 <span class="normal"> 91</span>
 <span class="normal"> 92</span>
 <span class="normal"> 93</span>
@@ -2652,8 +2788,16 @@
 <span class="normal">154</span>
 <span class="normal">155</span>
 <span class="normal">156</span>
-<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span><span class="p">:</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">:</span> <span class="n">AgreggationType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">:</span> <span class="n">DatasetType</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">display_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">backward_compatibility</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">download_source</span><span class="p">:</span> <span class="n">DownloadSource</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CesnetDataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create new dataset instance.</span>
 
@@ -2665,6 +2809,7 @@
 <span class="sd">        dataset_type: Type of a dataset you want to create. Can be [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).</span>
 <span class="sd">        check_errors: Whether to validate if the dataset is corrupted. `Default: False`</span>
 <span class="sd">        display_details: Whether to display details about the available data in chosen dataset. `Default: False`</span>
+<span class="sd">        download_source: Where to download the dataset from when it is not present in `data_root` yet: `&quot;auto&quot;` tries every configured source in order (DataZoo bucket, then the mirrors) and moves on when one fails; `&quot;datazoo&quot;`, `&quot;google_drive&quot;` or `&quot;zenodo&quot;` uses only that source. See [`DownloadSource`][cesnet_tszoo.utils.enums.DownloadSource]. `Default: &quot;auto&quot;`</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        [`TimeBasedCesnetDataset`](reference_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.time_based_cesnet_dataset.TimeBasedCesnetDataset), [`SeriesBasedCesnetDataset`](reference_series_based_cesnet_dataset.md#cesnet_tszoo.datasets.series_based_cesnet_dataset.SeriesBasedCesnetDataset) or [`DisjointTimeBasedCesnetDataset`](reference_disjoint_time_based_cesnet_dataset.md#cesnet_tszoo.datasets.disjoint_time_based_cesnet_dataset.DisjointTimeBasedCesnetDataset).</span>
@@ -2676,6 +2821,7 @@
     <span class="n">source_type</span> <span class="o">=</span> <span class="n">SourceType</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
     <span class="n">aggregation</span> <span class="o">=</span> <span class="n">AgreggationType</span><span class="p">(</span><span class="n">aggregation</span><span class="p">)</span>
     <span class="n">dataset_type</span> <span class="o">=</span> <span class="n">DatasetType</span><span class="p">(</span><span class="n">dataset_type</span><span class="p">)</span>
+    <span class="n">download_source</span> <span class="o">=</span> <span class="n">DownloadSource</span><span class="p">(</span><span class="n">download_source</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">subset</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported subset: </span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">. Supported are: </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">subsets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -2712,7 +2858,7 @@
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_is_downloaded</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">):</span>
-        <span class="bp">cls</span><span class="o">.</span><span class="n">_download</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">)</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_download</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="n">download_source</span><span class="p">)</span>
 
     <span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">DatasetMetadata</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">configs_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">benchmarks_root</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">annotations_root</span><span class="p">,</span> <span class="n">subset</span><span class="p">,</span> <span class="n">source_type</span><span class="p">,</span> <span class="n">aggregation</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">id_names</span><span class="p">[</span><span class="n">source_type</span><span class="p">],</span> <span class="bp">cls</span><span class="o">.</span><span class="n">default_values</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">matrix_feature_mappings</span><span class="p">)</span>
 
@@ -2726,6 +2872,67 @@
         <span class="n">dataset</span><span class="o">.</span><span class="n">display_dataset_details</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">dataset</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="cesnet_tszoo.datasets.databases.cesnet_database.CesnetDatabase.get_download_urls" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_download_urls</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_download_urls</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">download_source</span><span class="p">:</span> <span class="n">DownloadSource</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DownloadSource</span><span class="o">.</span><span class="n">AUTO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns all download sources for <code>dataset_name</code> in the order they are tried: <code>download_urls</code> mirrors first (plain URLs or multi-part sources, see <code>cesnet_tszoo.utils.download.parts_source</code>), then DataZoo <code>bucket_url</code>, then the <code>fallback_download_urls</code> mirrors.</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>cesnet_tszoo\datasets\databases\cesnet_database.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_download_urls</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">download_source</span><span class="p">:</span> <span class="n">DownloadSource</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DownloadSource</span><span class="o">.</span><span class="n">AUTO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns all download sources for `dataset_name` in the order they are tried: `download_urls` mirrors first (plain URLs or multi-part sources, see `cesnet_tszoo.utils.download.parts_source`), then DataZoo `bucket_url`, then the `fallback_download_urls` mirrors. &quot;&quot;&quot;</span>
+
+    <span class="n">urls</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">download_urls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="p">[]))</span>
+    <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">bucket_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">bucket_url</span><span class="si">}</span><span class="s2">&amp;file=</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">.h5&quot;</span><span class="p">)</span>
+    <span class="n">urls</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">fallback_download_urls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="p">[]))</span>
+
+    <span class="n">download_source</span> <span class="o">=</span> <span class="n">DownloadSource</span><span class="p">(</span><span class="n">download_source</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">download_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">DownloadSource</span><span class="o">.</span><span class="n">AUTO</span><span class="p">:</span>
+        <span class="n">available</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">kind</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">source_kind</span><span class="p">,</span> <span class="n">urls</span><span class="p">)</span> <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span>
+        <span class="n">urls</span> <span class="o">=</span> <span class="p">[</span><span class="n">url</span> <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span> <span class="k">if</span> <span class="n">source_kind</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="ow">is</span> <span class="n">download_source</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">urls</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> has no &#39;</span><span class="si">{</span><span class="n">download_source</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39; download source for </span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">. &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;Available sources: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2"> (or &#39;auto&#39;).&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">urls</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2824,15 +3031,7 @@
 
             <details class="quote">
               <summary>Source code in <code>cesnet_tszoo\datasets\databases\cesnet_database.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">167</span>
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
@@ -2844,7 +3043,15 @@
 <span class="normal">176</span>
 <span class="normal">177</span>
 <span class="normal">178</span>
-<span class="normal">179</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_expected_paths</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">database_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns expected path for the provided `data_root` and `database_name`</span>
 

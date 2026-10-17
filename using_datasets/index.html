@@ -476,6 +476,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../cesnet_timeseries26/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CESNET-TimeSeries26
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cesnet_agg23/" class="md-nav__link">
         
   
@@ -918,6 +941,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-the-download-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      Choosing the download source
+    </span>
+  </a>
   
 </li>
       
@@ -1790,6 +1822,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#choosing-the-download-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      Choosing the download source
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1812,9 +1853,10 @@
 <h1 id="using-datasets">Using datasets</h1>
 <p>This tutorial will look at what you need to use dataset. <br/>
 Trying to use dataset you do not have downloaded, will automatically download it.</p>
-<p>There currently seven supported datasets:</p>
+<p>There currently eight supported datasets:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" title="CESNET-TimeSeries24" href="../cesnet_timeseries24/#cesnet_timeseries24_page">CESNET_TimeSeries24</a> - supports all approaches</li>
+<li><a class="autorefs autorefs-internal" title="CESNET-TimeSeries26" href="../cesnet_timeseries26/#cesnet_timeseries26_page">CESNET_TimeSeries26</a> - supports all approaches</li>
 <li><a class="autorefs autorefs-internal" title="CESNET-AGG23" href="../cesnet_agg23/#cesnet_agg23_page">CESNET_AGG23</a> - supports only time-based</li>
 <li><a class="autorefs autorefs-internal" href="../abilene/#abilene_page">Abilene</a> - supports all approaches</li>
 <li><a class="autorefs autorefs-internal" href="../geant/#geant_page">GÉANT</a> - supports all approaches</li>
@@ -1860,6 +1902,46 @@ Trying to use dataset you do not have downloaded, will automatically download it
 <span class="n">series_based_dataset</span><span class="o">.</span><span class="n">set_dataset_config_and_initialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 </code></pre></div>
 <p>Similarly you can use other datasets from the <em>Datasets</em> section.</p>
+<h2 id="choosing-the-download-source">Choosing the download source</h2>
+<p>A dataset file is downloaded the first time it is requested. By default (<code>download_source="auto"</code>) the library tries
+every configured source in order - the CESNET DataZoo bucket first, then the mirrors (Google Drive, Zenodo) - and moves
+on when a source is unavailable or returns a file whose SHA-256 does not match. To use one source only, pass
+<code>download_source</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">cesnet_tszoo.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">CESNET_TimeSeries24</span>
+
+<span class="c1"># Only Zenodo (large files are stored there as 500 MB parts, downloaded in parallel and re-assembled)</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">CESNET_TimeSeries24</span><span class="o">.</span><span class="n">get_dataset</span><span class="p">(</span><span class="n">data_root</span><span class="o">=</span><span class="s2">&quot;/some_directory/&quot;</span><span class="p">,</span> <span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;institutions&quot;</span><span class="p">,</span>
+                                          <span class="n">aggregation</span><span class="o">=</span><span class="s2">&quot;1_hour&quot;</span><span class="p">,</span> <span class="n">dataset_type</span><span class="o">=</span><span class="s2">&quot;time_based&quot;</span><span class="p">,</span> <span class="n">download_source</span><span class="o">=</span><span class="s2">&quot;zenodo&quot;</span><span class="p">)</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th><code>download_source</code></th>
+<th>Sources used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"auto"</code> (default)</td>
+<td>All configured sources, in order</td>
+</tr>
+<tr>
+<td><code>"datazoo"</code></td>
+<td>CESNET DataZoo bucket</td>
+</tr>
+<tr>
+<td><code>"google_drive"</code></td>
+<td>Google Drive mirrors (primary and backup folder)</td>
+</tr>
+<tr>
+<td><code>"zenodo"</code></td>
+<td>Zenodo records</td>
+</tr>
+</tbody>
+</table>
+<p>When the chosen source is not available for the dataset, <code>get_dataset</code> raises a <code>ValueError</code> listing the sources that
+are. The number of parts of a split file downloaded at the same time is 4; set the environment variable
+<code>CESNET_TSZOO_PARALLEL_DOWNLOADS</code> to change it (<code>1</code> downloads the parts one by one).</p>
 
 
 

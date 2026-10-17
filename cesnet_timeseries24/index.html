@@ -12,7 +12,7 @@
         <link rel="prev" href="../adding_datasets/">
       
       
-        <link rel="next" href="../cesnet_agg23/">
+        <link rel="next" href="../cesnet_timeseries26/">
       
       
       <link rel="icon" href="../images/tszoo_logo.svg">
@@ -570,6 +570,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#download-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Download sources
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#links" class="md-nav__link">
     <span class="md-ellipsis">
       Links
@@ -582,6 +591,29 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cesnet_timeseries26/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CESNET-TimeSeries26
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -1862,6 +1894,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#download-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Download sources
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#links" class="md-nav__link">
     <span class="md-ellipsis">
       Links
@@ -2023,6 +2064,13 @@ Inactive timeout: 65s
 </tr>
 </tbody>
 </table>
+<h4 id="download-sources">Download sources</h4>
+<p>The library downloads the HDF5 files from the CESNET DataZoo bucket. When the bucket is unavailable or returns a
+corrupted file, it falls back to the Zenodo mirror of the HDF5 files, records
+<a href="https://zenodo.org/records/23296228">23296228</a>, <a href="https://zenodo.org/records/23296251">23296251</a> and
+<a href="https://zenodo.org/records/23296272">23296272</a>. Files larger than 500 MB are stored there as 500 MB parts
+(<code>&lt;file&gt;.h5.001</code>, <code>.002</code>, …), which the library downloads in parallel and re-assembles. Every downloaded file is
+verified against its SHA-256 (<code>CHECKSUMS</code>).</p>
 <h3 id="links">Links</h3>
 <p>More detailed description is available in the dataset <a href="https://doi.org/10.1038/s41597-025-04603-x">paper</a> or you can contact dataset author <a href="https://koumajos.github.io/">Josef Koumar</a>. Original dataset can be downloaded at <a href="https://zenodo.org/records/13382427">https://zenodo.org/records/13382427</a>.</p>
 
